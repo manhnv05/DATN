@@ -1,10 +1,7 @@
 import React, { useContext } from 'react';
-import { NavLink } from 'react-router-dom';
-
-// react-bootstrap
+import { NavLink} from 'react-router-dom';
 import { ListGroup } from 'react-bootstrap';
 
-// project import
 import NavIcon from '../NavIcon';
 import NavBadge from '../NavBadge';
 
@@ -12,58 +9,57 @@ import { ConfigContext } from '../../../../../contexts/ConfigContext';
 import * as actionType from '../../../../../store/actions';
 import useWindowSize from '../../../../../hooks/useWindowSize';
 
-// ==============================|| NAV ITEM ||============================== //
-
 const NavItem = ({ item }) => {
-  const windowSize = useWindowSize();
-  const configContext = useContext(ConfigContext);
-  const { dispatch } = configContext;
+    const windowSize = useWindowSize();
+    const { dispatch } = useContext(ConfigContext);
 
-  let itemTitle = item.title;
-  if (item.icon) {
-    itemTitle = <span className="pcoded-mtext">{item.title}</span>;
-  }
+    const itemTitle = item.icon ? <span className="pcoded-mtext">{item.title}</span> : item.title;
+    const itemTarget = item.target ? '_blank' : '';
 
-  let itemTarget = '';
-  if (item.target) {
-    itemTarget = '_blank';
-  }
-
-  let subContent;
-  if (item.external) {
-    subContent = (
-      <a href={item.url} target="_blank" rel="noopener noreferrer">
-        <NavIcon items={item} />
-        {itemTitle}
-        <NavBadge items={item} />
-      </a>
+    const subContent = item.external ? (
+        <a href={item.url} target="_blank" rel="noopener noreferrer" className="nav-link">
+            <NavIcon items={item} />
+            {itemTitle}
+            <NavBadge items={item} />
+        </a>
+    ) : (
+        <NavLink
+            to={item.url}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            target={itemTarget}
+        >
+            <NavIcon items={item} />
+            {itemTitle}
+            <NavBadge items={item} />
+        </NavLink>
     );
-  } else {
-    subContent = (
-      <NavLink to={item.url} className="nav-link" exact="true" target={itemTarget}>
-        <NavIcon items={item} />
-        {itemTitle}
-        <NavBadge items={item} />
-      </NavLink>
-    );
-  }
-  let mainContent = '';
 
-  if (windowSize.width < 992) {
-    mainContent = (
-      <ListGroup.Item as="li" bsPrefix=" " className={item.classes} onClick={() => dispatch({ type: actionType.COLLAPSE_MENU })}>
-        {subContent}
-      </ListGroup.Item>
-    );
-  } else {
-    mainContent = (
-      <ListGroup.Item as="li" bsPrefix=" " className={item.classes}>
-        {subContent}
-      </ListGroup.Item>
-    );
-  }
+    const listGroupItemClass = item.classes || '';
 
-  return <React.Fragment>{mainContent}</React.Fragment>;
+    return (
+        <>
+            <style>{`
+        .nav-link.active {
+          background-color: #e6f7ff !important;
+          color: #1890ff !important;
+          border-radius: 6px;
+        }
+        li > .nav-link.active {
+          background-color: #e6f7ff !important;
+          color: #1890ff !important;
+        }
+      `}</style>
+
+            <ListGroup.Item
+                as="li"
+                bsPrefix=" "
+                className={listGroupItemClass}
+                onClick={windowSize.width < 992 ? () => dispatch({ type: actionType.COLLAPSE_MENU }) : undefined}
+            >
+                {subContent}
+            </ListGroup.Item>
+        </>
+    );
 };
 
 export default NavItem;
