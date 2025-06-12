@@ -163,7 +163,7 @@
         @supports (-webkit-overflow-scrolling: touch) {
           top: 13px;
         }
-        @media (-ms-high-contrast: none), (-ms-high-contrast: active) {
+        @media (forced-colors: active) {
           top: 5px;
         }
       }
@@ -205,7 +205,7 @@
           @supports (-webkit-overflow-scrolling: touch) {
             top: 10px;
           }
-          @media (-ms-high-contrast: none), (-ms-high-contrast: active) {
+          @media (forced-colors: active) {
             top: 2px;
           }
         }
@@ -230,6 +230,7 @@
     cursor: pointer;
   }
 }
+
 @-moz-document url-prefix() {
   .radio input[type='radio'] + .cr::after {
     top: 12px;
@@ -240,7 +241,7 @@
     input[type='radio'] {
       + .cr {
         &:after {
-          @media (-ms-high-contrast: none), (-ms-high-contrast: active) {
+          @media (forced-colors: active) {
             top: 6px;
           }
         }
@@ -250,7 +251,7 @@
       input[type='radio'] {
         + .cr {
           &:after {
-            @media (-ms-high-contrast: none), (-ms-high-contrast: active) {
+            @media (forced-colors: active) {
               top: 3px;
             }
           }

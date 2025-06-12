@@ -1,41 +1,41 @@
 const menuItems = {
   items: [
     {
-      id: 'navigation',
-      //title: 'Điều Hướng',
+      id: 'main-navigation',
       type: 'group',
       icon: 'icon-navigation',
       children: [
+        // Tổng quan
         {
           id: 'dashboard',
           title: 'Thống Kê',
           type: 'item',
-          icon: 'feather icon-home',
+          icon: 'feather icon-home text-primary',
           url: '/app/dashboard/analytics'
         },
+
+        // Bán hàng
         {
           id: 'pos-sale',
           title: 'Bán Hàng Tại Quầy',
           type: 'item',
-          icon: 'feather icon-shopping-cart',
-          url: '/BanTaiQuay/HoaDon',
-          target: false,
-          breadcrumbs: true
+          icon: 'feather icon-shopping-cart text-primary',
+          url: '/BanTaiQuay/HoaDon'
         },
         {
           id: 'invoice-management',
           title: 'Quản Lý Hóa Đơn',
           type: 'item',
-          icon: 'feather icon-file-text',
-          url: '/HoaDon/QuanLyHoaDon',
-          target: false,
-          breadcrumbs: true
+          icon: 'feather icon-file-text text-primary',
+          url: '/HoaDon/QuanLyHoaDon'
         },
+
+        // Quản lý sản phẩm
         {
-          id: 'component',
+          id: 'product-management',
           title: 'Quản Lý Sản Phẩm',
           type: 'collapse',
-          icon: 'feather icon-box',
+          icon: 'feather icon-box text-primary',
           children: [
             {
               id: 'product',
@@ -63,7 +63,7 @@ const menuItems = {
             },
             {
               id: 'size',
-              title: 'Kích Thuớc',
+              title: 'Kích Thước',
               type: 'item',
               url: '/SanPham/size'
             },
@@ -93,50 +93,43 @@ const menuItems = {
             }
           ]
         },
+
+        // Khuyến mãi
         {
-          id: 'discount',
+          id: 'discount-management',
           title: 'Giảm Giá',
           type: 'collapse',
-          icon: 'feather icon-tag',
-          url: '',
-          target: false,
-          breadcrumbs: false,
+          icon: 'feather icon-tag text-primary',
           children: [
             {
-              id: 'discount-list',
+              id: 'discount-voucher',
               title: 'Phiếu Giảm Giá',
               type: 'item',
-              url: '/PhieuGiamGia/list',
-              target: false,
-              breadcrumbs: true
+              url: '/PhieuGiamGia/list'
             },
             {
-              id: 'discount-create',
+              id: 'discount-campaign',
               title: 'Đợt Giảm Giá',
               type: 'item',
-              url: '/DotGiamGia/list',
-              target: false,
-              breadcrumbs: true
+              url: '/DotGiamGia/list'
             }
           ]
         },
+
+        // Quản lý người dùng
         {
           id: 'customer',
           title: 'Khách Hàng',
           type: 'item',
-          icon: 'feather icon-user',
-          url: '/KhachHang/list',
-          target: false,
-          breadcrumbs: true
+          icon: 'feather icon-user text-primary',
+          url: '/KhachHang/list'
         },
         {
           id: 'employee',
           title: 'Nhân Viên',
           type: 'item',
-          icon: 'feather icon-users',
-          url: '/NhanVien/list',
-          target: false,
-          breadcrumbs: true
+          icon: 'feather icon-users text-primary',
+          url: '/NhanVien/list'
         }
       ]
     }
