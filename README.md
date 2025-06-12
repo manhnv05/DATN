@@ -19,20 +19,18 @@
 ## 3. Chuẩn bị project
 
 cấu trúc như sau:
-```
-```
+```text
 DATN/
 ├── src/
 │   ├── main/
-│   │   ├── java/               # Mã nguồn backend (Spring Boot)
+│   │   ├── java/            # Mã nguồn backend (Spring Boot)
 │   │   ├── resources/
-│   │   │   ├── templates/      # Chứa code build của ReactJS (sau khi build)
-│   │   │   ├── static/         # Tài nguyên tĩnh (ảnh, js, css nếu cần)
-│   │   │   └── ...             # Các file cấu hình khác
+│   │   │   ├── templates/   # Chứa code build của ReactJS (sau khi build)
+│   │   │   ├── static/      # Tài nguyên tĩnh (ảnh, js, css nếu cần)
+│   │   │   └── ...          # Các file cấu hình khác
 │   └── test/
-├── pom.xml                     # File cấu hình Maven
+├── pom.xml                  # File cấu hình Maven
 └── README.md
-```
 ```
 
 ---
