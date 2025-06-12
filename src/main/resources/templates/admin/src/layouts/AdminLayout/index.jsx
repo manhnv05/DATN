@@ -10,8 +10,6 @@ import useOutsideClick from '../../hooks/useOutsideClick';
 import { ConfigContext } from '../../contexts/ConfigContext';
 import * as actionType from '../../store/actions';
 
-// ==============================|| ADMIN LAYOUT ||============================== //
-
 const AdminLayout = ({ children }) => {
   const windowSize = useWindowSize();
   const ref = useRef();
@@ -45,10 +43,10 @@ const AdminLayout = ({ children }) => {
   let mainClass = ['pcoded-wrapper'];
 
   let common = (
-    <React.Fragment>
-      <Navigation />
-      <NavBar />
-    </React.Fragment>
+      <React.Fragment>
+        <Navigation />
+        <NavBar />
+      </React.Fragment>
   );
 
   if (windowSize.width < 992) {
@@ -59,26 +57,38 @@ const AdminLayout = ({ children }) => {
     outSideClass = [...outSideClass, 'mob-fixed'];
 
     common = (
-      <div className={outSideClass.join(' ')} ref={ref}>
-        {common}
-      </div>
+        <div className={outSideClass.join(' ')} ref={ref}>
+          {common}
+        </div>
     );
   }
 
   return (
-    <React.Fragment>
-      {common}
-      <div className="pcoded-main-container" onClick={() => mobileOutClickHandler} onKeyDown={() => mobileOutClickHandler}>
-        <div className={mainClass.join(' ')}>
-          <div className="pcoded-content">
-            <div className="pcoded-inner-content">
-              <Breadcrumb />
-              {children}
+      <React.Fragment>
+        {/* Disable text selection for navigation */}
+        <style>{`
+        .pcoded-navbar,
+        .pcoded-navbar * {
+          user-select: none !important;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+        }
+      `}</style>
+
+        {common}
+
+        <div className="pcoded-main-container" onClick={mobileOutClickHandler} onKeyDown={mobileOutClickHandler}>
+          <div className={mainClass.join(' ')}>
+            <div className="pcoded-content">
+              <div className="pcoded-inner-content">
+                <Breadcrumb />
+                {children}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </React.Fragment>
+      </React.Fragment>
   );
 };
 
