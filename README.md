@@ -2,7 +2,7 @@
 
 ## 1. Giới thiệu
 
-Đây là dự án kết hợp **Spring Boot** (backend) và **ReactJS** (frontend). Dưới đây là hướng dẫn đầy đủ để bạn chạy dự án này trên máy cá nhân.
+Đây là dự án kết hợp **Spring Boot** và **ReactJS**. Dưới đây là hướng dẫn đầy đủ để bạn chạy dự án này trên máy cá nhân.
 
 ---
 
@@ -20,8 +20,19 @@
 
 cấu trúc như sau:
 ```
-/backend      # Spring Boot
-/frontend     # ReactJS
+```
+DATN/
+├── src/
+│   ├── main/
+│   │   ├── java/               # Mã nguồn backend (Spring Boot)
+│   │   ├── resources/
+│   │   │   ├── templates/      # Chứa code build của ReactJS (sau khi build)
+│   │   │   ├── static/         # Tài nguyên tĩnh (ảnh, js, css nếu cần)
+│   │   │   └── ...             # Các file cấu hình khác
+│   └── test/
+├── pom.xml                     # File cấu hình Maven
+└── README.md
+```
 ```
 
 ---
