@@ -7,7 +7,6 @@ import java.io.Serializable;
 public class HinhAnhVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
-//    private Integer id;
     private Integer idSanPhamChiTiet;
     private String maAnh;
     private String duongDanAnh;

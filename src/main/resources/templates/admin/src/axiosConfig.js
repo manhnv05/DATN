@@ -2,10 +2,8 @@ import axios from 'axios';
 
 const instance = axios.create({
     baseURL: 'http://localhost:8080',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    withCredentials: true // Cho phép gửi credentials như cookie, dùng cho CORS (nếu backend cho phép)
+    // headers: { 'Content-Type': 'application/json' }, // Không cần mặc định nếu dùng upload file nhiều
+    withCredentials: true // Nếu backend cho phép, còn không thì có thể xóa đi
 });
 
 // Nếu backend luôn cần Basic Auth, hãy bỏ comment đoạn sau:

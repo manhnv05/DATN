@@ -3,14 +3,14 @@ package com.example.datn.Controller;
 import com.example.datn.DTO.HinhAnhDTO;
 import com.example.datn.Service.HinhAnhService;
 import com.example.datn.VO.HinhAnhQueryVO;
-import com.example.datn.VO.HinhAnhUpdateVO;
-import com.example.datn.VO.HinhAnhVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 @Validated
 @RestController
@@ -20,28 +20,49 @@ public class HinhAnhController {
     @Autowired
     private HinhAnhService hinhAnhService;
 
+    // ✅ Tạo mới hình ảnh
     @PostMapping
-    public String save(@Valid @RequestBody HinhAnhVO vO) {
-        return hinhAnhService.save(vO).toString();
+    public ResponseEntity<?> save(
+            @RequestParam("ma_anh") String maAnh,
+            @RequestParam(value = "duong_dan_anh", required = false) MultipartFile duongDanAnh,
+            @RequestParam("anh_mac_dinh") Integer anhMacDinh,
+            @RequestParam("mo_ta") String moTa,
+            @RequestParam("trang_thai") Integer trangThai
+            // @RequestParam(value = "id_san_pham_chi_tiet", required = false) Integer idSanPhamChiTiet
+    ) {
+        Integer id = hinhAnhService.save(maAnh, anhMacDinh, moTa, trangThai, duongDanAnh);
+        return ResponseEntity.ok(id);
     }
 
+    // ✅ Xóa hình ảnh theo ID
     @DeleteMapping("/{id}")
-    public void delete(@Valid @NotNull @PathVariable("id") Integer id) {
+    public ResponseEntity<?> delete(@Valid @NotNull @PathVariable("id") Integer id) {
         hinhAnhService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
+    // ✅ Cập nhật hình ảnh
     @PutMapping("/{id}")
-    public void update(@Valid @NotNull @PathVariable("id") Integer id,
-                       @Valid @RequestBody HinhAnhUpdateVO vO) {
-        hinhAnhService.update(id, vO);
+    public ResponseEntity<?> update(
+            @Valid @NotNull @PathVariable("id") Integer id,
+            @RequestParam("ma_anh") String maAnh,
+            @RequestParam(value = "duong_dan_anh", required = false) MultipartFile duongDanAnh,
+            @RequestParam("anh_mac_dinh") Integer anhMacDinh,
+            @RequestParam("mo_ta") String moTa,
+            @RequestParam("trang_thai") Integer trangThai
+            // @RequestParam(value = "id_san_pham_chi_tiet", required = false) Integer idSanPhamChiTiet
+    ) {
+        hinhAnhService.update(id, maAnh, anhMacDinh, moTa, trangThai, duongDanAnh);
+        return ResponseEntity.noContent().build();
     }
 
+    // ✅ Lấy chi tiết hình ảnh theo ID
     @GetMapping("/{id}")
-    public HinhAnhDTO getById(@Valid @NotNull @PathVariable("id") Integer id) {
-        return hinhAnhService.getById(id);
+    public ResponseEntity<HinhAnhDTO> getById(@Valid @NotNull @PathVariable("id") Integer id) {
+        return ResponseEntity.ok(hinhAnhService.getById(id));
     }
 
-    // Chuẩn RESTful: filter qua @RequestParam, hỗ trợ phân trang động
+    // ✅ Danh sách hình ảnh có phân trang và lọc
     @GetMapping
     public Page<HinhAnhDTO> query(
             @RequestParam(required = false) Integer id,
