@@ -23,10 +23,10 @@ cấu trúc như sau:
 DATN/
 ├── src/
 │   ├── main/
-│   │   ├── java/            # Mã nguồn backend (Spring Boot)
+│   │   ├── java/            # Mã nguồn backend
 │   │   ├── resources/
-│   │   │   ├── templates/   # Chứa code build của ReactJS (sau khi build)
-│   │   │   ├── static/      # Tài nguyên tĩnh (ảnh, js, css nếu cần)
+│   │   │   ├── templates/   # Chứa code build của ReactJS
+│   │   │   ├── static/      # Tài nguyên tĩnh
 │   │   │   └── ...          # Các file cấu hình khác
 │   └── test/
 ├── pom.xml                  # File cấu hình Maven
