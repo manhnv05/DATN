@@ -68,7 +68,7 @@ const routes = [
     type: "collapse",
     name: "Quản Lý Hóa Đơn",
     key: "billing",
-    route: "/billing",
+    route: "/OrderManagementPage",
     icon: <CreditCard size="12px" />,
     component: <OrderManagementPage />,
     noCollapse: true,

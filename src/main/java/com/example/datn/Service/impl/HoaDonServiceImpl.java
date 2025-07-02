@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -239,6 +240,41 @@ public class HoaDonServiceImpl implements HoaDonService {
     }
 
     @Override
+    public CapNhatTrangThaiDTO capNhatTrangThaiHoaDonKhiQuayLai(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien) {
+        HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        TrangThai trangThaiCu = hoaDon.getTrangThai();
+
+        if (trangThaiCu == trangThaiMoi) {
+            throw new AppException(ErrorCode.NO_STATUS_CHANGE);
+        }
+
+        // Kiểm tra LÙI TRẠNG THÁI ở đây
+        if (!trangThaiCu.canRevertTo(trangThaiMoi)) { // Kiểm tra lùi lại
+            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+
+        // ... (logic cập nhật và ghi lịch sử giống hệt phương thức trên) ...
+        String nguoiThucHienThayDoi = nguoiThucHien != null ? nguoiThucHien : hoaDon.getNhanVien().getHoVaTen();
+
+        hoaDon.setTrangThai(trangThaiMoi);
+        HoaDon updatedHoaDon = hoaDonRepository.save(hoaDon);
+
+        String noiDungThayDoi = String.format("Trạng thái hóa đơn thay đổi từ '%s' sang '%s'",
+                trangThaiCu.getDisplayName(), trangThaiMoi.getDisplayName());
+
+        lichSuHoaDonService.ghiNhanLichSuHoaDon(updatedHoaDon, noiDungThayDoi, nguoiThucHienThayDoi, ghiChu, trangThaiMoi);
+
+        return new CapNhatTrangThaiDTO(
+                updatedHoaDon.getId(),
+                updatedHoaDon.getTrangThai().name(),
+                updatedHoaDon.getTrangThai().getDisplayName(),
+                "Cập nhật trạng thái thành công!"
+        );
+    }
+
+    @Override
     public List<HoaDonHistoryDTO> layLichSuThayDoiTrangThai(String maHoaDon) {
         return lichSuHoaDonService.layLichSuThayDoiTrangThai(maHoaDon);
     }
@@ -364,35 +400,26 @@ public class HoaDonServiceImpl implements HoaDonService {
         // Gọi lại phương thức cập nhật trạng thái chung để thực hiện việc hủy
         return capNhatTrangThaiHoaDon(idHoaDon, TrangThai.HUY, ghiChu, nguoiThucHien);
     }
+
+
     @Override
     public CapNhatTrangThaiDTO quayLaiTrangThaiTruoc(Integer idHoaDon, String ghiChu, String nguoiThucHien) {
-//        HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
-//                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-//
-//        TrangThai trangThaiCu = hoaDon.getTrangThai();
-//
-//        // Lấy lịch sử thay đổi trạng thái gần nhất của hóa đơn này
-//        // Bạn cần triển khai phương thức này trong lichSuHoaDonService
-//        // Nó nên trả về trạng thái trước đó.
-//        Optional<LichSuHoaDon> lichSuGanNhat = lichSuHoaDonService.layLichSuThayDoiTrangThaiGanNhat(idHoaDon);
-//
-//        if (lichSuGanNhat.isEmpty()) {
-//            throw new AppException(ErrorCode.NO_PREVIOUS_STATUS); // Không có trạng thái trước đó để quay lại
-//        }
-//
-//        // Lấy trạng thái trước đó từ lịch sử
-//        // Cần đảm bảo lịch sử lưu trữ đúng trạng thái trước khi thay đổi.
-//        // Ví dụ: LichSuHoaDon có trường oldStatus và newStatus.
-//        TrangThai trangThaiQuayLai = lichSuGanNhat.get().getTrangThaiTruocDo(); // Giả sử bạn có trường này
-//
-//        // Kiểm tra tính hợp lệ của việc quay lại trạng thái này
-//        // Bạn có thể cần định nghĩa các quy tắc cụ thể cho việc quay lại (ví dụ: không thể quay lại nếu đã "HOAN_THANH")
-//        if (!trangThaiQuayLai.canTransitionFrom(trangThaiCu)) { // Hoặc một logic canRevertTo()
-//            throw new AppException(ErrorCode.INVALID_REVERT_TRANSITION); // Lỗi chuyển đổi không hợp lệ khi quay lại
-//        }
-        // Gọi lại phương thức cập nhật trạng thái chung
-//        return capNhatTrangThaiHoaDon(idHoaDon, trangThaiQuayLai, ghiChu, nguoiThucHien);
-        return null;
+        HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        TrangThai trangThaiHienTai = hoaDon.getTrangThai();
+        HoaDonHistoryDTO lichSuGanNhat = lichSuHoaDonService.layLichSuThayDoiTrangThaiGanNhat(idHoaDon);
+        if (lichSuGanNhat==null) {
+            throw new AppException(ErrorCode.NO_PREVIOUS_STATUS);
+        }
+        TrangThai trangThai= TrangThai.valueOf(lichSuGanNhat.getTrangThaiHoaDon());
+        TrangThai trangThaiQuayLai = trangThai;
+
+
+        if (!trangThaiHienTai.canRevertTo(trangThaiQuayLai)) {
+            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+        return capNhatTrangThaiHoaDonKhiQuayLai(idHoaDon, trangThaiQuayLai, ghiChu, nguoiThucHien);
+
     }
 
     @Override
@@ -440,6 +467,7 @@ public class HoaDonServiceImpl implements HoaDonService {
                             chiTietResponse.setThanhTien(hoaDonChiTiet.getThanhTien());
                             chiTietResponse.setGhiChu(hoaDonChiTiet.getGhiChu());
                             chiTietResponse.setTrangThai(hoaDonChiTiet.getTrangThai());
+
                             return chiTietResponse;
                         }).collect(Collectors.toList())
         );

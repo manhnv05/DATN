@@ -147,42 +147,24 @@ export async function updateVouchers(data) {
 }
 
 // Gửi mail thông báo phiếu giảm giá
-export async function sendMail({ voucherId, emails }) {
+export async function sendMail(data) {
     try {
-        // Đảm bảo truyền đúng cấu trúc object mà backend yêu cầu
-        const payload = {
-            phieuGiamGiaVO: { id: voucherId },
-            emails: emails
-        };
-
         const response = await fetch("http://localhost:8080/phieu_giam_gia/sendMail", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(data),
         });
 
         if (!response.ok) {
-            let errorMsg = "Failed to send voucher mail";
-            try {
-                const err = await response.json();
-                if (err && err.message) errorMsg = err.message;
-            } catch {}
-            throw new Error(errorMsg);
+            throw new Error("Failed to add voucher");
         }
 
-        // Đọc response dạng text trước, phòng trường hợp body rỗng
-        const text = await response.text();
-        if (text) {
-            const result = JSON.parse(text);
-            return result;
-        } else {
-            // Nếu không có body, trả về kết quả mặc định
-            return { success: true };
-        }
+        const result = await response.json();
+        return result;
     } catch (error) {
-        console.error("Error sending voucher mail:", error);
+        console.error("Error adding voucher:", error);
         return null;
     }
 }

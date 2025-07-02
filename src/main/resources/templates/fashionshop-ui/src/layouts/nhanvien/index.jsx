@@ -14,7 +14,7 @@ import Footer from "examples/Footer";
 import Icon from "@mui/material/Icon";
 import Table from "examples/Tables/Table";
 import { useNavigate } from "react-router-dom";
-import { FaPlus, FaEye, FaTrash, FaFileExcel, FaFilePdf } from "react-icons/fa";
+import { FaPlus, FaEye, FaTrash, FaFileExcel, FaFilePdf, FaEdit } from "react-icons/fa";
 import axios from "axios";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -29,19 +29,18 @@ import Divider from "@mui/material/Divider";
 import DialogContentText from "@mui/material/DialogContentText";
 import Avatar from "@mui/material/Avatar";
 import Notifications from "layouts/Notifications";
-import dayjs from "dayjs";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { toast } from "react-toastify";
 
 const genderOptions = ["Tất cả", "Nam", "Nữ", "Khác"];
-const statusOptions = ["Tất cả", "Đang làm", "Nghỉ"];
 const rowsPerPageOptions = [5, 10, 20];
 const apiBaseUrl = "http://localhost:8080/nhanVien";
 const provinceApiUrl = "https://provinces.open-api.vn/api/?depth=1";
-const districtApiUrl = (code) => `https://provinces.open-api.vn/api/p/${code}?depth=2`;
-const wardApiUrl = (code) => `https://provinces.open-api.vn/api/d/${code}?depth=2`;
+const districtApiUrl = code => `https://provinces.open-api.vn/api/p/${code}?depth=2`;
+const wardApiUrl = code => `https://provinces.open-api.vn/api/d/${code}?depth=2`;
+const roleListAPI = "http://localhost:8080/vaiTro/list";
 
 function getGenderLabel(gender) {
     if (gender === "Nam" || gender === 1) return "Nam";
@@ -49,15 +48,28 @@ function getGenderLabel(gender) {
     return "Khác";
 }
 
-function getStatusLabel(status) {
+const STATUS_OPTIONS = [
+    { value: 1, label: "Đang làm" },
+    { value: 0, label: "Nghỉ" },
+];
+
+function getStatusLabel(status, statusOptions) {
+    const found = statusOptions.find(s => s.value === status || s.label === status);
+    if (found) return found.label;
     if (status === 1 || status === "Đang làm") return "Đang làm";
     return "Nghỉ";
 }
 
 function getPaginationArray(currentPage, totalPages) {
-    if (totalPages <= 4) return Array.from({ length: totalPages }, (_, i) => i);
-    if (currentPage <= 1) return [0, 1, "...", totalPages - 2, totalPages - 1];
-    if (currentPage >= totalPages - 2) return [0, 1, "...", totalPages - 2, totalPages - 1];
+    if (totalPages <= 4) {
+        return Array.from({ length: totalPages }, (_, i) => i);
+    }
+    if (currentPage <= 1) {
+        return [0, 1, "...", totalPages - 2, totalPages - 1];
+    }
+    if (currentPage >= totalPages - 2) {
+        return [0, 1, "...", totalPages - 2, totalPages - 1];
+    }
     return [0, 1, "...", currentPage, "...", totalPages - 2, totalPages - 1];
 }
 
@@ -74,10 +86,15 @@ function NhanVienTable() {
     const [search, setSearch] = useState("");
     const [genderFilter, setGenderFilter] = useState("Tất cả");
     const [statusFilter, setStatusFilter] = useState("Tất cả");
+    const [statusOptions] = useState(STATUS_OPTIONS);
+    const [roleOptions, setRoleOptions] = useState([]);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(0);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
+    const [provinces, setProvinces] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [wards, setWards] = useState([]);
     const [editForm, setEditForm] = useState({
         maNhanVien: "",
         hoVaTen: "",
@@ -87,7 +104,7 @@ function NhanVienTable() {
         tinhThanhPho: "",
         quanHuyen: "",
         xaPhuong: "",
-        trangThai: 1,
+        trangThai: "",
         hinhAnh: "",
         canCuocCongDan: "",
         email: "",
@@ -96,6 +113,7 @@ function NhanVienTable() {
         ngaySinh: "",
         matKhau: "",
         diaChi: "",
+        diaChiCuThe: ""
     });
     const [editSaving, setEditSaving] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -106,10 +124,12 @@ function NhanVienTable() {
         message: "",
         severity: "info",
     });
-    const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        fetchEmployees();
+        // eslint-disable-next-line
+    }, [search, genderFilter, statusFilter, rowsPerPage, currentPage]);
 
     async function fetchEmployees() {
         setLoading(true);
@@ -120,9 +140,16 @@ function NhanVienTable() {
                 size: rowsPerPage,
                 hoVaTen: search,
             };
-            if (genderFilter !== "Tất cả") params.gioiTinh = genderFilter;
-            if (statusFilter !== "Tất cả") params.trangThai = statusFilter === "Đang làm" ? 1 : 0;
-            const response = await axios.get(apiBaseUrl, { params: params });
+            if (genderFilter !== "Tất cả") {
+                params.gioiTinh = genderFilter;
+            }
+            if (statusFilter !== "Tất cả") {
+                const statusObj = statusOptions.find(s => s.label === statusFilter);
+                if (statusObj) {
+                    params.trangThai = statusObj.value;
+                }
+            }
+            const response = await axios.get(apiBaseUrl, { params });
             setNhanVienData({
                 ...response.data,
                 content: response.data.content || [],
@@ -141,33 +168,34 @@ function NhanVienTable() {
         }
     }
 
-    useEffect(function () {
-        fetchEmployees();
-    }, [search, genderFilter, statusFilter, rowsPerPage, currentPage]);
-
-    useEffect(function () {
-        axios.get(provinceApiUrl).then(function (res) {
-            setProvinces(res.data || []);
-        });
+    useEffect(() => {
+        axios.get(provinceApiUrl).then(res => setProvinces(res.data || []));
+        axios.get(roleListAPI).then(res => setRoleOptions(Array.isArray(res.data) ? res.data : []));
     }, []);
 
-    useEffect(function () {
+    useEffect(() => {
         if (editForm.tinhThanhPho) {
-            axios.get(districtApiUrl(editForm.tinhThanhPho)).then(function (res) {
+            axios.get(districtApiUrl(editForm.tinhThanhPho)).then(res => {
                 setDistricts(res.data && res.data.districts ? res.data.districts : []);
             });
-        } else setDistricts([]);
-        setEditForm(function (f) { return { ...f, quanHuyen: "", xaPhuong: "" }; });
+        } else {
+            setDistricts([]);
+        }
+        setEditForm(f => ({ ...f, quanHuyen: "", xaPhuong: "" }));
         setWards([]);
+        // eslint-disable-next-line
     }, [editForm.tinhThanhPho]);
 
-    useEffect(function () {
+    useEffect(() => {
         if (editForm.quanHuyen) {
-            axios.get(wardApiUrl(editForm.quanHuyen)).then(function (res) {
+            axios.get(wardApiUrl(editForm.quanHuyen)).then(res => {
                 setWards(res.data && res.data.wards ? res.data.wards : []);
             });
-        } else setWards([]);
-        setEditForm(function (f) { return { ...f, xaPhuong: "" }; });
+        } else {
+            setWards([]);
+        }
+        setEditForm(f => ({ ...f, xaPhuong: "" }));
+        // eslint-disable-next-line
     }, [editForm.quanHuyen]);
 
     function handlePageChange(newPage) {
@@ -201,26 +229,42 @@ function NhanVienTable() {
     async function handleEditOpen(employee) {
         setEditingEmployee(employee);
         try {
-            const response = await axios.get(apiBaseUrl + "/" + employee.id);
+            const response = await axios.get(`${apiBaseUrl}/${employee.id}`);
             const detail = response.data;
+            let diaChiCuThe = "";
+            let xa = "";
+            let huyen = "";
+            let tinh = "";
+            if (detail.diaChi) {
+                let arr = detail.diaChi.split(" - ");
+                if (arr.length > 3) {
+                    diaChiCuThe = arr.slice(0, arr.length - 3).join(" - ");
+                    xa = arr[arr.length - 3];
+                    huyen = arr[arr.length - 2];
+                    tinh = arr[arr.length - 1];
+                } else {
+                    diaChiCuThe = "";
+                }
+            }
             setEditForm({
                 maNhanVien: detail.maNhanVien || "",
                 hoVaTen: detail.hoVaTen || "",
                 chucVu: detail.chucVu || "",
                 soDienThoai: detail.soDienThoai || detail.sdt || "",
                 gioiTinh: detail.gioiTinh || "",
-                tinhThanhPho: detail.tinhThanhPho || "",
-                quanHuyen: detail.quanHuyen || "",
-                xaPhuong: detail.xaPhuong || "",
-                trangThai: detail.trangThai !== undefined ? detail.trangThai : 1,
+                tinhThanhPho: detail.tinhThanhPho || tinh || "",
+                quanHuyen: detail.quanHuyen || huyen || "",
+                xaPhuong: detail.xaPhuong || xa || "",
+                trangThai: detail.trangThai !== undefined ? detail.trangThai : "",
                 hinhAnh: detail.hinhAnh || detail.anh || "",
                 canCuocCongDan: detail.canCuocCongDan || "",
                 email: detail.email || "",
                 tenTaiKhoan: detail.tenTaiKhoan || "",
-                vaiTro: detail.vaiTro && detail.vaiTro.ten ? detail.vaiTro.ten : "",
+                vaiTro: detail.vaiTro && detail.vaiTro.id ? detail.vaiTro.id : "",
                 ngaySinh: detail.ngaySinh || "",
                 matKhau: detail.matKhau || "",
                 diaChi: detail.diaChi || "",
+                diaChiCuThe: diaChiCuThe
             });
         } catch (error) {
             setEditForm({
@@ -232,15 +276,16 @@ function NhanVienTable() {
                 tinhThanhPho: employee.tinhThanhPho || "",
                 quanHuyen: employee.quanHuyen || "",
                 xaPhuong: employee.xaPhuong || "",
-                trangThai: employee.trangThai !== undefined ? employee.trangThai : 1,
+                trangThai: employee.trangThai !== undefined ? employee.trangThai : "",
                 hinhAnh: employee.hinhAnh || employee.anh || "",
                 canCuocCongDan: employee.canCuocCongDan || "",
                 email: employee.email || "",
                 tenTaiKhoan: employee.tenTaiKhoan || "",
-                vaiTro: employee.vaiTro && employee.vaiTro.ten ? employee.vaiTro.ten : "",
+                vaiTro: employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : "",
                 ngaySinh: employee.ngaySinh || "",
                 matKhau: employee.matKhau || "",
                 diaChi: employee.diaChi || "",
+                diaChiCuThe: ""
             });
         }
         setEditDialogOpen(true);
@@ -258,7 +303,7 @@ function NhanVienTable() {
             tinhThanhPho: "",
             quanHuyen: "",
             xaPhuong: "",
-            trangThai: 1,
+            trangThai: "",
             hinhAnh: "",
             canCuocCongDan: "",
             email: "",
@@ -267,12 +312,12 @@ function NhanVienTable() {
             ngaySinh: "",
             matKhau: "",
             diaChi: "",
+            diaChiCuThe: ""
         });
     }
 
     function handleEditChange(event) {
         let value = event.target.value;
-        if (event.target.name === "trangThai") value = Number(value);
         setEditForm({ ...editForm, [event.target.name]: value });
     }
 
@@ -280,8 +325,31 @@ function NhanVienTable() {
         if (!editingEmployee) return;
         setEditSaving(true);
         try {
+            let xa = "";
+            let huyen = "";
+            let tinh = "";
+            if (wards.length > 0 && editForm.xaPhuong) {
+                const foundWard = wards.find(w => w.code === editForm.xaPhuong);
+                xa = foundWard && foundWard.name ? foundWard.name : editForm.xaPhuong;
+            } else {
+                xa = editForm.xaPhuong;
+            }
+            if (districts.length > 0 && editForm.quanHuyen) {
+                const foundDistrict = districts.find(d => d.code === editForm.quanHuyen);
+                huyen = foundDistrict && foundDistrict.name ? foundDistrict.name : editForm.quanHuyen;
+            } else {
+                huyen = editForm.quanHuyen;
+            }
+            if (provinces.length > 0 && editForm.tinhThanhPho) {
+                const foundProvince = provinces.find(p => p.code === editForm.tinhThanhPho);
+                tinh = foundProvince && foundProvince.name ? foundProvince.name : editForm.tinhThanhPho;
+            } else {
+                tinh = editForm.tinhThanhPho;
+            }
+            const diaChiCuThe = editForm.diaChiCuThe || "";
+            const diaChi = [diaChiCuThe, xa, huyen, tinh].filter(Boolean).join(" - ");
             await axios.put(
-                apiBaseUrl + "/" + editingEmployee.id,
+                `${apiBaseUrl}/${editingEmployee.id}`,
                 {
                     maNhanVien: editForm.maNhanVien,
                     hoVaTen: editForm.hoVaTen,
@@ -299,7 +367,7 @@ function NhanVienTable() {
                     vaiTro: editForm.vaiTro,
                     ngaySinh: editForm.ngaySinh,
                     matKhau: editForm.matKhau,
-                    diaChi: editForm.diaChi,
+                    diaChi: diaChi
                 }
             );
             handleEditClose();
@@ -324,7 +392,7 @@ function NhanVienTable() {
         if (!deletingEmployee) return;
         setDeleteLoading(true);
         try {
-            await axios.delete(apiBaseUrl + "/" + deletingEmployee.id);
+            await axios.delete(`${apiBaseUrl}/${deletingEmployee.id}`);
             handleDeleteClose();
             toast.success("Xóa nhân viên thành công !")
             fetchEmployees();
@@ -337,81 +405,6 @@ function NhanVienTable() {
     function handleNotificationClose(event, reason) {
         if (reason === "clickaway") return;
         setNotification({ ...notification, open: false });
-    }
-
-    function handleExportExcel() {
-        const sheetData = [
-            [
-                "STT",
-                "Mã nhân viên",
-                "Họ và tên",
-                "Chức vụ",
-                "Số điện thoại",
-                "Giới tính",
-                "Địa chỉ",
-                "Trạng thái"
-            ],
-            ...nhanVienData.content.map(function (item, idx) {
-                let address = (item.diaChi && item.diaChi.trim() !== "")
-                    ? item.diaChi
-                    : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
-                return [
-                    currentPage * rowsPerPage + idx + 1,
-                    item.maNhanVien,
-                    item.hoVaTen,
-                    item.chucVu,
-                    item.soDienThoai || item.sdt,
-                    getGenderLabel(item.gioiTinh),
-                    address,
-                    getStatusLabel(item.trangThai),
-                ];
-            }),
-        ];
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-        XLSX.utils.book_append_sheet(workbook, worksheet, "NhanVien");
-        XLSX.writeFile(workbook, "danh_sach_nhan_vien.xlsx");
-    }
-
-    function handleExportPdf() {
-        const doc = new jsPDF({
-            orientation: "landscape",
-        });
-        doc.setFontSize(17);
-        doc.text("Danh sách nhân viên", 14, 18);
-        const tableColumn = [
-            "STT",
-            "Mã nhân viên",
-            "Họ và tên",
-            "Chức vụ",
-            "Số điện thoại",
-            "Giới tính",
-            "Địa chỉ",
-            "Trạng thái",
-        ];
-        const tableRows = nhanVienData.content.map(function (item, idx) {
-            let address = (item.diaChi && item.diaChi.trim() !== "")
-                ? item.diaChi
-                : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
-            return [
-                currentPage * rowsPerPage + idx + 1,
-                item.maNhanVien,
-                item.hoVaTen,
-                item.chucVu,
-                item.soDienThoai || item.sdt,
-                getGenderLabel(item.gioiTinh),
-                address,
-                getStatusLabel(item.trangThai),
-            ];
-        });
-        doc.autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 28,
-            styles: { fontSize: 10 },
-            headStyles: { fillColor: [73, 163, 241] },
-        });
-        doc.save("danh_sach_nhan_vien.pdf");
     }
 
     const columns = [
@@ -427,14 +420,12 @@ function NhanVienTable() {
             label: "Họ và tên",
             align: "left",
             width: "170px",
-            render: function (value, row) {
-                return (
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                        <Avatar src={row.hinhAnh || row.anh || "/default-avatar.png"} alt={value} />
-                        <span>{value}</span>
-                    </Box>
-                );
-            },
+            render: (value, row) => (
+                <Box display="flex" alignItems="center" gap={1.5}>
+                    <Avatar src={row.hinhAnh || row.anh || "/default-avatar.png"} alt={value} />
+                    <span>{value}</span>
+                </Box>
+            ),
         },
         {
             name: "chucVu",
@@ -453,17 +444,15 @@ function NhanVienTable() {
             label: "Giới tính",
             align: "center",
             width: "90px",
-            render: function (value) { return getGenderLabel(value); },
+            render: value => getGenderLabel(value),
         },
         {
             name: "diaChi",
             label: "Địa chỉ",
             align: "center",
             width: "230px",
-            render: function (_, row) {
-                if (row.diaChi && row.diaChi.trim() !== "") {
-                    return row.diaChi;
-                }
+            render: (_, row) => {
+                if (row.diaChi && row.diaChi.trim() !== "") return row.diaChi;
                 let xa = row.xaPhuong || "";
                 let huyen = row.quanHuyen || "";
                 let tinh = row.tinhThanhPho || "";
@@ -475,73 +464,75 @@ function NhanVienTable() {
             label: "Trạng thái",
             align: "center",
             width: "110px",
-            render: function (value) {
-                return (
-                    <span
-                        style={{
-                            background: getStatusLabel(value) === "Đang làm" ? "#e6f4ea" : "#f4f6fb",
-                            color: getStatusLabel(value) === "Đang làm" ? "#219653" : "#bdbdbd",
-                            border: "1px solid " + (getStatusLabel(value) === "Đang làm" ? "#219653" : "#bdbdbd"),
-                            borderRadius: 6,
-                            fontWeight: 500,
-                            padding: "2px 12px",
-                            fontSize: 13,
-                            display: "inline-block",
-                        }}
-                    >
-                        {getStatusLabel(value)}
-                    </span>
-                );
-            },
+            render: value => (
+                <span
+                    style={{
+                        background: getStatusLabel(value, statusOptions) === "Đang làm" ? "#e6f4ea" : "#f4f6fb",
+                        color: getStatusLabel(value, statusOptions) === "Đang làm" ? "#219653" : "#bdbdbd",
+                        border: "1px solid " + (getStatusLabel(value, statusOptions) === "Đang làm" ? "#219653" : "#bdbdbd"),
+                        borderRadius: 6,
+                        fontWeight: 500,
+                        padding: "2px 12px",
+                        fontSize: 13,
+                        display: "inline-block",
+                    }}
+                >
+          {getStatusLabel(value, statusOptions)}
+        </span>
+            ),
         },
         {
             name: "actions",
             label: "Thao tác",
             align: "center",
-            width: "110px",
-            render: function (_, row) {
-                return (
-                    <SoftBox display="flex" gap={0.5} justifyContent="center">
-                        <IconButton
-                            size="small"
-                            sx={{ color: "#4acbf2" }}
-                            title="Chi tiết"
-                            onClick={function () { navigate("/nhanvien/chitiet/" + row.id); }}
-                        >
-                            <FaEye />
-                        </IconButton>
-                        <IconButton
-                            size="small"
-                            sx={{ color: "#e74c3c" }}
-                            title="Xóa"
-                            onClick={function () { handleDeleteOpen(row); }}
-                        >
-                            <FaTrash />
-                        </IconButton>
-                    </SoftBox>
-                );
-            },
+            width: "140px",
+            render: (_, row) => (
+                <SoftBox display="flex" gap={0.5} justifyContent="center">
+                    <IconButton
+                        size="small"
+                        sx={{ color: "#4acbf2" }}
+                        title="Chi tiết"
+                        onClick={() => navigate("/nhanvien/chitiet/" + row.id)}
+                    >
+                        <FaEye />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        sx={{ color: "#f7b731" }}
+                        title="Sửa"
+                        onClick={() => handleEditOpen(row)}
+                    >
+                        <FaEdit />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        sx={{ color: "#e74c3c" }}
+                        title="Xóa"
+                        onClick={() => handleDeleteOpen(row)}
+                    >
+                        <FaTrash />
+                    </IconButton>
+                </SoftBox>
+            ),
         },
     ];
 
-    const rows = nhanVienData.content.map(function (item, idx) {
-        return {
-            stt: currentPage * rowsPerPage + idx + 1,
-            id: item.id,
-            maNhanVien: item.maNhanVien,
-            hoVaTen: item.hoVaTen,
-            chucVu: item.chucVu,
-            soDienThoai: item.soDienThoai || item.sdt || "",
-            gioiTinh: item.gioiTinh,
-            tinhThanhPho: item.tinhThanhPho || "",
-            quanHuyen: item.quanHuyen || "",
-            xaPhuong: item.xaPhuong || "",
-            diaChi: item.diaChi || "",
-            trangThai: item.trangThai,
-            hinhAnh: item.hinhAnh || item.anh || "",
-            actions: "",
-        };
-    });
+    const rows = nhanVienData.content.map((item, idx) => ({
+        stt: currentPage * rowsPerPage + idx + 1,
+        id: item.id,
+        maNhanVien: item.maNhanVien,
+        hoVaTen: item.hoVaTen,
+        chucVu: item.chucVu,
+        soDienThoai: item.soDienThoai || item.sdt || "",
+        gioiTinh: item.gioiTinh,
+        tinhThanhPho: item.tinhThanhPho || "",
+        quanHuyen: item.quanHuyen || "",
+        xaPhuong: item.xaPhuong || "",
+        diaChi: item.diaChi || "",
+        trangThai: item.trangThai,
+        hinhAnh: item.hinhAnh || item.anh || "",
+        actions: "",
+    }));
 
     const paginationItems = getPaginationArray(nhanVienData.number, nhanVienData.totalPages);
 
@@ -588,13 +579,11 @@ function NhanVienTable() {
                                     sx={{ borderRadius: 2, background: "#f5f6fa", height: 40 }}
                                     inputProps={{ "aria-label": "Giới tính" }}
                                 >
-                                    {genderOptions.map(function (gender) {
-                                        return (
-                                            <MenuItem key={gender} value={gender}>
-                                                {gender}
-                                            </MenuItem>
-                                        );
-                                    })}
+                                    {genderOptions.map(gender => (
+                                        <MenuItem key={gender} value={gender}>
+                                            {gender}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                             <FormControl sx={{ minWidth: 120 }}>
@@ -606,13 +595,12 @@ function NhanVienTable() {
                                     sx={{ borderRadius: 2, background: "#f5f6fa", height: 40 }}
                                     inputProps={{ "aria-label": "Trạng thái" }}
                                 >
-                                    {statusOptions.map(function (status) {
-                                        return (
-                                            <MenuItem key={status} value={status}>
-                                                {status}
-                                            </MenuItem>
-                                        );
-                                    })}
+                                    <MenuItem value="Tất cả">Tất cả</MenuItem>
+                                    {statusOptions.map(status => (
+                                        <MenuItem key={status.value} value={status.label}>
+                                            {status.label}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </SoftBox>
@@ -634,7 +622,39 @@ function NhanVienTable() {
                                         color: "#1769aa",
                                     },
                                 }}
-                                onClick={handleExportExcel}
+                                onClick={() => {
+                                    const sheetData = [
+                                        [
+                                            "STT",
+                                            "Mã nhân viên",
+                                            "Họ và tên",
+                                            "Chức vụ",
+                                            "Số điện thoại",
+                                            "Giới tính",
+                                            "Địa chỉ",
+                                            "Trạng thái"
+                                        ],
+                                        ...nhanVienData.content.map((item, idx) => {
+                                            let address = (item.diaChi && item.diaChi.trim() !== "")
+                                                ? item.diaChi
+                                                : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
+                                            return [
+                                                currentPage * rowsPerPage + idx + 1,
+                                                item.maNhanVien,
+                                                item.hoVaTen,
+                                                item.chucVu,
+                                                item.soDienThoai || item.sdt,
+                                                getGenderLabel(item.gioiTinh),
+                                                address,
+                                                getStatusLabel(item.trangThai, statusOptions),
+                                            ];
+                                        }),
+                                    ];
+                                    const workbook = XLSX.utils.book_new();
+                                    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+                                    XLSX.utils.book_append_sheet(workbook, worksheet, "NhanVien");
+                                    XLSX.writeFile(workbook, "danh_sach_nhan_vien.xlsx");
+                                }}
                             >
                                 Xuất Excel
                             </Button>
@@ -655,7 +675,46 @@ function NhanVienTable() {
                                         color: "#1769aa",
                                     },
                                 }}
-                                onClick={handleExportPdf}
+                                onClick={() => {
+                                    const doc = new jsPDF({
+                                        orientation: "landscape",
+                                    });
+                                    doc.setFontSize(17);
+                                    doc.text("Danh sách nhân viên", 14, 18);
+                                    const tableColumn = [
+                                        "STT",
+                                        "Mã nhân viên",
+                                        "Họ và tên",
+                                        "Chức vụ",
+                                        "Số điện thoại",
+                                        "Giới tính",
+                                        "Địa chỉ",
+                                        "Trạng thái",
+                                    ];
+                                    const tableRows = nhanVienData.content.map((item, idx) => {
+                                        let address = (item.diaChi && item.diaChi.trim() !== "")
+                                            ? item.diaChi
+                                            : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
+                                        return [
+                                            currentPage * rowsPerPage + idx + 1,
+                                            item.maNhanVien,
+                                            item.hoVaTen,
+                                            item.chucVu,
+                                            item.soDienThoai || item.sdt,
+                                            getGenderLabel(item.gioiTinh),
+                                            address,
+                                            getStatusLabel(item.trangThai, statusOptions),
+                                        ];
+                                    });
+                                    doc.autoTable({
+                                        head: [tableColumn],
+                                        body: tableRows,
+                                        startY: 28,
+                                        styles: { fontSize: 10 },
+                                        headStyles: { fillColor: [73, 163, 241] },
+                                    });
+                                    doc.save("danh_sach_nhan_vien.pdf");
+                                }}
                             >
                                 Xuất PDF
                             </Button>
@@ -676,7 +735,7 @@ function NhanVienTable() {
                                         color: "#1769aa",
                                     },
                                 }}
-                                onClick={function () { navigate("/nhanvien/add"); }}
+                                onClick={() => navigate("/nhanvien/add")}
                             >
                                 Thêm nhân viên
                             </Button>
@@ -706,13 +765,11 @@ function NhanVienTable() {
                                     onChange={handleRowsPerPageChange}
                                     size="small"
                                 >
-                                    {rowsPerPageOptions.map(function (number) {
-                                        return (
-                                            <MenuItem key={number} value={number}>
-                                                Xem {number}
-                                            </MenuItem>
-                                        );
-                                    })}
+                                    {rowsPerPageOptions.map(number => (
+                                        <MenuItem key={number} value={number}>
+                                            Xem {number}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </SoftBox>
@@ -721,14 +778,14 @@ function NhanVienTable() {
                                 variant="text"
                                 size="small"
                                 disabled={nhanVienData.first}
-                                onClick={function () { handlePageChange(currentPage - 1); }}
+                                onClick={() => handlePageChange(currentPage - 1)}
                                 sx={{ color: nhanVienData.first ? "#bdbdbd" : "#49a3f1" }}
                             >
                                 Trước
                             </Button>
-                            {paginationItems.map(function (item, idx) {
-                                if (item === "...") {
-                                    return (
+                            {paginationItems.map((item, idx) =>
+                                item === "..."
+                                    ? (
                                         <Button
                                             key={"ellipsis-" + idx}
                                             variant="text"
@@ -744,31 +801,29 @@ function NhanVienTable() {
                                         >
                                             ...
                                         </Button>
-                                    );
-                                }
-                                return (
-                                    <Button
-                                        key={item}
-                                        variant={nhanVienData.number === item ? "contained" : "text"}
-                                        color={nhanVienData.number === item ? "info" : "inherit"}
-                                        size="small"
-                                        onClick={function () { handlePageChange(item); }}
-                                        sx={{
-                                            minWidth: 32,
-                                            borderRadius: 2,
-                                            color: nhanVienData.number === item ? "#fff" : "#495057",
-                                            background: nhanVienData.number === item ? "#49a3f1" : "transparent",
-                                        }}
-                                    >
-                                        {item + 1}
-                                    </Button>
-                                );
-                            })}
+                                    ) : (
+                                        <Button
+                                            key={item}
+                                            variant={nhanVienData.number === item ? "contained" : "text"}
+                                            color={nhanVienData.number === item ? "info" : "inherit"}
+                                            size="small"
+                                            onClick={() => handlePageChange(item)}
+                                            sx={{
+                                                minWidth: 32,
+                                                borderRadius: 2,
+                                                color: nhanVienData.number === item ? "#fff" : "#495057",
+                                                background: nhanVienData.number === item ? "#49a3f1" : "transparent",
+                                            }}
+                                        >
+                                            {item + 1}
+                                        </Button>
+                                    )
+                            )}
                             <Button
                                 variant="text"
                                 size="small"
                                 disabled={nhanVienData.last}
-                                onClick={function () { handlePageChange(currentPage + 1); }}
+                                onClick={() => handlePageChange(currentPage + 1)}
                                 sx={{ color: nhanVienData.last ? "#bdbdbd" : "#49a3f1" }}
                             >
                                 Sau
@@ -824,15 +879,21 @@ function NhanVienTable() {
                         </Box>
                         <Box>
                             <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Chức vụ</Typography>
-                            <TextField
-                                value={editForm.chucVu}
-                                name="chucVu"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập chức vụ"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
+                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
+                                <Select
+                                    name="chucVu"
+                                    value={editForm.chucVu}
+                                    onChange={handleEditChange}
+                                    displayEmpty
+                                >
+                                    <MenuItem value=""><em>Chọn chức vụ</em></MenuItem>
+                                    <MenuItem value="Nhân viên bán hàng">Nhân viên bán hàng</MenuItem>
+                                    <MenuItem value="Quản lý">Quản lý</MenuItem>
+                                    <MenuItem value="Kế toán">Kế toán</MenuItem>
+                                    <MenuItem value="Thủ kho">Thủ kho</MenuItem>
+                                    <MenuItem value="Thu ngân">Thu ngân</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                         <Box>
                             <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Số điện thoại</Typography>
@@ -853,7 +914,9 @@ function NhanVienTable() {
                                     name="gioiTinh"
                                     value={editForm.gioiTinh}
                                     onChange={handleEditChange}
+                                    displayEmpty
                                 >
+                                    <MenuItem value=""><em>Chọn giới tính</em></MenuItem>
                                     <MenuItem value="Nam">Nam</MenuItem>
                                     <MenuItem value="Nữ">Nữ</MenuItem>
                                     <MenuItem value="Khác">Khác</MenuItem>
@@ -868,9 +931,9 @@ function NhanVienTable() {
                                 onChange={handleEditChange}
                                 fullWidth
                                 size="small"
+                                type="date"
                                 placeholder="YYYY-MM-DD"
                                 sx={{ background: "#fff", borderRadius: 2 }}
-                                type="date"
                                 InputLabelProps={{ shrink: true }}
                             />
                         </Box>
@@ -883,30 +946,6 @@ function NhanVienTable() {
                                 fullWidth
                                 size="small"
                                 placeholder="Nhập email"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Tên đăng nhập</Typography>
-                            <TextField
-                                value={editForm.tenTaiKhoan}
-                                name="tenTaiKhoan"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập tên đăng nhập"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Mật khẩu</Typography>
-                            <TextField
-                                value={editForm.matKhau}
-                                name="matKhau"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập mật khẩu"
                                 sx={{ background: "#fff", borderRadius: 2 }}
                             />
                         </Box>
@@ -924,25 +963,31 @@ function NhanVienTable() {
                         </Box>
                         <Box>
                             <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Vai trò</Typography>
-                            <TextField
-                                value={editForm.vaiTro}
-                                name="vaiTro"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập vai trò"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
+                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
+                                <Select
+                                    name="vaiTro"
+                                    value={editForm.vaiTro}
+                                    onChange={handleEditChange}
+                                    displayEmpty
+                                >
+                                    <MenuItem value=""><em>Chọn vai trò</em></MenuItem>
+                                    {roleOptions.map(role => (
+                                        <MenuItem value={role.id} key={role.id}>
+                                            {role.ten}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </Box>
                         <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Địa chỉ (ưu tiên nhập đầy đủ)</Typography>
+                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Địa chỉ cụ thể</Typography>
                             <TextField
-                                value={editForm.diaChi}
-                                name="diaChi"
+                                value={editForm.diaChiCuThe || ""}
+                                name="diaChiCuThe"
                                 onChange={handleEditChange}
                                 fullWidth
                                 size="small"
-                                placeholder="Nhập địa chỉ đầy đủ"
+                                placeholder="Nhập số nhà, tên đường, thôn xóm..."
                                 sx={{ background: "#fff", borderRadius: 2 }}
                             />
                         </Box>
@@ -956,13 +1001,11 @@ function NhanVienTable() {
                                     displayEmpty
                                 >
                                     <MenuItem value=""><em>Chọn Tỉnh/Thành phố</em></MenuItem>
-                                    {provinces.map(function (province) {
-                                        return (
-                                            <MenuItem value={province.code} key={province.code}>
-                                                {province.name}
-                                            </MenuItem>
-                                        );
-                                    })}
+                                    {provinces.map(province => (
+                                        <MenuItem value={province.code} key={province.code}>
+                                            {province.name}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </Box>
@@ -977,13 +1020,11 @@ function NhanVienTable() {
                                     disabled={!editForm.tinhThanhPho}
                                 >
                                     <MenuItem value=""><em>Chọn Quận/Huyện</em></MenuItem>
-                                    {districts.map(function (district) {
-                                        return (
-                                            <MenuItem value={district.code} key={district.code}>
-                                                {district.name}
-                                            </MenuItem>
-                                        );
-                                    })}
+                                    {districts.map(district => (
+                                        <MenuItem value={district.code} key={district.code}>
+                                            {district.name}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </Box>
@@ -998,13 +1039,11 @@ function NhanVienTable() {
                                     disabled={!editForm.quanHuyen}
                                 >
                                     <MenuItem value=""><em>Chọn Phường/Xã</em></MenuItem>
-                                    {wards.map(function (ward) {
-                                        return (
-                                            <MenuItem value={ward.code} key={ward.code}>
-                                                {ward.name}
-                                            </MenuItem>
-                                        );
-                                    })}
+                                    {wards.map(ward => (
+                                        <MenuItem value={ward.code} key={ward.code}>
+                                            {ward.name}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </Box>
@@ -1015,6 +1054,7 @@ function NhanVienTable() {
                                     name="trangThai"
                                     value={editForm.trangThai}
                                     onChange={handleEditChange}
+                                    displayEmpty
                                 >
                                     <MenuItem value={1}>Đang làm</MenuItem>
                                     <MenuItem value={0}>Nghỉ</MenuItem>

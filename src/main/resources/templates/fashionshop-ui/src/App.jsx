@@ -12,7 +12,7 @@ import createCache from "@emotion/cache";
 import routes from "routes";
 import { useSoftUIController, setMiniSidenav} from "context";
 import brand from "assets/images/logo4.png";
-
+import 'bootstrap/dist/css/bootstrap.min.css';
 export default function App() {
   const [controller, dispatch] = useSoftUIController();
   const { miniSidenav, direction, layout, sidenavColor } = controller;

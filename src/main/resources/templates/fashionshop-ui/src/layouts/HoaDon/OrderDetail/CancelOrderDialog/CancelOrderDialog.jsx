@@ -20,41 +20,41 @@ const CancelOrderDialog = ({ onClose, onConfirmCancel }) => {
         setCustomMessage(predefinedMessages[0]);
     }, []);
 
-const handleRadioChange = (e) => {
-    const message = e.target.value;
-    setSelectedMessage(message);
-    // Nếu chọn "Lý do khác", cho phép người dùng nhập tùy chỉnh, nếu không thì dùng mẫu
-    if (message === "Lý do khác: Vui lòng ghi rõ.") {
-        setCustomMessage(""); // Xóa nếu chuyển sang tùy chỉnh
-    }
-    else{
-        setCustomMessage(message)
-    }
-};
+    const handleRadioChange = (e) => {
+        const message = e.target.value;
+        setSelectedMessage(message);
+        // Nếu chọn "Lý do khác", cho phép người dùng nhập tùy chỉnh, nếu không thì dùng mẫu
+        if (message === "Lý do khác: Vui lòng ghi rõ.") {
+            setCustomMessage(""); // Xóa nếu chuyển sang tùy chỉnh
+        }
+        else{
+            setCustomMessage(message)
+        }
+    };
 
 // Trong file CancelOrderDialog.jsx
 
-const handleConfirm = () => {
-    // >> ĐIỂM DEBUG 1: Kiểm tra xem hàm có được gọi khi nhấn nút không.
-    console.log("1. [Dialog] Nút 'Xác nhận' đã được nhấn.");
+    const handleConfirm = () => {
+        // >> ĐIỂM DEBUG 1: Kiểm tra xem hàm có được gọi khi nhấn nút không.
+        console.log("1. [Dialog] Nút 'Xác nhận' đã được nhấn.");
 
-    const finalGhiChu = selectedMessage === "Lý do khác: Vui lòng ghi rõ."
-                        ? customMessage
-                        : selectedMessage;
+        const finalGhiChu = selectedMessage === "Lý do khác: Vui lòng ghi rõ."
+            ? customMessage
+            : selectedMessage;
 
-      console.log("2. [Dialog] Ghi chú cuối cùng (finalGhiChu):", `'${finalGhiChu}'`);
+        console.log("2. [Dialog] Ghi chú cuối cùng (finalGhiChu):", `'${finalGhiChu}'`);
 
-    if (!finalGhiChu.trim()) {
-        
-        console.warn("3. [Dialog] Ghi chú rỗng, dừng lại và hiện alert.");
-        alert("Vui lòng nhập ghi chú hủy đơn hàng.");
-        return;
-    }
-    
-    
-    console.log("4. [Dialog] Ghi chú hợp lệ. Chuẩn bị gọi onConfirmCancel...");
-    onConfirmCancel(finalGhiChu);
-};
+        if (!finalGhiChu.trim()) {
+
+            console.warn("3. [Dialog] Ghi chú rỗng, dừng lại và hiện alert.");
+            alert("Vui lòng nhập ghi chú hủy đơn hàng.");
+            return;
+        }
+
+
+        console.log("4. [Dialog] Ghi chú hợp lệ. Chuẩn bị gọi onConfirmCancel...");
+        onConfirmCancel(finalGhiChu);
+    };
     return (
         <div className={styles.dialogOverlay}>
             <div className={styles.dialogContent}>
@@ -90,13 +90,13 @@ const handleConfirm = () => {
                     />
                 </div>
 
-            <button className={styles.confirmButton} onClick={handleConfirm}>Xác nhận</button> 
+                <button className={styles.confirmButton} onClick={handleConfirm}>Xác nhận</button>
             </div>
         </div>
     );
 };
 CancelOrderDialog.propTypes = {
-  onClose: PropTypes.func.isRequired,
-  onConfirmCancel: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onConfirmCancel: PropTypes.func.isRequired,
 };
 export default CancelOrderDialog;

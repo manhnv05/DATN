@@ -219,43 +219,43 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
         }
 
         return (
-          <SoftBadge
-            size="sm"
-            badgeContent={text}
-            container
-            sx={{
-              ...baseBadgeStyles,
-              ...colorStyles,
-            }}
-          />
+            <SoftBadge
+                size="sm"
+                badgeContent={text}
+                container
+                sx={{
+                  ...baseBadgeStyles,
+                  ...colorStyles,
+                }}
+            />
         );
       },
     },
     {
-  label: "Ngày tạo",
-  name: "ngayTao",
-  align: "center", // Thuộc tính align này đã căn giữa nội dung trong ô bảng
-  render: (value) => {
-    const formattedDate = value ? format(new Date(value), "HH:mm:ss dd/MM/yyyy") : "";
+      label: "Ngày tạo",
+      name: "ngayTao",
+      align: "center", // Thuộc tính align này đã căn giữa nội dung trong ô bảng
+      render: (value) => {
+        const formattedDate = value ? format(new Date(value), "HH:mm:ss dd/MM/yyyy") : "";
 
-    return (
-      <SoftTypography
-        variant="caption" // Hoặc "body2", tùy thuộc bạn muốn font size thế nào
-        fontWeight="medium" // Làm cho chữ hơi đậm lên
-        sx={{
-          color: "#495057", // Màu chữ xám đậm, ví dụ
-          // color: '#0d6efd', // Hoặc màu xanh primary
-          whiteSpace: "nowrap", // Ngăn không cho ngày giờ bị ngắt dòng nếu quá dài
-          
-           fontSize: '1rem', // Điều chỉnh kích thước font
-          opacity: 0.6,
-        }}
-      >
-        {formattedDate}
-      </SoftTypography>
-    );
-  },
-},
+        return (
+            <SoftTypography
+                variant="caption" // Hoặc "body2", tùy thuộc bạn muốn font size thế nào
+                fontWeight="medium" // Làm cho chữ hơi đậm lên
+                sx={{
+                  color: "#495057", // Màu chữ xám đậm, ví dụ
+                  // color: '#0d6efd', // Hoặc màu xanh primary
+                  whiteSpace: "nowrap", // Ngăn không cho ngày giờ bị ngắt dòng nếu quá dài
+
+                  fontSize: '1rem', // Điều chỉnh kích thước font
+                  opacity: 0.6,
+                }}
+            >
+              {formattedDate}
+            </SoftTypography>
+        );
+      },
+    },
 
     {
       label: "Loại đơn",
@@ -283,41 +283,41 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
             break;
         }
         return (
-          <SoftBadge
-            size="sm"
-            badgeContent={text}
-            container
-            sx={{
-              ...baseBadgeStyles,
-              ...colorStyles,
-            }}
-          />
+            <SoftBadge
+                size="sm"
+                badgeContent={text}
+                container
+                sx={{
+                  ...baseBadgeStyles,
+                  ...colorStyles,
+                }}
+            />
         );
       },
     },
-  {
-  label: "Hành động",
-  name: "actions",
-  align: "center",
-  render: (value, row) => { // <<== Đổi ( thành {
-    
-    // ==========================================================
-    // >> Thêm dòng console.log của bạn vào đây <<
-    console.log("Giá trị của row.id là:", row.id);
-    // ==========================================================
+    {
+      label: "Hành động",
+      name: "actions",
+      align: "center",
+      render: (value, row) => { // <<== Đổi ( thành {
 
-    // Thêm từ khóa 'return' để trả về JSX
-    return (
-      <Tooltip title="Xem chi tiết" placement="top">
-        <Link to={`/order-management/${row.id}`}>
-          <IconButton color="info">
-            <Icon>visibility</Icon>
-          </IconButton>
-        </Link>
-      </Tooltip>
-    );
-  }, // <<== Đổi ) thành }
-},
+        // ==========================================================
+        // >> Thêm dòng console.log của bạn vào đây <<
+        console.log("Giá trị của row.id là:", row.id);
+        // ==========================================================
+
+        // Thêm từ khóa 'return' để trả về JSX
+        return (
+            <Tooltip title="Xem chi tiết" placement="top">
+              <Link to={`/order-management/${row.id}`}>
+                <IconButton color="info">
+                  <Icon>visibility</Icon>
+                </IconButton>
+              </Link>
+            </Tooltip>
+        );
+      }, // <<== Đổi ) thành }
+    },
   ];
 
   const rows = orders.map((order, index) => {
@@ -332,188 +332,188 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
   });
 
   return (
-    <SoftBox>
-      <SoftBox px={3} sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs value={filterStatus} onChange={handleStatusTabChange}>
-          {[
-            { key: "", label: "Tất cả" },
-            { key: "CHO_XAC_NHAN", label: "Chờ xác nhận" },
-            { key: "CHO_GIAO_HANG", label: "Chờ giao hàng" },
-            { key: "DANG_VAN_CHUYEN", label: "Đang vận chuyển" },
-            { key: "HOAN_THANH", label: "Hoàn thành" },
-            { key: "HUY", label: "Đã hủy" },
-          ].map(({ key, label }) => (
-            <Tab
-              key={key}
-              value={key}
-              label={
-                <SoftBox display="flex" alignItems="center" justifyContent="center">
-                  <SoftTypography variant="body2" fontWeight="bold" sx={{ textTransform: 'none' }}>
-                    {label}
-                  </SoftTypography>
-                  {(statusCounts[key] || 0) > 0 && (
-                    <Box
-                      sx={{
-                        ml: 0.5,
-                        backgroundColor: '#dc3545',
-                        color: '#fff',
-                        borderRadius: '50%',
-                        minWidth: '20px',
-                        height: '20px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold',
-                        padding: '0 4px',
-                        textTransform: 'none', // Đảm bảo count không viết hoa
-                      }}
-                    >
-                      {statusCounts[key]}
-                    </Box>
-                  )}
-                </SoftBox>
-              }
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(73, 163, 241, 0.1)',
-                },
-                '&.Mui-selected': {
-                  color: '#ffff !important',
-                  backgroundColor: '#49a3f1 !important',
-                },
-                textTransform: 'none', // Đảm bảo chữ của Tab không bị viết hoa
-              }}
-            />
-          ))}
-        </Tabs>
-      </SoftBox>
-
-      {error && (
-        <Alert severity="error" sx={{ m: 3, mt: 2 }}>
-          {error}
-        </Alert>
-      )}
-      <SoftBox p={3} pt={2}>
-        {loading ? (
-          <SoftBox>
-            {[...Array(pageSize)].map((_, index) => (
-              <Skeleton key={index} variant="rectangular" height={40} sx={{ my: 1 }} />
+      <SoftBox>
+        <SoftBox px={3} sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs value={filterStatus} onChange={handleStatusTabChange}>
+            {[
+              { key: "", label: "Tất cả" },
+              { key: "CHO_XAC_NHAN", label: "Chờ xác nhận" },
+              { key: "CHO_GIAO_HANG", label: "Chờ giao hàng" },
+              { key: "DANG_VAN_CHUYEN", label: "Đang vận chuyển" },
+              { key: "HOAN_THANH", label: "Hoàn thành" },
+              { key: "HUY", label: "Đã hủy" },
+            ].map(({ key, label }) => (
+                <Tab
+                    key={key}
+                    value={key}
+                    label={
+                      <SoftBox display="flex" alignItems="center" justifyContent="center">
+                        <SoftTypography variant="body2" fontWeight="bold" sx={{ textTransform: 'none' }}>
+                          {label}
+                        </SoftTypography>
+                        {(statusCounts[key] || 0) > 0 && (
+                            <Box
+                                sx={{
+                                  ml: 0.5,
+                                  backgroundColor: '#dc3545',
+                                  color: '#fff',
+                                  borderRadius: '50%',
+                                  minWidth: '20px',
+                                  height: '20px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  padding: '0 4px',
+                                  textTransform: 'none', // Đảm bảo count không viết hoa
+                                }}
+                            >
+                              {statusCounts[key]}
+                            </Box>
+                        )}
+                      </SoftBox>
+                    }
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: 'rgba(73, 163, 241, 0.1)',
+                      },
+                      '&.Mui-selected': {
+                        color: '#ffff !important',
+                        backgroundColor: '#49a3f1 !important',
+                      },
+                      textTransform: 'none', // Đảm bảo chữ của Tab không bị viết hoa
+                    }}
+                />
             ))}
-          </SoftBox>
-        ) : (
-          <Table columns={columns} rows={rows} loading={false} />
-        )}
-
-        {!loading && !error && orders.length === 0 && (
-          <SoftBox display="flex" justifyContent="center" p={3}>
-            <SoftTypography>Không có dữ liệu đơn hàng nào.</SoftTypography>
-          </SoftBox>
-        )}
-      </SoftBox>
-
-      <SoftBox
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        p={3}
-        flexWrap="wrap"
-        gap={2}
-      >
-        {/* Phần "Hiển thị:" và Select số mục/trang */}
-        <SoftBox display="flex" alignItems="center" sx={{ flexShrink: 0 }}>
-          <SoftTypography variant="body2" sx={{ mr: 1, whiteSpace: 'nowrap', color: '#49a3f1' }}>
-            Hiển thị:
-          </SoftTypography>
-          <Select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(0);
-            }}
-            sx={{ height: '35px', minWidth: '70px' }}
-            displayEmpty
-            renderValue={(selected) => {
-              if (selected === 5) return '5 hóa đơn';
-              if (selected === 10) return '10 hóa đơn';
-              if (selected === 20) return '20 hóa đơn';
-              return String(selected);
-            }}
-          >
-            <MenuItem value={5}>5 hóa đơn</MenuItem>
-            <MenuItem value={10}>10 hóa đơn</MenuItem>
-            <MenuItem value={20}>20 hóa đơn</MenuItem>
-          </Select>
+          </Tabs>
         </SoftBox>
 
-      
+        {error && (
+            <Alert severity="error" sx={{ m: 3, mt: 2 }}>
+              {error}
+            </Alert>
+        )}
+        <SoftBox p={3} pt={2}>
+          {loading ? (
+              <SoftBox>
+                {[...Array(pageSize)].map((_, index) => (
+                    <Skeleton key={index} variant="rectangular" height={40} sx={{ my: 1 }} />
+                ))}
+              </SoftBox>
+          ) : (
+              <Table columns={columns} rows={rows} loading={false} />
+          )}
 
-        {/* PHẦN PHÂN TRANG CHÍNH */}
-        <SoftBox display="flex" alignItems="center" gap={1} sx={{ flexShrink: 0 ,ml:"20px" }}>
-          {/* Nút "Trước" */}
-          <Button
-            variant="text"
-            size="small"
-            disabled={currentPage === 0}
-            onClick={() => setCurrentPage(prev => prev - 1)}
-            sx={{
-              color: currentPage === 0 ? "#bdbdbd" : "#495057",
-              textTransform: "none",
-              '&:hover': {
-                backgroundColor: 'rgba(73, 163, 241, 0.08)',
-              },
-            }}
-          >
-            Trước
-          </Button>
+          {!loading && !error && orders.length === 0 && (
+              <SoftBox display="flex" justifyContent="center" p={3}>
+                <SoftTypography>Không có dữ liệu đơn hàng nào.</SoftTypography>
+              </SoftBox>
+          )}
+        </SoftBox>
 
-          {/* Các nút số trang và dấu "..." */}
-          {totalPages > 0 && generatePageNumbers(currentPage, totalPages).map((pageNumber, index) => (
-            pageNumber === '...' ? (
-              <SoftTypography key={`ellipsis-${index}`} variant="body2" sx={{ mx: 0.5, color: '#495057' }}>...</SoftTypography>
-            ) : (
-              <Button
-                key={`page-${pageNumber}`}
-                variant={currentPage === pageNumber - 1 ? "contained" : "text"}
-                color={currentPage === pageNumber - 1 ? "info" : "inherit"}
+        <SoftBox
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            p={3}
+            flexWrap="wrap"
+            gap={2}
+        >
+          {/* Phần "Hiển thị:" và Select số mục/trang */}
+          <SoftBox display="flex" alignItems="center" sx={{ flexShrink: 0 }}>
+            <SoftTypography variant="body2" sx={{ mr: 1, whiteSpace: 'nowrap', color: '#49a3f1' }}>
+              Hiển thị:
+            </SoftTypography>
+            <Select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                sx={{ height: '35px', minWidth: '70px' }}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (selected === 5) return '5 hóa đơn';
+                  if (selected === 10) return '10 hóa đơn';
+                  if (selected === 20) return '20 hóa đơn';
+                  return String(selected);
+                }}
+            >
+              <MenuItem value={5}>5 hóa đơn</MenuItem>
+              <MenuItem value={10}>10 hóa đơn</MenuItem>
+              <MenuItem value={20}>20 hóa đơn</MenuItem>
+            </Select>
+          </SoftBox>
+
+
+
+          {/* PHẦN PHÂN TRANG CHÍNH */}
+          <SoftBox display="flex" alignItems="center" gap={1} sx={{ flexShrink: 0 ,ml:"20px" }}>
+            {/* Nút "Trước" */}
+            <Button
+                variant="text"
                 size="small"
-                onClick={() => setCurrentPage(pageNumber - 1)}
+                disabled={currentPage === 0}
+                onClick={() => setCurrentPage(prev => prev - 1)}
                 sx={{
-                  minWidth: 32,
-                  borderRadius: 2,
+                  color: currentPage === 0 ? "#bdbdbd" : "#495057",
                   textTransform: "none",
-                  background: currentPage === pageNumber - 1 ? "#49a3f1" : "transparent",
-                  color: currentPage === pageNumber - 1 ? "#fff" : "#495057",
                   '&:hover': {
-                    backgroundColor: currentPage === pageNumber - 1 ? "#49a3f1" : 'rgba(73, 163, 241, 0.08)',
+                    backgroundColor: 'rgba(73, 163, 241, 0.08)',
                   },
                 }}
-              >
-                {pageNumber}
-              </Button>
-            )
-          ))}
+            >
+              Trước
+            </Button>
 
-          {/* Nút "Sau" */}
-          <Button
-            variant="text"
-            size="small"
-            disabled={currentPage >= totalPages - 1 || totalPages === 0}
-            onClick={() => setCurrentPage(prev => prev + 1)}
-            sx={{
-              color: (currentPage >= totalPages - 1 || totalPages === 0) ? "#bdbdbd" : "#495057",
-              textTransform: "none",
-              '&:hover': {
-                backgroundColor: 'rgba(73, 163, 241, 0.08)',
-              },
-            }}
-          >
-            Sau
-          </Button>
+            {/* Các nút số trang và dấu "..." */}
+            {totalPages > 0 && generatePageNumbers(currentPage, totalPages).map((pageNumber, index) => (
+                pageNumber === '...' ? (
+                    <SoftTypography key={`ellipsis-${index}`} variant="body2" sx={{ mx: 0.5, color: '#495057' }}>...</SoftTypography>
+                ) : (
+                    <Button
+                        key={`page-${pageNumber}`}
+                        variant={currentPage === pageNumber - 1 ? "contained" : "text"}
+                        color={currentPage === pageNumber - 1 ? "info" : "inherit"}
+                        size="small"
+                        onClick={() => setCurrentPage(pageNumber - 1)}
+                        sx={{
+                          minWidth: 32,
+                          borderRadius: 2,
+                          textTransform: "none",
+                          background: currentPage === pageNumber - 1 ? "#49a3f1" : "transparent",
+                          color: currentPage === pageNumber - 1 ? "#fff" : "#495057",
+                          '&:hover': {
+                            backgroundColor: currentPage === pageNumber - 1 ? "#49a3f1" : 'rgba(73, 163, 241, 0.08)',
+                          },
+                        }}
+                    >
+                      {pageNumber}
+                    </Button>
+                )
+            ))}
+
+            {/* Nút "Sau" */}
+            <Button
+                variant="text"
+                size="small"
+                disabled={currentPage >= totalPages - 1 || totalPages === 0}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                sx={{
+                  color: (currentPage >= totalPages - 1 || totalPages === 0) ? "#bdbdbd" : "#495057",
+                  textTransform: "none",
+                  '&:hover': {
+                    backgroundColor: 'rgba(73, 163, 241, 0.08)',
+                  },
+                }}
+            >
+              Sau
+            </Button>
+          </SoftBox>
+
         </SoftBox>
-
       </SoftBox>
-    </SoftBox>
   );
 }
 OrderTable.propTypes = {

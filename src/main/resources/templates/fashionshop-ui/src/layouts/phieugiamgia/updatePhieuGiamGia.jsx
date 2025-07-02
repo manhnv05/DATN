@@ -160,7 +160,7 @@ export default function UpdatePhieuGiam() {
             listKachHang.push(khachhang.email)
         ))
         const datasendMail = {
-            phieuGiamGiaRequest: data,
+            phieuGiamGiaVO: data,
             emails: listKachHang
         }
         if (dataPDDKH.length !== 0) {

@@ -78,8 +78,8 @@ const OrderHistory = ({ orderId }) => {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       const transformedData = [...data]
-        .sort((a, b) => new Date(a.thoiGian) - new Date(b.thoiGian))
-        .map(item => mapStatusToDisplay(item.trangThaiHoaDon, item.thoiGian));
+          .sort((a, b) => new Date(a.thoiGian) - new Date(b.thoiGian))
+          .map(item => mapStatusToDisplay(item.trangThaiHoaDon, item.thoiGian));
       setHistoryData(transformedData);
     } catch (err) {
       setError(err);
@@ -119,101 +119,101 @@ const OrderHistory = ({ orderId }) => {
   if (historyData.length === 0) return <Typography sx={{ textAlign: 'center', p: 3 }}>Chưa có lịch sử trạng thái.</Typography>;
 
 
-  
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center', // Căn giữa toàn bộ container
-        alignItems: 'center', // Căn chỉnh các item theo chiều dọc
-        width: '100%', // Đảm bảo container chiếm hết chiều rộng
-        p: 2, // Padding cho container tổng
-        position: 'relative',
-      }}
-    >
-      {/* Container chứa các item và đường kẻ */}
       <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-around', // Thay đổi ở đây: dùng 'space-around' hoặc 'gap'
-          alignItems: 'center', // Đảm bảo các item con được căn giữa theo chiều dọc
-          width: '100%', // Đảm bảo chiếm toàn bộ chiều rộng
-          position: 'relative',
-          padding: '0 20px', // Thêm padding ngang để đường kẻ không chạm mép
-          zIndex: 3, // Đảm bảo các item nằm trên đường kẻ
-        }}
-      >
-        {/* Đường kẻ nền màu xám */}
-         {totalItems > 1 && (
-        <Box
           sx={{
-            position: 'absolute',
-            top: '47px', // Vị trí của đường kẻ theo chiều dọc (căn giữa icon)
-            left: '20px', // Bắt đầu sau padding
-            right: '20px', // Kết thúc trước padding
-            height: '4px',
-            backgroundColor: '#6ea8fe', // Màu từ theme MUI
-            zIndex: 1,
+            display: 'flex',
+            justifyContent: 'center', // Căn giữa toàn bộ container
+            alignItems: 'center', // Căn chỉnh các item theo chiều dọc
+            width: '100%', // Đảm bảo container chiếm hết chiều rộng
+            p: 2, // Padding cho container tổng
+            position: 'relative',
           }}
-        />
-        )}
-        {historyData.map((item, index) => {
-          const isActive = index <= actualLastActiveIndex;
-          return (
-            <Box
-              key={index}
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                zIndex: 2, // Đảm bảo mỗi item riêng lẻ nằm trên đường kẻ
-              }}
-            >
-              {/* NEW Outer Box for Border */}
+      >
+        {/* Container chứa các item và đường kẻ */}
+        <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-around', // Thay đổi ở đây: dùng 'space-around' hoặc 'gap'
+              alignItems: 'center', // Đảm bảo các item con được căn giữa theo chiều dọc
+              width: '100%', // Đảm bảo chiếm toàn bộ chiều rộng
+              position: 'relative',
+              padding: '0 20px', // Thêm padding ngang để đường kẻ không chạm mép
+              zIndex: 3, // Đảm bảo các item nằm trên đường kẻ
+            }}
+        >
+          {/* Đường kẻ nền màu xám */}
+          {totalItems > 1 && (
               <Box
-                sx={{
-                  borderRadius: '50%',
-                  border: `3px solid ${isActive ? '#6ea8fe' : '#E0E0E0'}`, // Thay đổi màu viền dựa trên trạng thái active
-                  padding: '5px',
-                  display: 'flex',
-                  width: 90,
-                  height: 90,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'border-color 0.5s ease-in-out',
-                  backgroundColor: '#F0F8FF',
-                  zIndex: 3,
-                }}
-              >
-                {/* Original Icon Wrapper - now inside the new Outer Box */}
-                <Box
                   sx={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    position: 'absolute',
+                    top: '47px', // Vị trí của đường kẻ theo chiều dọc (căn giữa icon)
+                    left: '20px', // Bắt đầu sau padding
+                    right: '20px', // Kết thúc trước padding
+                    height: '4px',
+                    backgroundColor: '#6ea8fe', // Màu từ theme MUI
+                    zIndex: 1,
                   }}
+              />
+          )}
+          {historyData.map((item, index) => {
+            const isActive = index <= actualLastActiveIndex;
+            return (
+                <Box
+                    key={index}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      zIndex: 2, // Đảm bảo mỗi item riêng lẻ nằm trên đường kẻ
+                    }}
                 >
-                  {getIconComponent(item.className)}
+                  {/* NEW Outer Box for Border */}
+                  <Box
+                      sx={{
+                        borderRadius: '50%',
+                        border: `3px solid ${isActive ? '#6ea8fe' : '#E0E0E0'}`, // Thay đổi màu viền dựa trên trạng thái active
+                        padding: '5px',
+                        display: 'flex',
+                        width: 90,
+                        height: 90,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'border-color 0.5s ease-in-out',
+                        backgroundColor: '#F0F8FF',
+                        zIndex: 3,
+                      }}
+                  >
+                    {/* Original Icon Wrapper - now inside the new Outer Box */}
+                    <Box
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                    >
+                      {getIconComponent(item.className)}
+                    </Box>
+                  </Box>
+                  {/* Content */}
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      {item.status}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {item.formattedDate}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-              {/* Content */}
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {item.status}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {item.formattedDate}
-                </Typography>
-              </Box>
-            </Box>
-          );
-        })}
+            );
+          })}
+        </Box>
       </Box>
-    </Box>
   );
 };
 

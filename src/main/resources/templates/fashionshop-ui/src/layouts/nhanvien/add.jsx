@@ -88,7 +88,7 @@ const labelStyle = {
 
 const GradientCard = styled(Card)(({ theme }) => ({
     borderRadius: 16,
-    background: "linear-gradient(120deg,#eef8ff 60%,#f0f4fa 120%)",
+    background: "#fff",
     boxShadow: "0 8px 32px 0 rgba(28, 72, 180, 0.09)",
     padding: theme.spacing(3),
     position: "relative",
@@ -511,7 +511,7 @@ export default function AddNhanVienForm() {
             <Box
                 sx={{
                     minHeight: "100vh",
-                    background: "white",
+                    background: "linear-gradient(130deg,#f2f9fe 70%,#e9f0fa 100%)",
                     display: "flex",
                     alignItems: "flex-start",
                     justifyContent: "center",
@@ -526,7 +526,7 @@ export default function AddNhanVienForm() {
                         <Paper
                             elevation={0}
                             sx={{
-                                background: "white",
+                                background: "linear-gradient(130deg,#f2f9fe 70%,#e9f0fa 100%)",
                                 mb: 2,
                                 p: 2,
                                 borderRadius: 3,

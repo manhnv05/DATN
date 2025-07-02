@@ -8,16 +8,13 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Box from "@mui/material/Box";
+import SoftBox from "components/SoftBox";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Icon from "@mui/material/Icon";
 import Table from "examples/Tables/Table";
-import CircularProgress from "@mui/material/CircularProgress";
-import Grid from "@mui/material/Grid";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
+import { CircularProgress, Grid, Tooltip, Typography, Box } from "@mui/material";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import Notifications from "layouts/Notifications";
@@ -738,7 +735,7 @@ function ProductForm() {
     return (
         <DashboardLayout>
             <DashboardNavbar />
-            <Box
+            <SoftBox
                 py={3}
                 sx={{
                     background: "#F4F6FB",
@@ -769,7 +766,7 @@ function ProductForm() {
                     </Typography>
                     <form onSubmit={handleAddProduct}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12} md={6}>
+                            <Grid item xs={12}>
                                 <FormControl fullWidth sx={{ mb: 2 }}>
                                     <label htmlFor="product-name" style={{ fontWeight: "bold", marginBottom: 4, display: "block" }}>
                                         Tên sản phẩm <span style={{ color: "red" }}>*</span>
@@ -982,280 +979,282 @@ function ProductForm() {
                                 </FormControl>
                             </Grid>
                         </Grid>
-                        <Box my={4} textAlign="right">
-                            <Button
-                                variant="contained"
-                                color="success"
-                                size="large"
-                                onClick={handleAddProductDetail}
-                                sx={{ fontWeight: 600, px: 4, fontSize: 17, borderRadius: 3, boxShadow: 3 }}
-                            >
-                                {addLoading && (
-                                    <CircularProgress size={22} color="inherit" sx={{ mr: 1 }} />
-                                )}
-                                Thêm sản phẩm chi tiết
-                            </Button>
-                        </Box>
-                        {productVariants.map((variant, colorIdx) => {
-                            const allChecked =
-                                checkedRows[colorIdx]?.length === variant.products.length;
-                            return (
-                                <Card
-                                    key={colorIdx}
-                                    sx={{
-                                        mb: 2.5,
-                                        borderRadius: 3,
-                                        boxShadow: 2,
-                                        p: 2.5,
-                                        background: "#fff",
-                                        userSelect: "none",
-                                        borderLeft: "7px solid #1976d2",
-                                    }}
+                        <SoftBox my={4}>
+                            <SoftBox textAlign="right" mb={2}>
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    size="large"
+                                    onClick={handleAddProductDetail}
+                                    sx={{ fontWeight: 600, px: 4, fontSize: 17, borderRadius: 3, boxShadow: 3 }}
                                 >
-                                    <Box
-                                        display="flex"
-                                        alignItems="center"
-                                        mb={2}
-                                        flexWrap="wrap"
-                                        gap={2}
+                                    {addLoading && (
+                                        <CircularProgress size={22} color="inherit" sx={{ mr: 1 }} />
+                                    )}
+                                    Thêm sản phẩm chi tiết
+                                </Button>
+                            </SoftBox>
+                            {productVariants.map((variant, colorIdx) => {
+                                const allChecked =
+                                    checkedRows[colorIdx]?.length === variant.products.length;
+                                return (
+                                    <Card
+                                        key={colorIdx}
+                                        sx={{
+                                            mb: 2.5,
+                                            borderRadius: 3,
+                                            boxShadow: 2,
+                                            p: 2.5,
+                                            background: "#fff",
+                                            userSelect: "none",
+                                            borderLeft: "7px solid #1976d2",
+                                        }}
                                     >
                                         <Box
-                                            fontWeight="bold"
-                                            sx={{ color: "#1976d2", fontSize: 16, mr: 2 }}
+                                            display="flex"
+                                            alignItems="center"
+                                            mb={2}
+                                            flexWrap="wrap"
+                                            gap={2}
                                         >
-                                            {`Màu: ${getLabelById(colorOptions, variant.colorId)}`}
-                                        </Box>
-                                        <FormControl sx={{ verticalAlign: "middle" }}>
-                                            <Tooltip title={allChecked ? "Bỏ chọn tất cả" : "Chọn tất cả"}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={allChecked}
-                                                    onChange={() =>
-                                                        handleCheckAllRows(colorIdx, !allChecked)
-                                                    }
-                                                    style={{
-                                                        transform: "scale(1.3)",
-                                                        marginRight: 5,
-                                                        verticalAlign: "middle",
-                                                    }}
-                                                />
-                                            </Tooltip>
-                                            <span style={{ fontWeight: 400, fontSize: 14 }}>
-                                                Chọn tất cả
-                                            </span>
-                                        </FormControl>
-                                        {allChecked && (
-                                            <Box
-                                                display="flex"
-                                                alignItems="center"
-                                                gap={2}
-                                                sx={{
-                                                    background: "#f4f7fd",
-                                                    borderRadius: 2,
-                                                    px: 2,
-                                                    py: 1,
-                                                    ml: 2,
-                                                }}
+                                            <SoftBox
+                                                fontWeight="bold"
+                                                sx={{ color: "#1976d2", fontSize: 16, mr: 2 }}
                                             >
-                                                <FormControl sx={{ minWidth: 120, mr: 2 }}>
-                                                    <label htmlFor={`quick-weight-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                        Trọng lượng (g)
-                                                    </label>
-                                                    <Input
-                                                        id={`quick-weight-${colorIdx}`}
-                                                        type="text"
-                                                        value={quickWeight[colorIdx] ?? ""}
-                                                        onChange={e =>
-                                                            handleQuickFill(colorIdx, "weight", e.target.value)
+                                                {`Màu: ${getLabelById(colorOptions, variant.colorId)}`}
+                                            </SoftBox>
+                                            <FormControl sx={{ verticalAlign: "middle" }}>
+                                                <Tooltip title={allChecked ? "Bỏ chọn tất cả" : "Chọn tất cả"}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={allChecked}
+                                                        onChange={() =>
+                                                            handleCheckAllRows(colorIdx, !allChecked)
                                                         }
-                                                        size="small"
-                                                        sx={{ width: 110, background: "#fff" }}
-                                                        placeholder="VD: 300"
-                                                    />
-                                                </FormControl>
-                                                <FormControl sx={{ minWidth: 120, mr: 2 }}>
-                                                    <label htmlFor={`quick-qty-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                        Số lượng
-                                                    </label>
-                                                    <Input
-                                                        id={`quick-qty-${colorIdx}`}
-                                                        type="text"
-                                                        value={quickQty[colorIdx] ?? ""}
-                                                        onChange={e =>
-                                                            handleQuickFill(colorIdx, "qty", e.target.value)
-                                                        }
-                                                        size="small"
-                                                        sx={{ width: 110, background: "#fff" }}
-                                                        placeholder="VD: 20"
-                                                    />
-                                                </FormControl>
-                                                <FormControl sx={{ minWidth: 120 }}>
-                                                    <label htmlFor={`quick-price-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                        Giá (₫)
-                                                    </label>
-                                                    <Input
-                                                        id={`quick-price-${colorIdx}`}
-                                                        type="text"
-                                                        value={quickPrice[colorIdx] ?? ""}
-                                                        onChange={e =>
-                                                            handleQuickFill(colorIdx, "price", e.target.value)
-                                                        }
-                                                        size="small"
-                                                        sx={{ width: 110, background: "#fff" }}
-                                                        placeholder="VD: 150000"
-                                                    />
-                                                </FormControl>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                    <Table
-                                        columns={[
-                                            { name: "check", label: "", align: "center", width: 40 },
-                                            { name: "name", label: "Sản phẩm", align: "left" },
-                                            { name: "size", label: "Kích cỡ", align: "center" },
-                                            {
-                                                name: "weight",
-                                                label: "Trọng lượng (g)",
-                                                align: "right",
-                                            },
-                                            {
-                                                name: "qty",
-                                                label: "Số lượng",
-                                                align: "right"
-                                            },
-                                            {
-                                                name: "price",
-                                                label: "Giá (₫)",
-                                                align: "right"
-                                            },
-                                            { name: "image", label: "Ảnh", align: "center" },
-                                            { name: "action", label: "", align: "center", width: 40 },
-                                        ]}
-                                        rows={variant.products.map((p, prodIdx) => ({
-                                            check: (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={checkedRows[colorIdx]?.includes(prodIdx) || false}
-                                                    onChange={() => handleCheckRow(colorIdx, prodIdx)}
-                                                />
-                                            ),
-                                            name: (
-                                                <Tooltip title={p.name || ""}>
-                                                    <Input
-                                                        value={p.name}
-                                                        size="small"
-                                                        readOnly
-                                                        sx={{ minWidth: 90 }}
+                                                        style={{
+                                                            transform: "scale(1.3)",
+                                                            marginRight: 5,
+                                                            verticalAlign: "middle",
+                                                        }}
                                                     />
                                                 </Tooltip>
-                                            ),
-                                            size: (
-                                                <Tooltip
-                                                    title={getLabelById(sizeOptions, p.sizeId) || ""}
+                                                <span style={{ fontWeight: 400, fontSize: 14 }}>
+                                                    Chọn tất cả
+                                                </span>
+                                            </FormControl>
+                                            {allChecked && (
+                                                <Box
+                                                    display="flex"
+                                                    alignItems="center"
+                                                    gap={2}
+                                                    sx={{
+                                                        background: "#f4f7fd",
+                                                        borderRadius: 2,
+                                                        px: 2,
+                                                        py: 1,
+                                                        ml: 2,
+                                                    }}
                                                 >
-                                                    <Input
-                                                        value={getLabelById(sizeOptions, p.sizeId)}
+                                                    <FormControl sx={{ minWidth: 120, mr: 2 }}>
+                                                        <label htmlFor={`quick-weight-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                            Trọng lượng (g)
+                                                        </label>
+                                                        <Input
+                                                            id={`quick-weight-${colorIdx}`}
+                                                            type="text"
+                                                            value={quickWeight[colorIdx] ?? ""}
+                                                            onChange={e =>
+                                                                handleQuickFill(colorIdx, "weight", e.target.value)
+                                                            }
+                                                            size="small"
+                                                            sx={{ width: 110, background: "#fff" }}
+                                                            placeholder="VD: 300"
+                                                        />
+                                                    </FormControl>
+                                                    <FormControl sx={{ minWidth: 120, mr: 2 }}>
+                                                        <label htmlFor={`quick-qty-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                            Số lượng
+                                                        </label>
+                                                        <Input
+                                                            id={`quick-qty-${colorIdx}`}
+                                                            type="text"
+                                                            value={quickQty[colorIdx] ?? ""}
+                                                            onChange={e =>
+                                                                handleQuickFill(colorIdx, "qty", e.target.value)
+                                                            }
+                                                            size="small"
+                                                            sx={{ width: 110, background: "#fff" }}
+                                                            placeholder="VD: 20"
+                                                        />
+                                                    </FormControl>
+                                                    <FormControl sx={{ minWidth: 120 }}>
+                                                        <label htmlFor={`quick-price-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                            Giá (₫)
+                                                        </label>
+                                                        <Input
+                                                            id={`quick-price-${colorIdx}`}
+                                                            type="text"
+                                                            value={quickPrice[colorIdx] ?? ""}
+                                                            onChange={e =>
+                                                                handleQuickFill(colorIdx, "price", e.target.value)
+                                                            }
+                                                            size="small"
+                                                            sx={{ width: 110, background: "#fff" }}
+                                                            placeholder="VD: 150000"
+                                                        />
+                                                    </FormControl>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                        <Table
+                                            columns={[
+                                                { name: "check", label: "", align: "center", width: 40 },
+                                                { name: "name", label: "Sản phẩm", align: "left" },
+                                                { name: "size", label: "Kích cỡ", align: "center" },
+                                                {
+                                                    name: "weight",
+                                                    label: "Trọng lượng (g)",
+                                                    align: "right",
+                                                },
+                                                {
+                                                    name: "qty",
+                                                    label: "Số lượng",
+                                                    align: "right"
+                                                },
+                                                {
+                                                    name: "price",
+                                                    label: "Giá (₫)",
+                                                    align: "right"
+                                                },
+                                                { name: "image", label: "Ảnh", align: "center" },
+                                                { name: "action", label: "", align: "center", width: 40 },
+                                            ]}
+                                            rows={variant.products.map((p, prodIdx) => ({
+                                                check: (
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checkedRows[colorIdx]?.includes(prodIdx) || false}
+                                                        onChange={() => handleCheckRow(colorIdx, prodIdx)}
+                                                    />
+                                                ),
+                                                name: (
+                                                    <Tooltip title={p.name || ""}>
+                                                        <Input
+                                                            value={p.name}
+                                                            size="small"
+                                                            readOnly
+                                                            sx={{ minWidth: 90 }}
+                                                        />
+                                                    </Tooltip>
+                                                ),
+                                                size: (
+                                                    <Tooltip
+                                                        title={getLabelById(sizeOptions, p.sizeId) || ""}
+                                                    >
+                                                        <Input
+                                                            value={getLabelById(sizeOptions, p.sizeId)}
+                                                            size="small"
+                                                            readOnly
+                                                            sx={{ minWidth: 60 }}
+                                                        />
+                                                    </Tooltip>
+                                                ),
+                                                weight: (
+                                                    <FormControl sx={{ minWidth: 120 }}>
+                                                        <label htmlFor={`weight-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                            Trọng lượng (g)
+                                                        </label>
+                                                        <Input
+                                                            id={`weight-${colorIdx}-${prodIdx}`}
+                                                            type="text"
+                                                            value={String(p.weight ?? "")}
+                                                            onChange={(e) =>
+                                                                handleVariantValueChange(
+                                                                    colorIdx,
+                                                                    prodIdx,
+                                                                    "weight",
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            size="small"
+                                                            sx={{ width: 110, background: "#fff" }}
+                                                            placeholder="VD: 300"
+                                                        />
+                                                    </FormControl>
+                                                ),
+                                                qty: (
+                                                    <FormControl sx={{ minWidth: 120 }}>
+                                                        <label htmlFor={`qty-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                            Số lượng
+                                                        </label>
+                                                        <Input
+                                                            id={`qty-${colorIdx}-${prodIdx}`}
+                                                            type="text"
+                                                            value={String(p.qty ?? "")}
+                                                            onChange={(e) =>
+                                                                handleVariantValueChange(
+                                                                    colorIdx,
+                                                                    prodIdx,
+                                                                    "qty",
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            size="small"
+                                                            sx={{ width: 110, background: "#fff" }}
+                                                            placeholder="VD: 20"
+                                                        />
+                                                    </FormControl>
+                                                ),
+                                                price: (
+                                                    <FormControl sx={{ minWidth: 120 }}>
+                                                        <label htmlFor={`price-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                            Giá (₫)
+                                                        </label>
+                                                        <Input
+                                                            id={`price-${colorIdx}-${prodIdx}`}
+                                                            type="text"
+                                                            value={String(p.price ?? "")}
+                                                            onChange={(e) =>
+                                                                handleVariantValueChange(
+                                                                    colorIdx,
+                                                                    prodIdx,
+                                                                    "price",
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            size="small"
+                                                            sx={{ width: 110, background: "#fff" }}
+                                                            placeholder="VD: 150000"
+                                                        />
+                                                    </FormControl>
+                                                ),
+                                                image: (
+                                                    <Button
+                                                        variant="outlined"
                                                         size="small"
-                                                        readOnly
                                                         sx={{ minWidth: 60 }}
-                                                    />
-                                                </Tooltip>
-                                            ),
-                                            weight: (
-                                                <FormControl sx={{ minWidth: 120 }}>
-                                                    <label htmlFor={`weight-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                        Trọng lượng (g)
-                                                    </label>
-                                                    <Input
-                                                        id={`weight-${colorIdx}-${prodIdx}`}
-                                                        type="text"
-                                                        value={String(p.weight ?? "")}
-                                                        onChange={(e) =>
-                                                            handleVariantValueChange(
-                                                                colorIdx,
-                                                                prodIdx,
-                                                                "weight",
-                                                                e.target.value
+                                                        onClick={() =>
+                                                            openImageModal(
+                                                                variant.colorId
                                                             )
                                                         }
-                                                        size="small"
-                                                        sx={{ width: 110, background: "#fff" }}
-                                                        placeholder="VD: 300"
-                                                    />
-                                                </FormControl>
-                                            ),
-                                            qty: (
-                                                <FormControl sx={{ minWidth: 120 }}>
-                                                    <label htmlFor={`qty-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                        Số lượng
-                                                    </label>
-                                                    <Input
-                                                        id={`qty-${colorIdx}-${prodIdx}`}
-                                                        type="text"
-                                                        value={String(p.qty ?? "")}
-                                                        onChange={(e) =>
-                                                            handleVariantValueChange(
-                                                                colorIdx,
-                                                                prodIdx,
-                                                                "qty",
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        size="small"
-                                                        sx={{ width: 110, background: "#fff" }}
-                                                        placeholder="VD: 20"
-                                                    />
-                                                </FormControl>
-                                            ),
-                                            price: (
-                                                <FormControl sx={{ minWidth: 120 }}>
-                                                    <label htmlFor={`price-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                        Giá (₫)
-                                                    </label>
-                                                    <Input
-                                                        id={`price-${colorIdx}-${prodIdx}`}
-                                                        type="text"
-                                                        value={String(p.price ?? "")}
-                                                        onChange={(e) =>
-                                                            handleVariantValueChange(
-                                                                colorIdx,
-                                                                prodIdx,
-                                                                "price",
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        size="small"
-                                                        sx={{ width: 110, background: "#fff" }}
-                                                        placeholder="VD: 150000"
-                                                    />
-                                                </FormControl>
-                                            ),
-                                            image: (
-                                                <Button
-                                                    variant="outlined"
-                                                    size="small"
-                                                    sx={{ minWidth: 60 }}
-                                                    onClick={() =>
-                                                        openImageModal(
-                                                            variant.colorId
-                                                        )
-                                                    }
-                                                >
-                                                    <Icon fontSize="small">image</Icon> Ảnh
-                                                </Button>
-                                            ),
-                                            action: (
-                                                <Tooltip title="Xóa dòng này">
-                                                    <IconButton size="small" sx={{ color: "#eb5757" }}>
-                                                        <FaTrash />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            ),
-                                        }))}
-                                    />
-                                </Card>
-                            );
-                        })}
+                                                    >
+                                                        <Icon fontSize="small">image</Icon> Ảnh
+                                                    </Button>
+                                                ),
+                                                action: (
+                                                    <Tooltip title="Xóa dòng này">
+                                                        <IconButton size="small" sx={{ color: "#eb5757" }}>
+                                                            <FaTrash />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                ),
+                                            }))}
+                                        />
+                                    </Card>
+                                );
+                            })}
+                        </SoftBox>
                     </form>
                 </Card>
                 <Dialog
@@ -1269,7 +1268,7 @@ function ProductForm() {
                         Thêm sản phẩm mới nhanh
                     </DialogTitle>
                     <DialogContent>
-                        <Box mb={2}>
+                        <SoftBox mb={2}>
                             <label htmlFor="new-product-name" style={{ fontWeight: "bold", marginBottom: 4, display: "block" }}>
                                 Tên sản phẩm <span style={{ color: "red" }}>*</span>
                             </label>
@@ -1287,8 +1286,8 @@ function ProductForm() {
                                     {addProductValidate.newProductName}
                                 </Box>
                             )}
-                        </Box>
-                        <Box mb={2}>
+                        </SoftBox>
+                        <SoftBox mb={2}>
                             <label htmlFor="new-product-category" style={{ fontWeight: "bold", marginBottom: 4, display: "block" }}>
                                 Danh mục <span style={{ color: "red" }}>*</span>
                             </label>
@@ -1306,8 +1305,8 @@ function ProductForm() {
                                     {addProductValidate.newProductCategory}
                                 </Box>
                             )}
-                        </Box>
-                        <Box mb={2}>
+                        </SoftBox>
+                        <SoftBox mb={2}>
                             <label htmlFor="new-product-country" style={{ fontWeight: "bold", marginBottom: 4, display: "block" }}>
                                 Xuất xứ <span style={{ color: "red" }}>*</span>
                             </label>
@@ -1325,8 +1324,8 @@ function ProductForm() {
                                     {addProductValidate.newProductCountry}
                                 </Box>
                             )}
-                        </Box>
-                        <Box mb={2}>
+                        </SoftBox>
+                        <SoftBox mb={2}>
                             <label htmlFor="new-product-desc" style={{ fontWeight: "bold", marginBottom: 4, display: "block" }}>
                                 Mô tả
                             </label>
@@ -1340,16 +1339,16 @@ function ProductForm() {
                                 multiline
                                 rows={3}
                             />
-                        </Box>
+                        </SoftBox>
                         {addProductError && (
-                            <Box color="error" mb={1}>
+                            <SoftBox color="error" mb={1}>
                                 {addProductError}
-                            </Box>
+                            </SoftBox>
                         )}
                         {addProductSuccess && (
-                            <Box color="success" mb={1}>
+                            <SoftBox color="success" mb={1}>
                                 {addProductSuccess}
-                            </Box>
+                            </SoftBox>
                         )}
                     </DialogContent>
                     <DialogActions>
@@ -1382,10 +1381,10 @@ function ProductForm() {
                         Chọn ảnh cho màu {getLabelById(colorOptions, modalColor)}
                     </DialogTitle>
                     <DialogContent>
-                        <Box mb={2} fontWeight="bold">
+                        <SoftBox mb={2} fontWeight="bold">
                             Danh sách ảnh đã chọn
-                        </Box>
-                        <Box
+                        </SoftBox>
+                        <SoftBox
                             display="flex"
                             alignItems="center"
                             gap={2}
@@ -1400,20 +1399,20 @@ function ProductForm() {
                             }}
                         >
                             {tempImages.length === 0 ? (
-                                <Box textAlign="center" color="secondary" width="100%">
+                                <SoftBox textAlign="center" color="secondary" width="100%">
                                     <img
                                         src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png"
                                         alt="no-img"
                                         style={{ width: 48, opacity: 0.5 }}
                                     />
                                     <div style={{ fontSize: 14, opacity: 0.7 }}>No Data Found</div>
-                                </Box>
+                                </SoftBox>
                             ) : (
                                 tempImages.map((id) => {
                                     const img = imageOptions.find((i) => i.value === id);
                                     if (!img) return null;
                                     return (
-                                        <Box
+                                        <SoftBox
                                             key={id}
                                             sx={{
                                                 border: "1px solid #ddd",
@@ -1441,27 +1440,27 @@ function ProductForm() {
                                             <div style={{ fontSize: 12, textAlign: "center" }}>
                                                 {img.label}
                                             </div>
-                                        </Box>
+                                        </SoftBox>
                                     );
                                 })
                             )}
-                        </Box>
-                        <Box fontWeight="bold" mt={4} mb={2}>
+                        </SoftBox>
+                        <SoftBox fontWeight="bold" mt={4} mb={2}>
                             Danh sách ảnh từ hệ thống
-                        </Box>
-                        <Box display="flex" flexWrap="wrap" gap={2}>
+                        </SoftBox>
+                        <SoftBox display="flex" flexWrap="wrap" gap={2}>
                             {imageOptions.length === 0 ? (
-                                <Box textAlign="center" color="secondary" width="100%">
+                                <SoftBox textAlign="center" color="secondary" width="100%">
                                     <img
                                         src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png"
                                         alt="no-img"
                                         style={{ width: 48, opacity: 0.5 }}
                                     />
                                     <div style={{ fontSize: 14, opacity: 0.7 }}>No Data Found</div>
-                                </Box>
+                                </SoftBox>
                             ) : (
                                 imageOptions.map((img) => (
-                                    <Box
+                                    <SoftBox
                                         key={img.value}
                                         sx={{
                                             border: tempImages.includes(img.value)
@@ -1509,10 +1508,10 @@ function ProductForm() {
                                         <div style={{ fontSize: 14, marginTop: 4 }}>
                                             {img.label}
                                         </div>
-                                    </Box>
+                                    </SoftBox>
                                 ))
                             )}
-                        </Box>
+                        </SoftBox>
                     </DialogContent>
                     <DialogActions>
                         <Button variant="outlined" onClick={closeImageModal} sx={{ minWidth: 110 }}>
@@ -1529,7 +1528,7 @@ function ProductForm() {
                         </Button>
                     </DialogActions>
                 </Dialog>
-            </Box>
+            </SoftBox>
             <Notifications
                 open={notify.open}
                 onClose={() => setNotify((n) => ({ ...n, open: false }))}

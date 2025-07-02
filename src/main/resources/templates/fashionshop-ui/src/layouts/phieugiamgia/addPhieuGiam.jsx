@@ -164,7 +164,7 @@ export default function AddPhieuGiam() {
         if (ketQua) {
             const danhSachEmailKhachHang = tatCaKhachHang.filter(function (khachHang) { return danhSachDaChon.includes(khachHang.id); }).map(function (khachHang) { return khachHang.email; });
             const duLieuGuiMail = {
-                phieuGiamGiaRequest: duLieuGuiLen,
+                phieuGiamGiaVO: duLieuGuiLen,
                 emails: danhSachEmailKhachHang
             };
             sendMail(duLieuGuiMail);

@@ -80,7 +80,7 @@ const OrderInfo = ({ order }) => {
                
 
                 {/* NHÓM 3: THÔNG TIN  NGƯỜI NHẬN HÀNG */}
-             <h6 className="mb-3 fs-5 fw-bold" style={{ color: "#6ea8fe" }}>
+             <h6 className="mb-3 fs-6 fw-bold" style={{ color: "#6ea8fe" }}>
   Thông tin người nhận
 </h6>
                 <div className="row mb-3">

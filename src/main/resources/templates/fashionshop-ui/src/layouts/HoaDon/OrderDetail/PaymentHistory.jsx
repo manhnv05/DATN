@@ -9,48 +9,48 @@ const PaymentHistory = ({ payments }) => {
   }
 
   return (
-    <table className="table table-bordered border-2 table rounded-3 ">
-  <thead className="table-light">
-    <tr>
-      <th>#</th>
-      <th>Số tiền</th>
-      <th>Thời gian</th>
-      <th>Mã giao dịch</th>
-      <th>Loại giao dịch</th>
-      <th>Nhân viên giao dịch</th>
-      <th>Nhân viên xác nhận</th>
-      <th>Ghi chú</th>
-    </tr>
-  </thead>
-  <tbody>
-    {payments.map((payment, index) => (
-      <tr key={index}>
-        <td>{index + 1}</td>
-        <td>{} </td>
-        <td>{}</td>
-        <td>{payment.transactionId}</td>
-        <td>{payment.type}</td>
-        <td>{payment.staff}</td>
-        <td>{payment.confirmedBy}</td>
-        <td>{payment.note}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+      <table className="table table-bordered border-2 table rounded-3 ">
+        <thead className="table-light">
+        <tr>
+          <th>#</th>
+          <th>Số tiền</th>
+          <th>Thời gian</th>
+          <th>Mã giao dịch</th>
+          <th>Loại giao dịch</th>
+          <th>Nhân viên giao dịch</th>
+          <th>Nhân viên xác nhận</th>
+          <th>Ghi chú</th>
+        </tr>
+        </thead>
+        <tbody>
+        {payments.map((payment, index) => (
+            <tr key={index}>
+              <td>{index + 1}</td>
+              <td>{} </td>
+              <td>{}</td>
+              <td>{payment.transactionId}</td>
+              <td>{payment.type}</td>
+              <td>{payment.staff}</td>
+              <td>{payment.confirmedBy}</td>
+              <td>{payment.note}</td>
+            </tr>
+        ))}
+        </tbody>
+      </table>
 
   );
 };
 PaymentHistory.propTypes = {
   payments: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.number,
-      ]).isRequired,
-      amount: PropTypes.number.isRequired,
-      date: PropTypes.string.isRequired,
-      method: PropTypes.string,
-    })
+      PropTypes.shape({
+        id: PropTypes.oneOfType([
+          PropTypes.string,
+          PropTypes.number,
+        ]).isRequired,
+        amount: PropTypes.number.isRequired,
+        date: PropTypes.string.isRequired,
+        method: PropTypes.string,
+      })
   ).isRequired,
 };
 export default PaymentHistory;

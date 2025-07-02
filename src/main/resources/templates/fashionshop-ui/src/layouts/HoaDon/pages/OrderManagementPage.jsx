@@ -45,40 +45,40 @@ function OrderManagementPage() {
   };
 
   return (
-    <DashboardLayout>
-      <DashboardNavbar />
-      <SoftBox py={3}>
-        <Grid container spacing={3}>
-          {/* KHỐI BỘ LỌC */}
-          <Grid item xs={12}>
-            <OrderFilter
-              onFilterChange={handleFilterChange}
-              filterValues={filterValues}
-              onClearFilters={handleClearFilters}
-            />
-          </Grid>
-
-          {/* KHỐI BẢNG DỮ LIỆU */}
-          <Grid item xs={12}>
-            <Card>
-              <SoftBox p={3} pb={1}>
-                <SoftTypography variant="h6" fontWeight="medium" color="info">
-                  Danh sách Đơn hàng
-                </SoftTypography>
-              </SoftBox>
-              <OrderTable
-                filterValues={filterValues}
-                currentPage={currentPage}
-                pageSize={pageSize}
-                setCurrentPage={setCurrentPage}
-                setPageSize={setPageSize}
+      <DashboardLayout>
+        <DashboardNavbar />
+        <SoftBox py={3}>
+          <Grid container spacing={3}>
+            {/* KHỐI BỘ LỌC */}
+            <Grid item xs={12}>
+              <OrderFilter
+                  onFilterChange={handleFilterChange}
+                  filterValues={filterValues}
+                  onClearFilters={handleClearFilters}
               />
-            </Card>
+            </Grid>
+
+            {/* KHỐI BẢNG DỮ LIỆU */}
+            <Grid item xs={12}>
+              <Card>
+                <SoftBox p={3} pb={1}>
+                  <SoftTypography variant="h6" fontWeight="medium" color="info">
+                    Danh sách Đơn hàng
+                  </SoftTypography>
+                </SoftBox>
+                <OrderTable
+                    filterValues={filterValues}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    setCurrentPage={setCurrentPage}
+                    setPageSize={setPageSize}
+                />
+              </Card>
+            </Grid>
           </Grid>
-        </Grid>
-      </SoftBox>
-      <Footer />
-    </DashboardLayout>
+        </SoftBox>
+        <Footer />
+      </DashboardLayout>
   );
 }
 
