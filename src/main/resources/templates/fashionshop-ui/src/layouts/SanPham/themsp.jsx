@@ -17,8 +17,9 @@ import Table from "examples/Tables/Table";
 import { CircularProgress, Grid, Tooltip, Typography, Box } from "@mui/material";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
-import Notifications from "layouts/Notifications";
 import { FaPlus, FaTrash } from "react-icons/fa";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 const apiUrl = (path) => `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -135,11 +136,6 @@ function ProductForm() {
     const [quickWeight, setQuickWeight] = useState({});
     const [quickQty, setQuickQty] = useState({});
     const [quickPrice, setQuickPrice] = useState({});
-    const [notify, setNotify] = useState({
-        open: false,
-        message: "",
-        severity: "info",
-    });
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [newProductName, setNewProductName] = useState("");
     const [newProductCategory, setNewProductCategory] = useState("");
@@ -508,11 +504,7 @@ function ProductForm() {
         if (Object.keys(errors).length > 0) {
             setAddProductValidate(errors);
             setAddLoading(false);
-            setNotify({
-                open: true,
-                message: Object.values(errors)[0],
-                severity: "error",
-            });
+            toast.error(Object.values(errors)[0]);
             return;
         }
 
@@ -520,11 +512,7 @@ function ProductForm() {
             setAddSuccess("Chọn sản phẩm thành công!");
             setShowAttributes(true);
             setAddLoading(false);
-            setNotify({
-                open: true,
-                message: "Chọn sản phẩm thành công!",
-                severity: "success",
-            });
+            toast.success("Chọn sản phẩm thành công!");
             return;
         }
 
@@ -547,18 +535,10 @@ function ProductForm() {
             setCreatedSanPhamId(result.id ? result.id : result);
             setAddSuccess("Thêm sản phẩm thành công!");
             setShowAttributes(true);
-            setNotify({
-                open: true,
-                message: "Thêm sản phẩm thành công!",
-                severity: "success",
-            });
+            toast.success("Thêm sản phẩm thành công!");
         } catch (err) {
             setAddError("Thêm sản phẩm thất bại!");
-            setNotify({
-                open: true,
-                message: "Thêm sản phẩm thất bại!",
-                severity: "error",
-            });
+            toast.error("Thêm sản phẩm thất bại!");
         }
         setAddLoading(false);
     };
@@ -593,22 +573,14 @@ function ProductForm() {
 
         if (Object.keys(errors).length > 0) {
             setAddError(Object.values(errors)[0]);
-            setNotify({
-                open: true,
-                message: Object.values(errors)[0],
-                severity: "error",
-            });
+            toast.error(Object.values(errors)[0]);
             setAddLoading(false);
             return;
         }
 
         if (!createdSanPhamId) {
             setAddError("Bạn phải thêm sản phẩm trước khi thêm chi tiết sản phẩm!");
-            setNotify({
-                open: true,
-                message: "Bạn phải thêm sản phẩm trước khi thêm chi tiết sản phẩm!",
-                severity: "error",
-            });
+            toast.error("Bạn phải thêm sản phẩm trước khi thêm chi tiết sản phẩm!");
             setAddLoading(false);
             return;
         }
@@ -657,11 +629,7 @@ function ProductForm() {
             );
             const chiTietSanPhamResults = await Promise.all(addDetailPromises);
             setAddSuccess("Thêm chi tiết sản phẩm thành công!");
-            setNotify({
-                open: true,
-                message: "Thêm chi tiết sản phẩm thành công!",
-                severity: "success",
-            });
+            toast.success("Thêm chi tiết sản phẩm thành công!");
 
             const saveImagePromises = [];
             chiTietSanPhamResults.forEach((ctspResult, idx) => {
@@ -692,11 +660,7 @@ function ProductForm() {
             await Promise.all(saveImagePromises);
         } catch (err) {
             setAddError("Thêm chi tiết sản phẩm thất bại!");
-            setNotify({
-                open: true,
-                message: "Thêm chi tiết sản phẩm thất bại!",
-                severity: "error",
-            });
+            toast.error("Thêm chi tiết sản phẩm thất bại!");
         }
         setAddLoading(false);
     };
@@ -723,6 +687,7 @@ function ProductForm() {
         setAddProductValidate(errors);
         if (Object.keys(errors).length > 0) {
             setAddProductLoading(false);
+            toast.error(Object.values(errors)[0]);
             return;
         }
         const productData = {
@@ -742,6 +707,7 @@ function ProductForm() {
             if (!res.ok) throw new Error("Lỗi khi thêm sản phẩm mới");
             await res.json();
             setAddProductSuccess("Thêm sản phẩm mới thành công!");
+            toast.success("Thêm sản phẩm mới thành công!");
 
             setTimeout(() => {
                 setShowAddProductModal(false);
@@ -762,6 +728,7 @@ function ProductForm() {
             }, 1200);
         } catch (err) {
             setAddProductError("Thêm sản phẩm mới thất bại!");
+            toast.error("Thêm sản phẩm mới thất bại!");
         }
         setAddProductLoading(false);
     };
@@ -1563,11 +1530,16 @@ function ProductForm() {
                     </DialogActions>
                 </Dialog>
             </SoftBox>
-            <Notifications
-                open={notify.open}
-                onClose={() => setNotify((n) => ({ ...n, open: false }))}
-                message={notify.message}
-                severity={notify.severity}
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
             />
             <Footer />
         </DashboardLayout>
