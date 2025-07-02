@@ -20,6 +20,7 @@ public enum ErrorCode {
     EMPLOYEE_NOT_FOUND(1011, "Nhân viên không tồn tại", HttpStatus.BAD_REQUEST),
     ORDER_NOT_FOUND(1005, "Hóa đơn không tồn tại", HttpStatus.NOT_FOUND),
     NO_STATUS_CHANGE(1006, "Trạng thái hóa đơn không thay đổi", HttpStatus.BAD_REQUEST),
+    NO_PREVIOUS_STATUS(1006, "Không có trạng thái trước đó để thay đổi", HttpStatus.BAD_REQUEST),
     INVALID_STATUS_TRANSITION(1007, "Chuyển đổi trạng thái không hợp lệ", HttpStatus.BAD_REQUEST),
     ORDER_HAS_BEEN_CANCELLED(1008, "Đơn hàng đã hủy", HttpStatus.BAD_REQUEST),
 

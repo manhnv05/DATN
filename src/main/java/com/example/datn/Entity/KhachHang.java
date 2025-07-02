@@ -22,8 +22,6 @@ import java.util.List;
 @AllArgsConstructor
 @Table(name = "khach_hang")
 public class KhachHang{
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

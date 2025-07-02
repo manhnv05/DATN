@@ -13,7 +13,6 @@ import routes from "routes";
 import { useSoftUIController, setMiniSidenav} from "context";
 import brand from "assets/images/logo4.png";
 import 'bootstrap/dist/css/bootstrap.min.css';
-
 export default function App() {
   const [controller, dispatch] = useSoftUIController();
   const { miniSidenav, direction, layout, sidenavColor } = controller;
@@ -21,6 +20,7 @@ export default function App() {
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
 
+  // Cache for the rtl
   useMemo(() => {
     const cacheRtl = createCache({
       key: "rtl",
