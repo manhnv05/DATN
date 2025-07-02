@@ -1,5 +1,6 @@
 // src/component/MainContent/YourPaginationComponent.jsx
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const generatePageNumbers = (currentPage, totalPages) => {
     // ... (toàn bộ code của hàm generatePageNumbers đã cung cấp ở trên)
@@ -87,5 +88,12 @@ function YourPaginationComponent({ currentPage, totalPages, setCurrentPage, page
         </nav>
     );
 }
+YourPaginationComponent.propTypes = {
+    currentPage: PropTypes.number.isRequired,
+    totalPages: PropTypes.number.isRequired,
+    setCurrentPage: PropTypes.func.isRequired,
+    pageSize: PropTypes.number.isRequired,
+    setPageSize: PropTypes.func.isRequired,
+};
 
 export default YourPaginationComponent;
