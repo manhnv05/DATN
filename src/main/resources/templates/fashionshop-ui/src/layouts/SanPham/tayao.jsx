@@ -22,6 +22,7 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
+import { toast, ToastContainer } from "react-toastify";
 
 const statusList = ["Tất cả", "Hiển thị", "Ẩn"];
 const viewOptions = [5, 10, 20];
@@ -29,7 +30,25 @@ const viewOptions = [5, 10, 20];
 const getTrangThaiText = (val) =>
     val === 1 || val === "1" || val === "Hiển thị" ? "Hiển thị" : "Ẩn";
 
-// Pagination helper: 2 đầu, 2 cuối, luôn nổi bật trang hiện tại nếu ở giữa
+function generateMaTayAo(existingList = []) {
+    const numbers = existingList
+        .map((item) => {
+            const match = /^TA(\d{4})$/.exec(item.ma || "");
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((num) => num !== null)
+        .sort((a, b) => a - b);
+    let next = 1;
+    for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] !== i + 1) {
+            next = i + 1;
+            break;
+        }
+        next = numbers.length + 1;
+    }
+    return "TA" + String(next).padStart(4, "0");
+}
+
 function getPaginationItems(current, total) {
     if (total <= 5) return Array.from({ length: total }, (_, i) => i);
     if (current <= 1) return [0, 1, "...", total - 2, total - 1];
@@ -45,10 +64,6 @@ function SleeveTable() {
         size: 5,
     });
 
-    const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
     const [sleevesData, setSleevesData] = useState({
         content: [],
         totalPages: 1,
@@ -59,7 +74,6 @@ function SleeveTable() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Modal states
     const [showModal, setShowModal] = useState(false);
     const [newSleeve, setNewSleeve] = useState({
         ma: "",
@@ -67,18 +81,26 @@ function SleeveTable() {
         trangThai: "Hiển thị",
     });
 
-    // Edit states
     const [editSleeve, setEditSleeve] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
-    // Delete states
     const [deleteId, setDeleteId] = useState(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    // Menu states
     const [anchorEl, setAnchorEl] = useState(null);
 
-    // Fetch sleeves from API
+    const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+    const handleMenuClose = () => setAnchorEl(null);
+
+    useEffect(() => {
+        if (showModal && sleevesData.content) {
+            setNewSleeve((prev) => ({
+                ...prev,
+                ma: generateMaTayAo(sleevesData.content),
+            }));
+        }
+    }, [showModal, sleevesData.content]);
+
     useEffect(() => {
         setLoading(true);
         setError("");
@@ -98,10 +120,9 @@ function SleeveTable() {
             .finally(() => setLoading(false));
     }, [queryParams]);
 
-    // Handler for Add Sleeve
     const handleAddSleeve = () => {
-        if (!newSleeve.ma || !newSleeve.tenTayAo) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!newSleeve.tenTayAo) {
+            toast.error("Tên tay áo không được để trống");
             return;
         }
         setLoading(true);
@@ -121,12 +142,15 @@ function SleeveTable() {
                 setShowModal(false);
                 setNewSleeve({ ma: "", tenTayAo: "", trangThai: "Hiển thị" });
                 setQueryParams({ ...queryParams, page: 0 });
+                toast.success("Thêm tay áo thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Edit Sleeve
     const handleEditClick = (sleeve) => {
         setEditSleeve({
             ...sleeve,
@@ -136,8 +160,8 @@ function SleeveTable() {
     };
 
     const handleSaveEdit = () => {
-        if (!editSleeve.ma || !editSleeve.tenTayAo) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!editSleeve.tenTayAo) {
+            toast.error("Tên tay áo không được để trống");
             return;
         }
         setLoading(true);
@@ -157,12 +181,15 @@ function SleeveTable() {
                 setShowEditModal(false);
                 setEditSleeve(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Cập nhật tay áo thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Delete Sleeve
     const handleDelete = (id) => {
         setDeleteId(id);
         setShowDeleteDialog(true);
@@ -177,17 +204,19 @@ function SleeveTable() {
                 setShowDeleteDialog(false);
                 setDeleteId(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Xóa tay áo thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Pagination
     const handlePageChange = (newPage) => {
         setQueryParams({ ...queryParams, page: newPage });
     };
 
-    // Table columns
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         { name: "ma", label: "Mã", align: "left", width: "100px" },
@@ -202,9 +231,7 @@ function SleeveTable() {
                     style={{
                         background: getTrangThaiText(value) === "Hiển thị" ? "#e6f4ea" : "#f4f6fb",
                         color: getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd",
-                        border: `1px solid ${
-                            getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd"
-                        }`,
+                        border: `1px solid ${getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd"}`,
                         borderRadius: 6,
                         fontWeight: 500,
                         padding: "2px 12px",
@@ -214,8 +241,8 @@ function SleeveTable() {
                         textAlign: "center",
                     }}
                 >
-          {getTrangThaiText(value)}
-        </span>
+                    {getTrangThaiText(value)}
+                </span>
             ),
         },
         {
@@ -254,10 +281,8 @@ function SleeveTable() {
             }))
             : [];
 
-    // Pagination items
     const paginationItems = getPaginationItems(sleevesData.number, sleevesData.totalPages || 1);
 
-    // Modal Thêm tay áo
     const renderAddSleeveModal = () => (
         <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -277,13 +302,6 @@ function SleeveTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã tay áo"
-                        value={newSleeve.ma}
-                        onChange={(e) => setNewSleeve({ ...newSleeve, ma: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên tay áo"
@@ -314,7 +332,6 @@ function SleeveTable() {
         </Dialog>
     );
 
-    // Modal sửa tay áo
     const renderEditSleeveModal = () => (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -334,13 +351,6 @@ function SleeveTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã tay áo"
-                        value={editSleeve?.ma || ""}
-                        onChange={(e) => setEditSleeve({ ...editSleeve, ma: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên tay áo"
@@ -368,7 +378,6 @@ function SleeveTable() {
         </Dialog>
     );
 
-    // Dialog xác nhận xóa tay áo
     const renderDeleteDialog = () => (
         <Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
             <DialogTitle
@@ -443,7 +452,6 @@ function SleeveTable() {
         <DashboardLayout>
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
-                {/* PHẦN 1: Card filter/search/action */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftBox
                         display="flex"
@@ -498,11 +506,11 @@ function SleeveTable() {
                             <IconButton onClick={handleMenuOpen} sx={{ color: "#495057" }}>
                                 <Icon fontSize="small">menu</Icon>
                             </IconButton>
-                            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-                                <MenuItem onClick={() => setAnchorEl(null)} sx={{ color: "#384D6C" }}>
+                            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                                <MenuItem onClick={handleMenuClose} sx={{ color: "#384D6C" }}>
                                     <FaQrcode className="me-2" style={{ color: "#0d6efd" }} /> Quét mã
                                 </MenuItem>
-                                <MenuItem onClick={() => setAnchorEl(null)} sx={{ color: "#384D6C" }}>
+                                <MenuItem onClick={handleMenuClose} sx={{ color: "#384D6C" }}>
                                     <span style={{ color: "#27ae60", marginRight: 8 }}>📥</span> Export Excel
                                 </MenuItem>
                             </Menu>
@@ -530,8 +538,6 @@ function SleeveTable() {
                         </SoftBox>
                     </SoftBox>
                 </Card>
-
-                {/* PHẦN 2: Card Table/Pagination */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
@@ -541,7 +547,6 @@ function SleeveTable() {
                     <SoftBox>
                         <Table columns={columns} rows={rows} loading={loading} />
                     </SoftBox>
-                    {/* Pagination đẹp */}
                     <SoftBox
                         display="flex"
                         justifyContent="space-between"
@@ -632,6 +637,17 @@ function SleeveTable() {
                 {renderEditSleeveModal()}
                 {renderDeleteDialog()}
             </SoftBox>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <Footer />
         </DashboardLayout>
     );

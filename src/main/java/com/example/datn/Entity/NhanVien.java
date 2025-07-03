@@ -59,14 +59,10 @@ public class NhanVien{
     @Column(name = "dia_chi")
     private String diaChi;
 
-    @Column(name = "ten_tai_khoan")
-    private String tenTaiKhoan;
 
     @Column(name = "mat_khau")
     private String matKhau;
 
-    @Column(name = "chuc_vu")
-    private String chucVu;
 
     @Column(name = "trang_thai")
     private Integer trangThai;

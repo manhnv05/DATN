@@ -12,19 +12,17 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import CircularProgress from "@mui/material/CircularProgress";
-import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import CloseIcon from "@mui/icons-material/Close";
 import { FaPlus, FaTrash, FaDownload } from "react-icons/fa";
 import { QRCodeCanvas } from "qrcode.react";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
+import { toast } from "react-toastify";
 
-// API base config
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 const apiUrl = (path) => `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 
-// Select style
 const selectMenuStyle = {
     menu: (base) => ({
         ...base,
@@ -45,11 +43,6 @@ const selectMenuStyle = {
         paddingLeft: 6,
         paddingRight: 6,
     }),
-    singleValue: (base) => ({
-        ...base,
-        fontWeight: 600,
-        color: "#1976d2",
-    }),
     placeholder: (base) => ({
         ...base,
         color: "#a8b8c3",
@@ -69,21 +62,32 @@ const selectMenuStyle = {
     }),
 };
 
-const trangThaiList = [
+const statusOptions = [
     { value: 1, label: "Đang bán" },
     { value: 0, label: "Ngừng bán" },
 ];
 
 function getOptionByValue(options, value) {
     if (value === undefined || value === null || value === "") return null;
-    return options.find(o => String(o.value) === String(value)) || null;
+    return options.find(option => String(option.value) === String(value)) || null;
+}
+
+function formatCurrencyVND(value) {
+    if (value === "" || value === null || value === undefined) return "";
+    const number = Number(String(value).replace(/[^\d]/g, ""));
+    if (Number.isNaN(number)) return "";
+    return number.toLocaleString("vi-VN");
+}
+
+function parseCurrencyVND(value) {
+    return String(value).replace(/[^\d]/g, "");
 }
 
 function ProductDetailUpdateModal({
                                       open,
                                       onClose,
-                                      onUpdate,
-                                      detail
+                                      detail,
+                                      onSuccess,
                                   }) {
     const [brandOptions, setBrandOptions] = useState([]);
     const [materialOptions, setMaterialOptions] = useState([]);
@@ -109,37 +113,41 @@ function ProductDetailUpdateModal({
 
     const [imagePreview, setImagePreview] = useState([]);
     const [imageFiles, setImageFiles] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState("");
     const qrRef = useRef();
 
     useEffect(() => {
         if (!open) return;
         setIsLoadingOptions(true);
         Promise.all([
-            fetch(apiUrl("/thuongHieu/all")).then(res => res.json()),
-            fetch(apiUrl("/chatLieu/all")).then(res => res.json()),
-            fetch(apiUrl("/coAo/all")).then(res => res.json()),
-            fetch(apiUrl("/tayAo/all")).then(res => res.json()),
-            fetch(apiUrl("/mauSac/all")).then(res => res.json()),
-            fetch(apiUrl("/kichThuoc/all")).then(res => res.json()),
-        ]).then(([thuongHieu, chatLieu, coAo, tayAo, mauSac, kichThuoc]) => {
-            setBrandOptions((thuongHieu || []).map(item => ({
+            fetch(apiUrl("/thuongHieu/all")).then(response => response.json()),
+            fetch(apiUrl("/chatLieu/all")).then(response => response.json()),
+            fetch(apiUrl("/coAo/all")).then(response => response.json()),
+            fetch(apiUrl("/tayAo/all")).then(response => response.json()),
+            fetch(apiUrl("/mauSac/all")).then(response => response.json()),
+            fetch(apiUrl("/kichThuoc/all")).then(response => response.json()),
+        ]).then(([brands, materials, collars, sleeves, colors, sizes]) => {
+            setBrandOptions((brands || []).map(item => ({
                 value: String(item.id), label: item.tenThuongHieu
             })));
-            setMaterialOptions((chatLieu || []).map(item => ({
+            setMaterialOptions((materials || []).map(item => ({
                 value: String(item.id), label: item.tenChatLieu
             })));
-            setCollarOptions((coAo || []).map(item => ({
+            setCollarOptions((collars || []).map(item => ({
                 value: String(item.id), label: item.tenCoAo
             })));
-            setSleeveOptions((tayAo || []).map(item => ({
+            setSleeveOptions((sleeves || []).map(item => ({
                 value: String(item.id), label: item.tenTayAo
             })));
-            setColorOptions((mauSac || []).map(item => ({
+            setColorOptions((colors || []).map(item => ({
                 value: String(item.id), label: item.tenMauSac
             })));
-            setSizeOptions((kichThuoc || []).map(item => ({
+            setSizeOptions((sizes || []).map(item => ({
                 value: String(item.id), label: item.tenKichCo || item.tenKichThuoc
             })));
+            setIsLoadingOptions(false);
+        }).catch(() => {
             setIsLoadingOptions(false);
         });
     }, [open]);
@@ -153,7 +161,7 @@ function ProductDetailUpdateModal({
                 idTayAo: detail?.idTayAo !== undefined ? String(detail?.idTayAo) : "",
                 idMauSac: detail?.idMauSac !== undefined ? String(detail?.idMauSac) : "",
                 idKichThuoc: detail?.idKichThuoc !== undefined ? String(detail?.idKichThuoc) : "",
-                gia: detail?.gia || "",
+                gia: detail?.gia ? formatCurrencyVND(detail.gia) : "",
                 soLuong: detail?.soLuong || "",
                 trongLuong: detail?.trongLuong || "",
                 trangThai: detail?.trangThai === 1 ? 1 : 0,
@@ -164,40 +172,124 @@ function ProductDetailUpdateModal({
         }
     }, [detail, isLoadingOptions]);
 
-    const handleChange = (key, value) => {
-        setForm((prev) => ({ ...prev, [key]: value }));
-    };
+    function handleChange(key, value) {
+        setForm(previous => ({ ...previous, [key]: value }));
+    }
 
-    const handleImageChange = (e) => {
-        const files = Array.from(e.target.files);
-        const previews = files.map((file) => URL.createObjectURL(file));
-        setImagePreview((prev) => [...prev, ...previews]);
-        setImageFiles((prev) => [...prev, ...files]);
-    };
+    function handleGiaChange(e) {
+        const input = e.target.value;
+        const numericValue = parseCurrencyVND(input);
+        setForm(previous => ({
+            ...previous,
+            gia: formatCurrencyVND(numericValue)
+        }));
+    }
 
-    const handleImageRemove = (img) => {
-        setImagePreview((prev) => prev.filter((i) => i !== img));
-        setImageFiles((prev) => {
-            const idx = imagePreview.indexOf(img);
-            if (idx !== -1) {
-                const arr = [...prev];
-                arr.splice(idx, 1);
-                return arr;
+    function handleImageChange(event) {
+        const files = Array.from(event.target.files);
+        const previews = files.map(file => URL.createObjectURL(file));
+        setImagePreview(previous => [...previous, ...previews]);
+        setImageFiles(previous => [...previous, ...files]);
+    }
+
+    function handleImageRemove(image) {
+        setImagePreview(previous => previous.filter(i => i !== image));
+        setImageFiles(previous => {
+            const index = imagePreview.indexOf(image);
+            if (index !== -1) {
+                const array = [...previous];
+                array.splice(index, 1);
+                return array;
             }
-            return prev;
+            return previous;
         });
-    };
+    }
 
-    const handleUpdate = () => {
-        onUpdate({
-            ...form,
-            id: detail?.id,
-            images: imagePreview,
-            imageFiles: imageFiles,
+    function validateForm() {
+        if (!form.idThuongHieu) {
+            toast.error("Vui lòng chọn thương hiệu");
+            return false;
+        }
+        if (!form.idChatLieu) {
+            toast.error("Vui lòng chọn chất liệu");
+            return false;
+        }
+        // Giá hiển thị là dạng 2.000, phải chuyển lại về số khi kiểm tra
+        const giaNumber = Number(parseCurrencyVND(form.gia));
+        if (!form.gia || isNaN(giaNumber) || giaNumber <= 0) {
+            toast.error("Vui lòng nhập giá lớn hơn 0");
+            return false;
+        }
+        if (!form.soLuong || isNaN(form.soLuong) || Number(form.soLuong) < 0) {
+            toast.error("Vui lòng nhập số lượng không âm");
+            return false;
+        }
+        if (!form.trongLuong || isNaN(form.trongLuong) || Number(form.trongLuong) <= 0) {
+            toast.error("Vui lòng nhập trọng lượng lớn hơn 0");
+            return false;
+        }
+        if (!form.idMauSac) {
+            toast.error("Vui lòng chọn màu sắc");
+            return false;
+        }
+        if (!form.idKichThuoc) {
+            toast.error("Vui lòng chọn kích cỡ");
+            return false;
+        }
+        return true;
+    }
+
+    async function handleUpdate() {
+        setIsSubmitting(true);
+        setFormError("");
+        if (!validateForm()) {
+            setIsSubmitting(false);
+            return;
+        }
+        const formData = new window.FormData();
+        formData.append("idSanPham", detail.idSanPham);
+        formData.append("maSanPhamChiTiet", detail.maSanPhamChiTiet);
+        formData.append("idThuongHieu", form.idThuongHieu);
+        formData.append("idChatLieu", form.idChatLieu);
+        formData.append("idCoAo", form.idCoAo);
+        formData.append("idTayAo", form.idTayAo);
+        formData.append("idMauSac", form.idMauSac);
+        formData.append("idKichThuoc", form.idKichThuoc);
+        formData.append("gia", Number(parseCurrencyVND(form.gia)));
+        formData.append("soLuong", form.soLuong);
+        formData.append("trongLuong", form.trongLuong);
+        formData.append("trangThai", form.trangThai);
+
+        imageFiles.forEach((file) => {
+            formData.append("images", file);
         });
-    };
 
-    const handleDownloadQR = () => {
+        try {
+            const response = await fetch(apiUrl(`/chiTietSanPham/${detail?.id}`), {
+                method: "PUT",
+                body: formData,
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                setFormError(error.message || "Cập nhật thất bại");
+                toast.error(error.message || "Cập nhật thất bại");
+                setIsSubmitting(false);
+                return;
+            }
+            toast.success("Cập nhật thành công!");
+            setIsSubmitting(false);
+            onClose();
+            if (onSuccess) {
+                onSuccess();
+            }
+        } catch (error) {
+            setFormError("Có lỗi hệ thống");
+            toast.error("Có lỗi hệ thống");
+            setIsSubmitting(false);
+        }
+    }
+
+    function handleDownloadQR() {
         const canvas = qrRef.current.querySelector("canvas");
         if (canvas) {
             const url = canvas.toDataURL("image/png");
@@ -208,10 +300,18 @@ function ProductDetailUpdateModal({
             link.click();
             document.body.removeChild(link);
         }
-    };
+    }
 
-    const renderSelectOrLoading = (component) =>
-        isLoadingOptions ? <Box display="flex" alignItems="center" justifyContent="center" py={2}><CircularProgress size={22} color="info" /></Box> : component;
+    function renderSelectOrLoading(component) {
+        if (isLoadingOptions) {
+            return (
+                <Box display="flex" alignItems="center" justifyContent="center" py={2}>
+                    <CircularProgress size={22} color="info" />
+                </Box>
+            );
+        }
+        return component;
+    }
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 6, p: 0 } }}>
@@ -238,12 +338,14 @@ function ProductDetailUpdateModal({
                     <Grid item xs={12} md={8}>
                         <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
-                                <Typography fontWeight={700} mb={0.5} color="#1769aa">Thương hiệu <span style={{color:"#e74c3c"}}>*</span></Typography>
+                                <Typography fontWeight={700} mb={0.5} color="#1769aa">
+                                    Thương hiệu <span style={{ color: "#e74c3c" }}>*</span>
+                                </Typography>
                                 {renderSelectOrLoading(
                                     <CreatableSelect
                                         options={brandOptions}
                                         value={getOptionByValue(brandOptions, form.idThuongHieu)}
-                                        onChange={opt => handleChange("idThuongHieu", opt ? opt.value : "")}
+                                        onChange={option => handleChange("idThuongHieu", option ? option.value : "")}
                                         styles={selectMenuStyle}
                                         isClearable
                                         placeholder="Chọn thương hiệu"
@@ -252,12 +354,14 @@ function ProductDetailUpdateModal({
                                 )}
                             </Grid>
                             <Grid item xs={12} md={6}>
-                                <Typography fontWeight={700} mb={0.5} color="#1769aa">Chất liệu <span style={{color:"#e74c3c"}}>*</span></Typography>
+                                <Typography fontWeight={700} mb={0.5} color="#1769aa">
+                                    Chất liệu <span style={{ color: "#e74c3c" }}>*</span>
+                                </Typography>
                                 {renderSelectOrLoading(
                                     <CreatableSelect
                                         options={materialOptions}
                                         value={getOptionByValue(materialOptions, form.idChatLieu)}
-                                        onChange={opt => handleChange("idChatLieu", opt ? opt.value : "")}
+                                        onChange={option => handleChange("idChatLieu", option ? option.value : "")}
                                         styles={selectMenuStyle}
                                         isClearable
                                         placeholder="Chọn chất liệu"
@@ -271,7 +375,7 @@ function ProductDetailUpdateModal({
                                     <CreatableSelect
                                         options={collarOptions}
                                         value={getOptionByValue(collarOptions, form.idCoAo)}
-                                        onChange={opt => handleChange("idCoAo", opt ? opt.value : "")}
+                                        onChange={option => handleChange("idCoAo", option ? option.value : "")}
                                         styles={selectMenuStyle}
                                         isClearable
                                         placeholder="Chọn cổ áo"
@@ -285,7 +389,7 @@ function ProductDetailUpdateModal({
                                     <CreatableSelect
                                         options={sleeveOptions}
                                         value={getOptionByValue(sleeveOptions, form.idTayAo)}
-                                        onChange={opt => handleChange("idTayAo", opt ? opt.value : "")}
+                                        onChange={option => handleChange("idTayAo", option ? option.value : "")}
                                         styles={selectMenuStyle}
                                         isClearable
                                         placeholder="Chọn tay áo"
@@ -294,12 +398,14 @@ function ProductDetailUpdateModal({
                                 )}
                             </Grid>
                             <Grid item xs={12} md={6}>
-                                <Typography fontWeight={700} mb={0.5} color="#1769aa">Màu sắc</Typography>
+                                <Typography fontWeight={700} mb={0.5} color="#1769aa">
+                                    Màu sắc <span style={{ color: "#e74c3c" }}>*</span>
+                                </Typography>
                                 {renderSelectOrLoading(
                                     <Select
                                         options={colorOptions}
                                         value={getOptionByValue(colorOptions, form.idMauSac)}
-                                        onChange={opt => handleChange("idMauSac", opt ? opt.value : "")}
+                                        onChange={option => handleChange("idMauSac", option ? option.value : "")}
                                         styles={selectMenuStyle}
                                         isClearable
                                         placeholder="Chọn màu sắc"
@@ -308,12 +414,14 @@ function ProductDetailUpdateModal({
                                 )}
                             </Grid>
                             <Grid item xs={12} md={6}>
-                                <Typography fontWeight={700} mb={0.5} color="#1769aa">Kích cỡ</Typography>
+                                <Typography fontWeight={700} mb={0.5} color="#1769aa">
+                                    Kích cỡ <span style={{ color: "#e74c3c" }}>*</span>
+                                </Typography>
                                 {renderSelectOrLoading(
                                     <Select
                                         options={sizeOptions}
                                         value={getOptionByValue(sizeOptions, form.idKichThuoc)}
-                                        onChange={opt => handleChange("idKichThuoc", opt ? opt.value : "")}
+                                        onChange={option => handleChange("idKichThuoc", option ? option.value : "")}
                                         styles={selectMenuStyle}
                                         isClearable
                                         placeholder="Chọn kích cỡ"
@@ -330,9 +438,10 @@ function ProductDetailUpdateModal({
                                     InputProps={{
                                         sx: { background: "#fafdff", borderRadius: 2 }
                                     }}
-                                    onChange={(e) => handleChange("gia", e.target.value)}
-                                    type="number"
-                                    inputProps={{ min: 0 }}
+                                    onChange={handleGiaChange}
+                                    type="text"
+                                    inputProps={{ min: 0, inputMode: "numeric", pattern: "[0-9]*" }}
+                                    placeholder="VD: 2.000"
                                 />
                             </Grid>
                             <Grid item xs={12} md={4}>
@@ -344,7 +453,7 @@ function ProductDetailUpdateModal({
                                     InputProps={{
                                         sx: { background: "#fafdff", borderRadius: 2 }
                                     }}
-                                    onChange={(e) => handleChange("soLuong", e.target.value)}
+                                    onChange={(event) => handleChange("soLuong", event.target.value)}
                                     type="number"
                                     inputProps={{ min: 0 }}
                                 />
@@ -358,7 +467,7 @@ function ProductDetailUpdateModal({
                                     InputProps={{
                                         sx: { background: "#fafdff", borderRadius: 2 }
                                     }}
-                                    onChange={(e) => handleChange("trongLuong", e.target.value)}
+                                    onChange={(event) => handleChange("trongLuong", event.target.value)}
                                     type="number"
                                     inputProps={{ min: 0 }}
                                 />
@@ -366,9 +475,9 @@ function ProductDetailUpdateModal({
                             <Grid item xs={12} md={6}>
                                 <Typography fontWeight={700} mb={0.5} color="#1769aa">Trạng thái</Typography>
                                 <Select
-                                    options={trangThaiList}
-                                    value={getOptionByValue(trangThaiList, form.trangThai)}
-                                    onChange={opt => handleChange("trangThai", opt ? opt.value : 0)}
+                                    options={statusOptions}
+                                    value={getOptionByValue(statusOptions, form.trangThai)}
+                                    onChange={option => handleChange("trangThai", option ? option.value : 0)}
                                     styles={selectMenuStyle}
                                     isClearable
                                     placeholder="Chọn trạng thái"
@@ -417,10 +526,12 @@ function ProductDetailUpdateModal({
                         </Grid>
                     </Grid>
                     <Grid item xs={12} md={4}>
-                        <Typography fontWeight={700} mb={1} color="#1769aa">Hình ảnh sản phẩm</Typography>
+                        <Typography fontWeight={700} mb={1} color="#1769aa">
+                            Hình ảnh sản phẩm
+                        </Typography>
                         <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" minHeight={90}>
-                            {(imagePreview || []).map((img, idx) => (
-                                <Box key={idx} sx={{ position: "relative", mb: 1 }}>
+                            {(imagePreview || []).map((image, index) => (
+                                <Box key={index} sx={{ position: "relative", mb: 1 }}>
                                     <Tooltip title="Xóa ảnh">
                                         <IconButton
                                             size="small"
@@ -432,13 +543,13 @@ function ProductDetailUpdateModal({
                                                 border: "1px solid #eee",
                                                 zIndex: 2
                                             }}
-                                            onClick={() => handleImageRemove(img)}
+                                            onClick={() => handleImageRemove(image)}
                                         >
                                             <FaTrash color="#e74c3c" />
                                         </IconButton>
                                     </Tooltip>
                                     <img
-                                        src={img}
+                                        src={image}
                                         alt="Ảnh sản phẩm"
                                         width={82}
                                         height={82}
@@ -489,6 +600,11 @@ function ProductDetailUpdateModal({
                         </Typography>
                     </Grid>
                 </Grid>
+                {formError && (
+                    <Box sx={{ my: 2 }}>
+                        <Typography color="error" fontWeight={600}>{formError}</Typography>
+                    </Box>
+                )}
             </DialogContent>
             <DialogActions sx={{ p: 2, background: "#fafdff" }}>
                 <Button onClick={onClose} color="inherit" variant="outlined" sx={{ borderRadius: 2, fontWeight: 600 }}>
@@ -499,9 +615,9 @@ function ProductDetailUpdateModal({
                     variant="contained"
                     color="info"
                     sx={{ borderRadius: 2, minWidth: 120, fontWeight: 700, fontSize: 17, boxShadow: 3 }}
-                    disabled={isLoadingOptions}
+                    disabled={isLoadingOptions || isSubmitting}
                 >
-                    Cập nhật
+                    {isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Cập nhật"}
                 </Button>
             </DialogActions>
         </Dialog>
@@ -511,12 +627,13 @@ function ProductDetailUpdateModal({
 ProductDetailUpdateModal.propTypes = {
     open: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    onUpdate: PropTypes.func.isRequired,
     detail: PropTypes.object,
+    onSuccess: PropTypes.func,
 };
 
 ProductDetailUpdateModal.defaultProps = {
     detail: {},
+    onSuccess: undefined,
 };
 
 export default ProductDetailUpdateModal;

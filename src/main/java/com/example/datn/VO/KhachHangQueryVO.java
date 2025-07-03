@@ -13,8 +13,6 @@ public class KhachHangQueryVO implements Serializable {
 
     private String maKhachHang;
 
-    private String tenTaiKhoan;
-
     private String matKhau;
 
     private String tenKhachHang;
@@ -26,8 +24,6 @@ public class KhachHangQueryVO implements Serializable {
     private String sdt;
 
     private Date ngaySinh;
-
-    private String ghiChu;
 
     private String hinhAnh;
 

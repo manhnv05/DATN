@@ -162,7 +162,6 @@ export default function AddPhieuGiam() {
 
         const ketQua = await addVouchers(duLieuGuiLen);
         if (ketQua) {
-            toast.success("Thêm voucher thành công!");
             const danhSachEmailKhachHang = tatCaKhachHang.filter(function (khachHang) { return danhSachDaChon.includes(khachHang.id); }).map(function (khachHang) { return khachHang.email; });
             const duLieuGuiMail = {
                 phieuGiamGiaVO: duLieuGuiLen,
@@ -179,7 +178,11 @@ export default function AddPhieuGiam() {
             if (danhSachPhieuGiamGiaKhachHang.length !== 0) {
                 await addPDDKH(danhSachPhieuGiamGiaKhachHang);
             }
-            navigation("/PhieuGiam");
+            navigate("/discount", {
+                state: {
+                    message: "Cập nhật voucher thành công!",
+                },
+            });
         } else {
             toast.error("Thêm voucher thất bại");
         }
@@ -441,9 +444,9 @@ export default function AddPhieuGiam() {
                                         />
                                     </Box>
                                 </Box>
-                                <Box display="flex" flexDirection="row" gap={2} marginBottom={2}>
+                                <Box display="flex" flexDirection="row" gap={2} mb={2}>
                                     <Box sx={{ flex: 1, maxWidth: 210 }}>
-                                        <Box component="label" sx={{ display: "block", marginBottom: 1, fontSize: "14px" }}>
+                                        <Box component="label" sx={{ display: "block", mb: 1, fontSize: "14px" }}>
                                             Ngày bắt đầu
                                         </Box>
                                         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -451,45 +454,41 @@ export default function AddPhieuGiam() {
                                                 name="ngayBatDau"
                                                 control={control}
                                                 defaultValue={null}
-                                                render={function ({ field }) {
-                                                    return (
-                                                        <DateTimePicker
-                                                            renderInput={function (props) {
-                                                                return (
-                                                                    <TextField
-                                                                        {...props}
-                                                                        fullWidth
-                                                                        sx={{
-                                                                            "& .MuiInputBase-root": {
-                                                                                fontWeight: 700,
-                                                                                color: "#1769aa",
-                                                                                background: "#f2f6fa",
-                                                                                borderRadius: 2,
-                                                                                height: "56px",
-                                                                                fontSize: "16px"
-                                                                            },
-                                                                            "& .MuiInputBase-input": {
-                                                                                padding: "16.5px 14px"
-                                                                            },
-                                                                            "& .MuiOutlinedInput-notchedOutline": {
-                                                                                border: "none"
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                );
-                                                            }}
-                                                            value={field.value}
-                                                            onChange={function (giaTriMoi) {
-                                                                field.onChange(giaTriMoi);
-                                                            }}
-                                                        />
-                                                    );
-                                                }}
+                                                render={({ field }) => (
+                                                    <DateTimePicker
+                                                        renderInput={(props) => (
+                                                            <TextField
+                                                                {...props}
+                                                                fullWidth
+                                                                sx={{
+                                                                    '& .MuiInputBase-root': {
+                                                                        fontWeight: 700,
+                                                                        color: "#1769aa",
+                                                                        background: "#f2f6fa",
+                                                                        borderRadius: 2,
+                                                                        height: '56px',
+                                                                        fontSize: '16px',
+                                                                    },
+                                                                    '& .MuiInputBase-input': {
+                                                                        padding: '16.5px 14px',
+                                                                    },
+                                                                    '& .MuiOutlinedInput-notchedOutline': {
+                                                                        border: 'none',
+                                                                    }
+                                                                }}
+                                                            />
+                                                        )}
+                                                        value={field.value}
+                                                        onChange={(newValue) => {
+                                                            field.onChange(newValue);
+                                                        }}
+                                                    />
+                                                )}
                                             />
                                         </LocalizationProvider>
                                     </Box>
                                     <Box sx={{ flex: 1, maxWidth: 210 }}>
-                                        <Box component="label" sx={{ display: "block", marginBottom: 1, fontSize: "14px" }}>
+                                        <Box component="label" sx={{ display: "block", mb: 1, fontSize: "14px" }}>
                                             Ngày kết thúc
                                         </Box>
                                         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -497,40 +496,37 @@ export default function AddPhieuGiam() {
                                                 name="ngayKetThuc"
                                                 control={control}
                                                 defaultValue={null}
-                                                render={function ({ field }) {
-                                                    return (
-                                                        <DateTimePicker
-                                                            renderInput={function (props) {
-                                                                return (
-                                                                    <TextField
-                                                                        {...props}
-                                                                        fullWidth
-                                                                        sx={{
-                                                                            "& .MuiInputBase-root": {
-                                                                                fontWeight: 700,
-                                                                                color: "#1769aa",
-                                                                                background: "#f2f6fa",
-                                                                                borderRadius: 2,
-                                                                                height: "56px",
-                                                                                fontSize: "16px"
-                                                                            },
-                                                                            "& .MuiInputBase-input": {
-                                                                                padding: "16.5px 14px"
-                                                                            },
-                                                                            "& .MuiOutlinedInput-notchedOutline": {
-                                                                                border: "none"
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                );
-                                                            }}
-                                                            value={field.value}
-                                                            onChange={function (giaTriMoi) {
-                                                                field.onChange(giaTriMoi);
-                                                            }}
-                                                        />
-                                                    );
-                                                }}
+                                                render={({ field }) => (
+                                                    <DateTimePicker
+
+                                                        renderInput={(props) => (
+                                                            <TextField
+                                                                {...props}
+                                                                fullWidth
+                                                                sx={{
+                                                                    '& .MuiInputBase-root': {
+                                                                        fontWeight: 700,
+                                                                        color: "#1769aa",
+                                                                        background: "#f2f6fa",
+                                                                        borderRadius: 2,
+                                                                        height: '56px',
+                                                                        fontSize: '16px',
+                                                                    },
+                                                                    '& .MuiInputBase-input': {
+                                                                        padding: '16.5px 14px',
+                                                                    },
+                                                                    '& .MuiOutlinedInput-notchedOutline': {
+                                                                        border: 'none',
+                                                                    }
+                                                                }}
+                                                            />
+                                                        )}
+                                                        value={field.value}
+                                                        onChange={(newValue) => {
+                                                            field.onChange(newValue);
+                                                        }}
+                                                    />
+                                                )}
                                             />
                                         </LocalizationProvider>
                                     </Box>

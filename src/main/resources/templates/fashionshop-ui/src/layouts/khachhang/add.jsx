@@ -62,14 +62,12 @@ const API_URL = "http://localhost:8080/khachHang/with-address";
 export default function AddKhachHangForm() {
     const [khachHang, setKhachHang] = useState({
         maKhachHang: "",
-        tenTaiKhoan: "",
         matKhau: "",
         tenKhachHang: "",
         email: "",
         gioiTinh: "",
         sdt: "",
         ngaySinh: "",
-        ghiChu: "",
         hinhAnh: "",
         trangThai: 1
     });
@@ -208,7 +206,6 @@ export default function AddKhachHangForm() {
 
     function validate() {
         let error = {};
-        if (!khachHang.tenTaiKhoan) error.tenTaiKhoan = "Vui lòng nhập tên tài khoản";
         if (!khachHang.tenKhachHang) error.tenKhachHang = "Vui lòng nhập tên khách hàng";
         if (!khachHang.email) error.email = "Vui lòng nhập email";
         if (khachHang.gioiTinh === "") error.gioiTinh = "Vui lòng chọn giới tính";
@@ -360,24 +357,6 @@ export default function AddKhachHangForm() {
                                 </Grid>
                                 <Grid item xs={12} md={9}>
                                     <Grid container spacing={2}>
-                                        <Grid item xs={12} md={6} lg={4}>
-                                            <label style={labelStyle}>Tên tài khoản</label>
-                                            <TextField
-                                                name="tenTaiKhoan"
-                                                value={khachHang.tenTaiKhoan}
-                                                onChange={handleKhachHangChange}
-                                                error={!!errors.tenTaiKhoan}
-                                                helperText={errors.tenTaiKhoan}
-                                                fullWidth
-                                                size="small"
-                                                sx={{
-                                                    bgcolor: "#f7fbfd",
-                                                    borderRadius: 2,
-                                                    input: { fontWeight: 600 }
-                                                }}
-                                                placeholder="VD: nguyenvanb"
-                                            />
-                                        </Grid>
                                         <Grid item xs={12} md={6} lg={4}>
                                             <label style={labelStyle}>Họ và tên khách hàng</label>
                                             <TextField
@@ -664,24 +643,6 @@ export default function AddKhachHangForm() {
                                                     ))}
                                                 </Select>
                                             </FormControl>
-                                        </Grid>
-                                        <Grid item xs={12}>
-                                            <label style={labelStyle}>Ghi chú bổ sung</label>
-                                            <TextField
-                                                name="ghiChu"
-                                                value={khachHang.ghiChu}
-                                                onChange={handleKhachHangChange}
-                                                fullWidth
-                                                size="small"
-                                                multiline
-                                                minRows={2}
-                                                sx={{
-                                                    bgcolor: "#f7fbfd",
-                                                    borderRadius: 2,
-                                                    textarea: { fontWeight: 600 }
-                                                }}
-                                                placeholder="Nhập ghi chú bổ sung cho khách hàng nếu có"
-                                            />
                                         </Grid>
                                     </Grid>
                                 </Grid>

@@ -56,6 +56,24 @@ function findById(array, value, key) {
     return array.find((item) => item && item[key] === value) || null;
 }
 
+function getRoleName(vaiTro, roleOptions) {
+    if (vaiTro && typeof vaiTro === "object" && vaiTro.ten) {
+        return vaiTro.ten;
+    }
+    if (typeof vaiTro === "string") {
+        return vaiTro;
+    }
+    if (vaiTro) {
+        const found = roleOptions.find(function (role) {
+            return role.id === vaiTro || String(role.id) === String(vaiTro);
+        });
+        if (found) {
+            return found.ten;
+        }
+    }
+    return "Chưa xác định";
+}
+
 const GENDER_OPTIONS = [
     { value: "Nam", label: "Nam" },
     { value: "Nữ", label: "Nữ" },
@@ -75,7 +93,6 @@ const POSITION_OPTIONS = [
     { value: "Thu ngân", label: "Thu ngân" },
 ];
 
-// UI Styles
 const labelStyle = {
     fontWeight: 600,
     color: "#1769aa",
@@ -92,7 +109,7 @@ const GradientCard = styled(Card)(({ theme }) => ({
     padding: theme.spacing(3),
     position: "relative",
     overflow: "visible",
-    maxWidth: 950,
+    maxWidth: 1500,
     width: "100%"
 }));
 
@@ -168,9 +185,7 @@ export default function AddNhanVienForm() {
         soDienThoai: "",
         canCuocCongDan: "",
         email: "",
-        tenTaiKhoan: "",
         vaiTro: null,
-        chucVu: "",
         trangThai: 1,
         tinhThanhPho: "",
         quanHuyen: "",
@@ -320,9 +335,6 @@ export default function AddNhanVienForm() {
         if (!employee.vaiTro || !employee.vaiTro.id) {
             error.vaiTro = "Vui lòng chọn vai trò";
         }
-        if (!employee.chucVu) {
-            error.chucVu = "Vui lòng chọn chức vụ";
-        }
         if (!employee.soDienThoai) {
             error.soDienThoai = "Vui lòng nhập số điện thoại";
         }
@@ -402,9 +414,7 @@ export default function AddNhanVienForm() {
                 soDienThoai: employee.soDienThoai,
                 canCuocCongDan: employee.canCuocCongDan,
                 email: employee.email,
-                tenTaiKhoan: employee.tenTaiKhoan,
                 idVaiTro: employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : null,
-                chucVu: employee.chucVu,
                 trangThai: employee.trangThai,
                 maNhanVien: maNhanVien,
                 matKhau: matKhau,
@@ -538,7 +548,6 @@ export default function AddNhanVienForm() {
                         </Paper>
                         <form onSubmit={handleSubmit} autoComplete="off">
                             <Grid container spacing={3}>
-                                {/* Left - Avatar & CCCD */}
                                 <Grid item xs={12} md={4}>
                                     <Box
                                         sx={{
@@ -637,7 +646,6 @@ export default function AddNhanVienForm() {
                                         </Box>
                                     </Box>
                                 </Grid>
-                                {/* Right - Form */}
                                 <Grid item xs={12} md={8}>
                                     <Grid container spacing={2}>
                                         <Grid item xs={12} sm={6}>
@@ -684,20 +692,6 @@ export default function AddNhanVienForm() {
                                                 sx={getFieldSx("email")}
                                                 placeholder="VD: email@gmail.com"
                                                 onFocus={() => setFocusField("email")}
-                                                onBlur={() => setFocusField("")}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6}>
-                                            <label style={labelStyle}>Tên tài khoản</label>
-                                            <TextField
-                                                name="tenTaiKhoan"
-                                                value={employee.tenTaiKhoan}
-                                                onChange={handleEmployeeChange}
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("tenTaiKhoan")}
-                                                placeholder="VD: nguyenvana"
-                                                onFocus={() => setFocusField("tenTaiKhoan")}
                                                 onBlur={() => setFocusField("")}
                                             />
                                         </Grid>
@@ -778,7 +772,7 @@ export default function AddNhanVienForm() {
                                                     onChange={function (event) {
                                                         const selectedId = event.target.value;
                                                         const foundRole = roleOptions.find(function (role) {
-                                                            return role.id === selectedId;
+                                                            return role.id === selectedId || String(role.id) === String(selectedId);
                                                         });
                                                         setEmployee(function (previous) {
                                                             return {
@@ -809,6 +803,13 @@ export default function AddNhanVienForm() {
                                                 </Select>
                                                 <FormHelperText>{errors.vaiTro}</FormHelperText>
                                             </FormControl>
+                                            <Box mt={1}>
+                                                <Typography fontSize={15} color="#1769aa" fontWeight={600}>
+                                                    Tên vai trò đang chọn: <span style={{ color: "#1976d2", fontWeight: 700 }}>
+                                                        {getRoleName(employee.vaiTro, roleOptions)}
+                                                    </span>
+                                                </Typography>
+                                            </Box>
                                             <Tooltip title="Thêm vai trò mới">
                                                 <IconButton
                                                     color="primary"
@@ -818,34 +819,6 @@ export default function AddNhanVienForm() {
                                                     <AddCircleOutlineIcon fontSize="large" />
                                                 </IconButton>
                                             </Tooltip>
-                                        </Grid>
-                                        <Grid item xs={12} sm={6}>
-                                            <label style={labelStyle}>Chức vụ</label>
-                                            <FormControl
-                                                fullWidth
-                                                size="small"
-                                                error={Boolean(errors.chucVu)}
-                                                sx={getFieldSx("chucVu")}
-                                            >
-                                                <Select
-                                                    name="chucVu"
-                                                    value={employee.chucVu}
-                                                    onChange={handleEmployeeChange}
-                                                    displayEmpty
-                                                    onFocus={() => setFocusField("chucVu")}
-                                                    onBlur={() => setFocusField("")}
-                                                >
-                                                    <MenuItem value="">
-                                                        <em>Chọn chức vụ</em>
-                                                    </MenuItem>
-                                                    {POSITION_OPTIONS.map((pos) => (
-                                                        <MenuItem value={pos.value} key={pos.value}>
-                                                            {pos.label}
-                                                        </MenuItem>
-                                                    ))}
-                                                </Select>
-                                                <FormHelperText>{errors.chucVu}</FormHelperText>
-                                            </FormControl>
                                         </Grid>
                                         <Grid item xs={12} sm={6}>
                                             <label style={labelStyle}>Tỉnh/Thành phố</label>

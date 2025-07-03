@@ -22,14 +22,36 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
+import { toast, ToastContainer } from "react-toastify";
 
+// Status list and view options
 const statusList = ["Tất cả", "Hiển thị", "Ẩn"];
 const viewOptions = [5, 10, 20];
 
-const getTrangThaiText = (val) =>
-    val === 1 || val === "1" || val === "Hiển thị" ? "Hiển thị" : "Ẩn";
+// Get status text
+const getTrangThaiText = (val) => val === 1 || val === "1" || val === "Hiển thị" ? "Hiển thị" : "Ẩn";
 
-// Hàm phân trang đẹp: luôn có 2 đầu, 2 cuối, và trang hiện tại nổi bật nếu ở giữa
+// Auto-generate category code
+function generateMaDanhMuc(existingList = []) {
+    const numbers = existingList
+        .map((item) => {
+            const match = /^DM(\d{4})$/.exec(item.maDanhMuc || "");
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((num) => num !== null)
+        .sort((a, b) => a - b);
+    let next = 1;
+    for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] !== i + 1) {
+            next = i + 1;
+            break;
+        }
+        next = numbers.length + 1;
+    }
+    return "DM" + String(next).padStart(4, "0");
+}
+
+// Pagination helper
 function getPaginationItems(current, total) {
     if (total <= 5) return Array.from({ length: total }, (_, i) => i);
     if (current <= 1) return [0, 1, "...", total - 2, total - 1];
@@ -55,7 +77,6 @@ function CategoryTable() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Modal states
     const [showModal, setShowModal] = useState(false);
     const [newCategory, setNewCategory] = useState({
         maDanhMuc: "",
@@ -63,16 +84,23 @@ function CategoryTable() {
         trangThai: "Hiển thị",
     });
 
-    // Edit states
     const [editCategory, setEditCategory] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
-    // Delete states
     const [deleteId, setDeleteId] = useState(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    // Menu states
     const [anchorEl, setAnchorEl] = useState(null);
+
+    // Auto-generate code when opening modal
+    useEffect(() => {
+        if (showModal && categoriesData.content) {
+            setNewCategory((prev) => ({
+                ...prev,
+                maDanhMuc: generateMaDanhMuc(categoriesData.content),
+            }));
+        }
+    }, [showModal, categoriesData.content]);
 
     // Fetch categories from API
     useEffect(() => {
@@ -93,10 +121,10 @@ function CategoryTable() {
             .finally(() => setLoading(false));
     }, [queryParams]);
 
-    // Handler for Add Category
+    // Add category
     const handleAddCategory = () => {
-        if (!newCategory.maDanhMuc || !newCategory.tenDanhMuc) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!newCategory.tenDanhMuc) {
+            toast.error("Tên danh mục không được để trống");
             return;
         }
         setLoading(true);
@@ -116,12 +144,16 @@ function CategoryTable() {
                 setShowModal(false);
                 setNewCategory({ maDanhMuc: "", tenDanhMuc: "", trangThai: "Hiển thị" });
                 setQueryParams({ ...queryParams, page: 0 });
+                toast.success("Thêm danh mục thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Edit Category
+    // Edit category
     const handleEditClick = (category) => {
         setEditCategory({
             ...category,
@@ -131,8 +163,8 @@ function CategoryTable() {
     };
 
     const handleSaveEdit = () => {
-        if (!editCategory.maDanhMuc || !editCategory.tenDanhMuc) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!editCategory.tenDanhMuc) {
+            toast.error("Tên danh mục không được để trống");
             return;
         }
         setLoading(true);
@@ -152,12 +184,16 @@ function CategoryTable() {
                 setShowEditModal(false);
                 setEditCategory(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Cập nhật danh mục thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Delete Category
+    // Delete category
     const handleDelete = (id) => {
         setDeleteId(id);
         setShowDeleteDialog(true);
@@ -172,17 +208,19 @@ function CategoryTable() {
                 setShowDeleteDialog(false);
                 setDeleteId(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Xóa danh mục thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Pagination
     const handlePageChange = (newPage) => {
         setQueryParams({ ...queryParams, page: newPage });
     };
 
-    // Menu actions
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
@@ -211,8 +249,8 @@ function CategoryTable() {
                         textAlign: "center",
                     }}
                 >
-          {getTrangThaiText(value)}
-        </span>
+                    {getTrangThaiText(value)}
+                </span>
             ),
         },
         {
@@ -251,7 +289,7 @@ function CategoryTable() {
             }))
             : [];
 
-    // Modal Thêm danh mục
+    // Add modal
     const renderAddCategoryModal = () => (
         <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -271,13 +309,6 @@ function CategoryTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã danh mục"
-                        value={newCategory.maDanhMuc}
-                        onChange={(e) => setNewCategory({ ...newCategory, maDanhMuc: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên danh mục"
@@ -308,7 +339,7 @@ function CategoryTable() {
         </Dialog>
     );
 
-    // Modal sửa danh mục
+    // Edit modal
     const renderEditCategoryModal = () => (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -328,13 +359,6 @@ function CategoryTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã danh mục"
-                        value={editCategory?.maDanhMuc || ""}
-                        onChange={(e) => setEditCategory({ ...editCategory, maDanhMuc: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên danh mục"
@@ -362,7 +386,7 @@ function CategoryTable() {
         </Dialog>
     );
 
-    // Dialog xác nhận xóa danh mục
+    // Delete dialog
     const renderDeleteDialog = () => (
         <Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
             <DialogTitle
@@ -433,14 +457,12 @@ function CategoryTable() {
         </Dialog>
     );
 
-    // Pagination
     const paginationItems = getPaginationItems(categoriesData.number, categoriesData.totalPages || 1);
 
     return (
         <DashboardLayout>
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
-                {/* PHẦN 1: Card filter/search/action */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftBox
                         display="flex"
@@ -527,8 +549,6 @@ function CategoryTable() {
                         </SoftBox>
                     </SoftBox>
                 </Card>
-
-                {/* PHẦN 2: Card Table/Pagination */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
@@ -567,7 +587,6 @@ function CategoryTable() {
                                 </Select>
                             </FormControl>
                         </SoftBox>
-                        {/* Pagination đẹp */}
                         <SoftBox display="flex" alignItems="center" gap={1}>
                             <Button
                                 variant="text"
@@ -629,6 +648,17 @@ function CategoryTable() {
                 {renderEditCategoryModal()}
                 {renderDeleteDialog()}
             </SoftBox>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <Footer />
         </DashboardLayout>
     );

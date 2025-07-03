@@ -22,8 +22,12 @@ import "flatpickr/dist/flatpickr.min.css";
 import "flatpickr/dist/themes/airbnb.css";
 import useNotify from "./hooks/useNotify";
 import instanceAPIMain from "../../configapi";
-
-
+import { toast } from "react-toastify";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Box from "@mui/material/Box";
+import dayjs from "dayjs";
 
 export function debounce(func, timeout = 500) {
     let timer;
@@ -109,6 +113,8 @@ const AddDiscountEventPage = () => {
                         reset({
                             tenDotGiamGia: payload.tenDotGiamGia,
                             phanTramGiamGia: payload.phanTramGiamGia,
+                            ngayBatDau:payload.ngayBatDau,
+                            ngayKetThuc:payload.ngayKetThuc,
                             trangThai: payload.trangThai,
                             dateRange: [payload.ngayBatDau, payload.ngayKetThuc],
                         });
@@ -327,19 +333,20 @@ const AddDiscountEventPage = () => {
             const payload = {
                 tenDotGiamGia: data.tenDotGiamGia,
                 phanTramGiamGia: Number(data.phanTramGiamGia),
-                ngayBatDau: start,
-                ngayKetThuc: end,
+                ngayBatDau: dayjs(data.ngayBatDau).format('YYYY-MM-DDTHH:mm:ss'),
+                ngayKetThuc: dayjs(data.ngayKetThuc).format('YYYY-MM-DDTHH:mm:ss'),
                 trangThai: data.trangThai,
             };
+            console.log(payload)
             const res = eventId
                 ? await updateDotGiamGia(eventId, { ...payload, id: eventId })
                 : await createDotGiamGia(payload);
             const idDotGiamGia = eventId || res.data;
             setEventId(idDotGiamGia);
-            notify(eventId ? "Cập nhật thành công" : "Thêm thành công", "success");
+            eventId ? toast.success("Cập nhật thành công") : toast.success("Thêm thành công")
         } catch (e) {
             console.error(e);
-            notify("Thao tác thất bại", "error");
+            eventId ? toast.success("Cập nhật không thành công") : toast.error("Thêm không thành công")
         }
     };
 
@@ -453,36 +460,88 @@ const AddDiscountEventPage = () => {
                             >
                                 Thời gian áp dụng
                             </InputLabel>
-                            <Controller
-                                name="dateRange"
-                                control={control}
-                                rules={{
-                                    validate: (value) =>
-                                        value && value.length === 2 ? true : "Vui lòng chọn khoảng thời gian",
-                                }}
-                                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                                    <Flatpickr
-                                        options={{
-                                            mode: "range",
-                                            enableTime: true,
-                                            dateFormat: "m/d/Y h:i K",
-                                            minDate: "today",
-                                            time_24hr: false,
-                                        }}
-                                        value={value}
-                                        onChange={(dates) => onChange(dates)}
-                                        render={(props, ref) => (
-                                            <TextField
-                                                {...props}
-                                                inputRef={ref}
-                                                fullWidth
-                                                error={!!error}
-                                                helperText={error?.message}
-                                            />
-                                        )}
-                                    />
-                                )}
-                            />
+                            <Box display="flex" flexDirection="row" gap={2} mb={2} sx={{ marginTop: 1 }}>
+                                <Box sx={{ flex: 1, maxWidth: 190 }}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <Controller
+                                            name="ngayBatDau"
+                                            control={control}
+                                            defaultValue={null}
+                                            render={({ field }) => (
+                                                <DateTimePicker
+                                                    label="Ngày bắt đầu"
+                                                    renderInput={(props) => (
+                                                        <TextField
+                                                            {...props}
+                                                            fullWidth
+                                                            sx={{
+                                                                '& .MuiInputBase-root': {
+                                                                    fontWeight: 700,
+                                                                    color: "#1769aa",
+                                                                    background: "#f2f6fa",
+                                                                    borderRadius: 2,
+                                                                    height: '56px',
+                                                                    fontSize: '16px',
+                                                                },
+                                                                '& .MuiInputBase-input': {
+                                                                    padding: '16.5px 14px',
+                                                                },
+                                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                                    border: 'none',
+                                                                }
+                                                            }}
+                                                        />
+                                                    )}
+                                                    value={field.value}
+                                                    onChange={(newValue) => {
+                                                        field.onChange(newValue);
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    </LocalizationProvider>
+                                </Box>
+                                <Box sx={{ flex: 1, maxWidth: 190 }}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <Controller
+                                            name="ngayKetThuc"
+                                            control={control}
+                                            defaultValue={null}
+                                            render={({ field }) => (
+                                                <DateTimePicker
+                                                    label="Ngày kết thúc"
+                                                    renderInput={(props) => (
+                                                        <TextField
+                                                            {...props}
+                                                            fullWidth
+                                                            sx={{
+                                                                '& .MuiInputBase-root': {
+                                                                    fontWeight: 700,
+                                                                    color: "#1769aa",
+                                                                    background: "#f2f6fa",
+                                                                    borderRadius: 2,
+                                                                    height: '56px',
+                                                                    fontSize: '16px',
+                                                                },
+                                                                '& .MuiInputBase-input': {
+                                                                    padding: '16.5px 14px',
+                                                                },
+                                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                                    border: 'none',
+                                                                }
+                                                            }}
+                                                        />
+                                                    )}
+                                                    value={field.value}
+                                                    onChange={(newValue) => {
+                                                        field.onChange(newValue);
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    </LocalizationProvider>
+                                </Box>
+                            </Box>
                         </Stack>
                         <Stack>
                             <InputLabel
