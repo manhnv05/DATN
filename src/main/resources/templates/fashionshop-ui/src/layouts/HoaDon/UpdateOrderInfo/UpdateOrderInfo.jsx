@@ -27,6 +27,7 @@ const UpdateOrderInfo = ({ show, onClose, orderId, initialData, onUpdateSuccess 
 
   useEffect(() => {
     if (show) {
+       console.log("Initial Order Data (initialData):", initialData);
       const initializeForm = async () => {
         setIsPreloading(true);
 
@@ -194,7 +195,7 @@ const UpdateOrderInfo = ({ show, onClose, orderId, initialData, onUpdateSuccess 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Xóa lỗi cho trường này ngay khi người dùng bắt đầu nhập
+
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -257,6 +258,7 @@ const UpdateOrderInfo = ({ show, onClose, orderId, initialData, onUpdateSuccess 
       diaChi: fullAddress,
       ghiChu: "Cập nhật thông tin giao hàng",
     };
+     console.log("Tên người nhận (tenKhachHang) khi submit:", requestPayload.tenKhachHang);
 
     try {
       const backendApiUrl = `http://localhost:8080/api/hoa-don/cap-nhat-thong-tin/${orderId}`;

@@ -49,7 +49,7 @@ public interface HoaDonMapper {
 
 
     // Map tenKhachHang: Nếu có thực thể khách hàng, lấy tên từ đó. Nếu không (khách lẻ), lấy từ trường tenKhachHang trực tiếp của HoaDon Entity.
-    @Mapping(target = "tenKhachHang", expression = "java(hoaDon.getKhachHang() != null ? hoaDon.getKhachHang().getTenKhachHang() : hoaDon.getTenKhachHang())")
+    @Mapping(target = "tenKhachHang", expression = "java(hoaDon.getKhachHang() != null ? hoaDon.getTenKhachHang()  : hoaDon.getKhachHang().getTenKhachHang())")
     // Map tenNhanVien: Nếu có thực thể nhân viên, lấy tên từ đó. Nếu không, trả về null.
     @Mapping(target = "tenNhanVien", expression = "java(hoaDon.getNhanVien() != null ? hoaDon.getNhanVien().getHoVaTen() : null)")
     HoaDonDTO toHoaDonResponse(HoaDon hoaDon);

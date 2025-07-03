@@ -225,11 +225,12 @@ const OrderDetailPage = () => {
 
   const initialUpdateData = orderData
       ? {
-        tenNguoiNhan: orderData.customerName,
+        tenNguoiNhan: orderData.receiverName,
         soDienThoai: orderData.phoneNumber,
         diaChi: orderData.diaChi,
       }
       : {};
+    
   // Hàm xử lý in hóa đơn
   // Trong OrderDetailPage/index.jsx
   const handlePrint = useReactToPrint({

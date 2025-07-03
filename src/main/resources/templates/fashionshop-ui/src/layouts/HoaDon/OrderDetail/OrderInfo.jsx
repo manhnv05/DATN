@@ -92,9 +92,14 @@ const OrderInfo = ({ order }) => {
                     </div>
                     <div className="col-6">
                         <strong>Loại:</strong>{' '}
-                       <span className={`${styles.softBadge} ${styles[getOrderTypeBadgeClassName(order.type)]}`}>
-  {order.type === 'online' ? 'Trực tuyến' : 'Tại quầy'}
-</span>
+  <span className={`${styles.softBadge} ${styles[getOrderTypeBadgeClassName(order.type)]}`}>
+             
+              {order.type && (order.type.toLowerCase() === 'online' || order.type.toLowerCase() === 'trực tuyến')
+                ? 'Trực tuyến'
+                : (order.type && (order.type.toLowerCase() === 'at_counter' || order.type.toLowerCase() === 'tại quầy')
+                  ? 'Tại quầy'
+                  : order.type)}
+            </span>
                     </div>
                     <div className="col-md-6 col-12 mb-2">
                         <strong>Địa chỉ:</strong> {order.diaChi}
