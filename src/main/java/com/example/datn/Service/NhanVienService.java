@@ -32,7 +32,6 @@ public class NhanVienService {
 
     private final NhanVienRepository nhanVienRepository;
 
-    // Inject EmailService ở Config package để gửi email HTML nâng cao
     @Autowired(required = false)
     @Qualifier("emailConfigService")
     private com.example.datn.Config.EmailService emailConfigService;
@@ -56,7 +55,6 @@ public class NhanVienService {
 
         bean = nhanVienRepository.save(bean);
 
-        // Gửi email tài khoản/mật khẩu cho nhân viên nếu có email và emailConfigService cấu hình
         if (emailConfigService != null && bean.getEmail() != null && !bean.getEmail().trim().isEmpty()) {
             String subject = "🎉 Tài khoản nhân viên đã được tạo thành công! 🎉";
             String body = "<div style=\"font-family:'Segoe UI',Arial,sans-serif;background:#f9fafd;padding:32px 0;\">"
@@ -142,8 +140,10 @@ public class NhanVienService {
         BeanUtils.copyProperties(original, bean);
         if (original.getVaiTro() != null) {
             bean.setIdVaiTro(original.getVaiTro().getId());
+            bean.setTenVaiTro(original.getVaiTro().getTen());
         } else {
             bean.setIdVaiTro(null);
+            bean.setTenVaiTro(null);
         }
         return bean;
     }

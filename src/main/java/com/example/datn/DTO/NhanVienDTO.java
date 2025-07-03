@@ -14,6 +14,9 @@ public class NhanVienDTO{
 
     private String maNhanVien;
 
+
+    private String tenVaiTro;
+
     private String hoVaTen;
 
     private String hinhAnh;
