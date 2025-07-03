@@ -22,6 +22,7 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
+import { toast, ToastContainer } from "react-toastify";
 
 const statusList = ["Tất cả", "Hiển thị", "Ẩn"];
 const viewOptions = [5, 10, 20];
@@ -29,7 +30,25 @@ const viewOptions = [5, 10, 20];
 const getTrangThaiText = (val) =>
     val === 1 || val === "1" || val === "Hiển thị" ? "Hiển thị" : "Ẩn";
 
-// Pagination helper: 2 đầu, 2 cuối, luôn nổi bật trang hiện tại nếu ở giữa
+function generateMaThuongHieu(existingList = []) {
+    const numbers = existingList
+        .map((item) => {
+            const match = /^TH(\d{4})$/.exec(item.maThuongHieu || "");
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((num) => num !== null)
+        .sort((a, b) => a - b);
+    let next = 1;
+    for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] !== i + 1) {
+            next = i + 1;
+            break;
+        }
+        next = numbers.length + 1;
+    }
+    return "TH" + String(next).padStart(4, "0");
+}
+
 function getPaginationItems(current, total) {
     if (total <= 5) return Array.from({ length: total }, (_, i) => i);
     if (current <= 1) return [0, 1, "...", total - 2, total - 1];
@@ -38,7 +57,6 @@ function getPaginationItems(current, total) {
 }
 
 function BrandTable() {
-    // Query params state
     const [queryParams, setQueryParams] = useState({
         tenThuongHieu: "",
         trangThai: "Tất cả",
@@ -70,8 +88,18 @@ function BrandTable() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const [anchorEl, setAnchorEl] = useState(null);
+    const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+    const handleMenuClose = () => setAnchorEl(null);
 
-    // Fetch brands from API
+    useEffect(() => {
+        if (showModal && brandsData.content) {
+            setNewBrand((prev) => ({
+                ...prev,
+                maThuongHieu: generateMaThuongHieu(brandsData.content),
+            }));
+        }
+    }, [showModal, brandsData.content]);
+
     useEffect(() => {
         setLoading(true);
         setError("");
@@ -91,10 +119,9 @@ function BrandTable() {
             .finally(() => setLoading(false));
     }, [queryParams]);
 
-    // Handler for Add Brand
     const handleAddBrand = () => {
-        if (!newBrand.maThuongHieu || !newBrand.tenThuongHieu) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!newBrand.tenThuongHieu) {
+            toast.error("Tên thương hiệu không được để trống");
             return;
         }
         setLoading(true);
@@ -114,12 +141,15 @@ function BrandTable() {
                 setShowModal(false);
                 setNewBrand({ maThuongHieu: "", tenThuongHieu: "", trangThai: "Hiển thị" });
                 setQueryParams({ ...queryParams, page: 0 });
+                toast.success("Thêm thương hiệu thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Edit Brand
     const handleEditClick = (brand) => {
         setEditBrand({
             ...brand,
@@ -129,8 +159,8 @@ function BrandTable() {
     };
 
     const handleSaveEdit = () => {
-        if (!editBrand.maThuongHieu || !editBrand.tenThuongHieu) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!editBrand.tenThuongHieu) {
+            toast.error("Tên thương hiệu không được để trống");
             return;
         }
         setLoading(true);
@@ -150,12 +180,15 @@ function BrandTable() {
                 setShowEditModal(false);
                 setEditBrand(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Cập nhật thương hiệu thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Delete Brand
     const handleDelete = (id) => {
         setDeleteId(id);
         setShowDeleteDialog(true);
@@ -170,20 +203,21 @@ function BrandTable() {
                 setShowDeleteDialog(false);
                 setDeleteId(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Xóa thương hiệu thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Pagination
     const handlePageChange = (newPage) => {
         setQueryParams({ ...queryParams, page: newPage });
     };
 
-    // Pagination items
     const paginationItems = getPaginationItems(brandsData.number, brandsData.totalPages || 1);
 
-    // Table columns
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         { name: "maThuongHieu", label: "Mã", align: "left", width: "100px" },
@@ -208,8 +242,8 @@ function BrandTable() {
                         textAlign: "center",
                     }}
                 >
-          {getTrangThaiText(value)}
-        </span>
+                    {getTrangThaiText(value)}
+                </span>
             ),
         },
         {
@@ -248,7 +282,6 @@ function BrandTable() {
             }))
             : [];
 
-    // Modal Thêm thương hiệu
     const renderAddBrandModal = () => (
         <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -268,13 +301,6 @@ function BrandTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã thương hiệu"
-                        value={newBrand.maThuongHieu}
-                        onChange={(e) => setNewBrand({ ...newBrand, maThuongHieu: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên thương hiệu"
@@ -305,7 +331,6 @@ function BrandTable() {
         </Dialog>
     );
 
-    // Modal sửa thương hiệu
     const renderEditBrandModal = () => (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -325,13 +350,6 @@ function BrandTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã thương hiệu"
-                        value={editBrand?.maThuongHieu || ""}
-                        onChange={(e) => setEditBrand({ ...editBrand, maThuongHieu: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên thương hiệu"
@@ -359,7 +377,6 @@ function BrandTable() {
         </Dialog>
     );
 
-    // Dialog xác nhận xóa
     const renderDeleteDialog = () => (
         <Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
             <DialogTitle
@@ -434,7 +451,6 @@ function BrandTable() {
         <DashboardLayout>
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
-                {/* PHẦN 1: Card filter/search/action */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftBox
                         display="flex"
@@ -486,14 +502,14 @@ function BrandTable() {
                             </FormControl>
                         </SoftBox>
                         <SoftBox display="flex" alignItems="center" gap={1}>
-                            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ color: "#495057" }}>
+                            <IconButton onClick={handleMenuOpen} sx={{ color: "#495057" }}>
                                 <Icon fontSize="small">menu</Icon>
                             </IconButton>
-                            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-                                <MenuItem onClick={() => setAnchorEl(null)} sx={{ color: "#384D6C" }}>
+                            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                                <MenuItem onClick={handleMenuClose} sx={{ color: "#384D6C" }}>
                                     <FaQrcode className="me-2" style={{ color: "#0d6efd" }} /> Quét mã
                                 </MenuItem>
-                                <MenuItem onClick={() => setAnchorEl(null)} sx={{ color: "#384D6C" }}>
+                                <MenuItem onClick={handleMenuClose} sx={{ color: "#384D6C" }}>
                                     <span style={{ color: "#27ae60", marginRight: 8 }}>📥</span> Export Excel
                                 </MenuItem>
                             </Menu>
@@ -521,8 +537,6 @@ function BrandTable() {
                         </SoftBox>
                     </SoftBox>
                 </Card>
-
-                {/* PHẦN 2: Card Table/Pagination */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
@@ -532,7 +546,6 @@ function BrandTable() {
                     <SoftBox>
                         <Table columns={columns} rows={rows} loading={loading} />
                     </SoftBox>
-                    {/* Pagination + View */}
                     <SoftBox
                         display="flex"
                         justifyContent="space-between"
@@ -623,6 +636,17 @@ function BrandTable() {
                 {renderEditBrandModal()}
                 {renderDeleteDialog()}
             </SoftBox>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <Footer />
         </DashboardLayout>
     );

@@ -29,16 +29,55 @@ const normalizeUrl = (url) =>
         ? url
         : `${API_BASE}${url?.startsWith("/") ? "" : "/"}${url || ""}`;
 
-const generateProductCode = () => {
-    const now = new Date();
-    const year = now.getFullYear().toString().slice(-2);
-    const month = (now.getMonth() + 1).toString().padStart(2, "0");
-    const day = now.getDate().toString().padStart(2, "0");
-    const hour = now.getHours().toString().padStart(2, "0");
-    const minute = now.getMinutes().toString().padStart(2, "0");
-    const second = now.getSeconds().toString().padStart(2, "0");
-    return `SP${year}${month}${day}${hour}${minute}${second}`;
-};
+async function generateMaSanPhamUnique() {
+    try {
+        const res = await fetch(apiUrl("/sanPham/all-ma"));
+        const data = await res.json();
+        if (!Array.isArray(data)) {
+            return "SP0001";
+        }
+        const numbers = data
+            .map((ma) => {
+                const match = /^SP(\d{4})$/.exec(ma);
+                return match ? parseInt(match[1], 10) : null;
+            })
+            .filter((num) => num !== null)
+            .sort((a, b) => a - b);
+        let next = 1;
+        for (let i = 0; i < numbers.length; i++) {
+            if (numbers[i] !== i + 1) {
+                next = i + 1;
+                break;
+            }
+            next = numbers.length + 1;
+        }
+        return "SP" + String(next).padStart(4, "0");
+    } catch {
+        return "SP0001";
+    }
+}
+
+async function fetchAllMaSanPhamChiTiet() {
+    try {
+        const res = await fetch(apiUrl("/chiTietSanPham/all-ma"));
+        const data = await res.json();
+        if (!Array.isArray(data)) return [];
+        return data;
+    } catch {
+        return [];
+    }
+}
+
+function getUniqueMaSanPhamChiTiet(maSanPhamBase, colorId, sizeId, existedList) {
+    let idx = 1;
+    let ma = `${maSanPhamBase}-${colorId}-${sizeId}`;
+    while (existedList.includes(ma)) {
+        idx += 1;
+        ma = `${maSanPhamBase}-${colorId}-${sizeId}-${idx}`;
+    }
+    existedList.push(ma);
+    return ma;
+}
 
 function getProductVariantsByColors(colors, sizes, productName) {
     const selectedColors = colors.filter(Boolean);
@@ -100,8 +139,18 @@ const selectMenuStyle = {
     }),
 };
 
+function formatCurrencyVND(value) {
+    const number = Number(String(value).replace(/[^\d]/g, ""));
+    if (Number.isNaN(number) || value === "") return "";
+    return number.toLocaleString("vi-VN");
+}
+
+function parseCurrencyVND(value) {
+    return String(value).replace(/[^\d]/g, "");
+}
+
 function ProductForm() {
-    const [productCode, setProductCode] = useState(generateProductCode());
+    const [productCode, setProductCode] = useState("");
     const [productName, setProductName] = useState("");
     const [productNameOptions, setProductNameOptions] = useState([]);
     const [productDesc, setProductDesc] = useState("");
@@ -357,27 +406,27 @@ function ProductForm() {
     }, [JSON.stringify(colors), JSON.stringify(sizes), productName]);
 
     useEffect(() => {
-        setProductCode(generateProductCode());
+        generateMaSanPhamUnique().then(setProductCode);
     }, []);
 
     useEffect(() => {
         if (productName) {
             fetch(apiUrl(`/sanPham/search?keyword=${encodeURIComponent(productName)}`))
                 .then(res => res.json())
-                .then(data => {
+                .then(async data => {
                     if (Array.isArray(data) && data.length > 0) {
                         const prod = data[0];
                         setCreatedSanPhamId(prod.id);
                         setProductDesc(prod.moTa ? prod.moTa : "");
                         setSelectedCategory(prod.idDanhMuc ? prod.idDanhMuc : "");
                         setSelectedCountry(prod.xuatXu ? prod.xuatXu : "");
-                        setProductCode(prod.maSanPham ? prod.maSanPham : generateProductCode());
+                        setProductCode(prod.maSanPham ? prod.maSanPham : await generateMaSanPhamUnique());
                     } else {
                         setCreatedSanPhamId(null);
                         setProductDesc("");
                         setSelectedCategory(categoryOptions[0]?.value || "");
                         setSelectedCountry(countryOptions[0]?.value || "");
-                        setProductCode(generateProductCode());
+                        setProductCode(await generateMaSanPhamUnique());
                     }
                 });
         }
@@ -394,7 +443,11 @@ function ProductForm() {
             newArr[colorIdx] = {
                 ...newArr[colorIdx],
                 products: newArr[colorIdx].products.map((p, idx) =>
-                    idx === prodIdx ? { ...p, [field]: value } : p
+                    idx === prodIdx
+                        ? field === "price"
+                            ? { ...p, price: parseCurrencyVND(value) }
+                            : { ...p, [field]: value }
+                        : p
                 ),
             };
             return newArr;
@@ -443,7 +496,9 @@ function ProductForm() {
                 ...newArr[colorIdx],
                 products: newArr[colorIdx].products.map((p, idx) =>
                     (checkedRows[colorIdx] || []).includes(idx)
-                        ? { ...p, [type]: value }
+                        ? type === "price"
+                            ? { ...p, [type]: parseCurrencyVND(value) }
+                            : { ...p, [type]: value }
                         : p
                 ),
             };
@@ -585,11 +640,17 @@ function ProductForm() {
             return;
         }
 
+        const existedMaChiTietList = await fetchAllMaSanPhamChiTiet();
         const chiTietSanPhams = [];
         const chiTietSanPhamIndexMap = [];
-
         productVariants.forEach((variant, colorIdx) => {
             variant.products.forEach((prod, prodIdx) => {
+                const maChiTiet = getUniqueMaSanPhamChiTiet(
+                    productCode,
+                    variant.colorId,
+                    prod.sizeId,
+                    existedMaChiTietList
+                );
                 chiTietSanPhams.push({
                     idSanPham: createdSanPhamId,
                     idChatLieu: selectedMaterial,
@@ -601,10 +662,7 @@ function ProductForm() {
                     gia: Number(prod.price),
                     soLuong: Number(prod.qty),
                     trongLuong: Number(prod.weight),
-                    maSanPhamChiTiet: `${productCode}-${findId(
-                        colorOptions,
-                        variant.colorId
-                    )}-${findId(sizeOptions, prod.sizeId)}`,
+                    maSanPhamChiTiet: maChiTiet,
                     moTa: "",
                     trangThai: 1,
                 });
@@ -665,7 +723,7 @@ function ProductForm() {
         setAddLoading(false);
     };
 
-    const handleOpenAddProductModal = () => {
+    const handleOpenAddProductModal = async () => {
         setShowAddProductModal(true);
         setNewProductName("");
         setNewProductCategory(selectedCategory ? selectedCategory : "");
@@ -674,6 +732,8 @@ function ProductForm() {
         setAddProductError("");
         setAddProductSuccess("");
         setAddProductValidate({});
+        const code = await generateMaSanPhamUnique();
+        setProductCode(code);
     };
 
     const handleAddNewProduct = async () => {
@@ -691,7 +751,7 @@ function ProductForm() {
             return;
         }
         const productData = {
-            maSanPham: generateProductCode(),
+            maSanPham: await generateMaSanPhamUnique(),
             tenSanPham: newProductName,
             idDanhMuc: newProductCategory,
             xuatXu: newProductCountry,
@@ -1095,13 +1155,13 @@ function ProductForm() {
                                                         <Input
                                                             id={`quick-price-${colorIdx}`}
                                                             type="text"
-                                                            value={quickPrice[colorIdx] ?? ""}
+                                                            value={formatCurrencyVND(quickPrice[colorIdx])}
                                                             onChange={e =>
                                                                 handleQuickFill(colorIdx, "price", e.target.value)
                                                             }
                                                             size="small"
                                                             sx={{ width: 110, background: "#fff" }}
-                                                            placeholder="VD: 150000"
+                                                            placeholder="VD: 150.000đ"
                                                         />
                                                     </FormControl>
                                                 </Box>
@@ -1162,9 +1222,6 @@ function ProductForm() {
                                                 ),
                                                 weight: (
                                                     <FormControl sx={{ minWidth: 120 }}>
-                                                        <label htmlFor={`weight-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                            Trọng lượng (g)
-                                                        </label>
                                                         <Input
                                                             id={`weight-${colorIdx}-${prodIdx}`}
                                                             type="text"
@@ -1185,9 +1242,6 @@ function ProductForm() {
                                                 ),
                                                 qty: (
                                                     <FormControl sx={{ minWidth: 120 }}>
-                                                        <label htmlFor={`qty-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                            Số lượng
-                                                        </label>
                                                         <Input
                                                             id={`qty-${colorIdx}-${prodIdx}`}
                                                             type="text"
@@ -1208,13 +1262,10 @@ function ProductForm() {
                                                 ),
                                                 price: (
                                                     <FormControl sx={{ minWidth: 120 }}>
-                                                        <label htmlFor={`price-${colorIdx}-${prodIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
-                                                            Giá (₫)
-                                                        </label>
                                                         <Input
                                                             id={`price-${colorIdx}-${prodIdx}`}
                                                             type="text"
-                                                            value={String(p.price ?? "")}
+                                                            value={formatCurrencyVND(p.price)}
                                                             onChange={(e) =>
                                                                 handleVariantValueChange(
                                                                     colorIdx,
@@ -1225,7 +1276,7 @@ function ProductForm() {
                                                             }
                                                             size="small"
                                                             sx={{ width: 110, background: "#fff" }}
-                                                            placeholder="VD: 150000"
+                                                            placeholder="VD: 150.000đ"
                                                         />
                                                     </FormControl>
                                                 ),

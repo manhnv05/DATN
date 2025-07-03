@@ -19,7 +19,7 @@
     "@mui/material": "^5.17.1",
     "@mui/styled-engine": "5.12.3",
     "@mui/system": "^5.17.1",
-    "@mui/x-date-pickers": "^6.18.0",
+    "@mui/x-date-pickers": "^5.0.19",
     "@testing-library/jest-dom": "5.16.5",
     "@testing-library/react": "14.0.0",
     "@testing-library/user-event": "14.4.3",

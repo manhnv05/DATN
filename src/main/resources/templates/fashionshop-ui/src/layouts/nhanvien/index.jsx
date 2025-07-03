@@ -48,15 +48,15 @@ function getGenderLabel(gender) {
 }
 
 const STATUS_OPTIONS = [
-    { value: 1, label: "Đang làm" },
-    { value: 0, label: "Nghỉ" },
+    { value: 1, label: "Đang hoạt động" },
+    { value: 0, label: "Ngừng hoạt động" },
 ];
 
 function getStatusLabel(status, statusOptions) {
     const found = statusOptions.find(s => s.value === status || s.label === status);
     if (found) return found.label;
-    if (status === 1 || status === "Đang làm") return "Đang làm";
-    return "Nghỉ";
+    if (status === 1 || status === "Đang hoạt động") return "Đang hoạt động";
+    return "Ngừng hoạt động";
 }
 
 function getPaginationArray(currentPage, totalPages) {
@@ -70,6 +70,24 @@ function getPaginationArray(currentPage, totalPages) {
         return [0, 1, "...", totalPages - 2, totalPages - 1];
     }
     return [0, 1, "...", currentPage, "...", totalPages - 2, totalPages - 1];
+}
+
+function getRoleName(vaiTro, roleOptions) {
+    if (vaiTro && typeof vaiTro === "object" && vaiTro.ten) {
+        return vaiTro.ten;
+    }
+    if (typeof vaiTro === "string") {
+        return vaiTro;
+    }
+    if (vaiTro) {
+        const found = roleOptions.find(function (role) {
+            return role.id === vaiTro || String(role.id) === String(vaiTro);
+        });
+        if (found) {
+            return found.ten;
+        }
+    }
+    return "Chưa xác định";
 }
 
 function NhanVienTable() {
@@ -97,7 +115,6 @@ function NhanVienTable() {
     const [editForm, setEditForm] = useState({
         maNhanVien: "",
         hoVaTen: "",
-        chucVu: "",
         soDienThoai: "",
         gioiTinh: "",
         tinhThanhPho: "",
@@ -107,7 +124,6 @@ function NhanVienTable() {
         hinhAnh: "",
         canCuocCongDan: "",
         email: "",
-        tenTaiKhoan: "",
         vaiTro: "",
         ngaySinh: "",
         matKhau: "",
@@ -127,7 +143,6 @@ function NhanVienTable() {
 
     useEffect(() => {
         fetchEmployees();
-        // eslint-disable-next-line
     }, [search, genderFilter, statusFilter, rowsPerPage, currentPage]);
 
     async function fetchEmployees() {
@@ -182,7 +197,6 @@ function NhanVienTable() {
         }
         setEditForm(f => ({ ...f, quanHuyen: "", xaPhuong: "" }));
         setWards([]);
-        // eslint-disable-next-line
     }, [editForm.tinhThanhPho]);
 
     useEffect(() => {
@@ -194,7 +208,6 @@ function NhanVienTable() {
             setWards([]);
         }
         setEditForm(f => ({ ...f, xaPhuong: "" }));
-        // eslint-disable-next-line
     }, [editForm.quanHuyen]);
 
     function handlePageChange(newPage) {
@@ -248,7 +261,6 @@ function NhanVienTable() {
             setEditForm({
                 maNhanVien: detail.maNhanVien || "",
                 hoVaTen: detail.hoVaTen || "",
-                chucVu: detail.chucVu || "",
                 soDienThoai: detail.soDienThoai || detail.sdt || "",
                 gioiTinh: detail.gioiTinh || "",
                 tinhThanhPho: detail.tinhThanhPho || tinh || "",
@@ -258,7 +270,6 @@ function NhanVienTable() {
                 hinhAnh: detail.hinhAnh || detail.anh || "",
                 canCuocCongDan: detail.canCuocCongDan || "",
                 email: detail.email || "",
-                tenTaiKhoan: detail.tenTaiKhoan || "",
                 vaiTro: detail.vaiTro && detail.vaiTro.id ? detail.vaiTro.id : "",
                 ngaySinh: detail.ngaySinh || "",
                 matKhau: detail.matKhau || "",
@@ -269,7 +280,6 @@ function NhanVienTable() {
             setEditForm({
                 maNhanVien: employee.maNhanVien || "",
                 hoVaTen: employee.hoVaTen || employee.hoTen || "",
-                chucVu: employee.chucVu || "",
                 soDienThoai: employee.soDienThoai || employee.sdt || "",
                 gioiTinh: employee.gioiTinh || "",
                 tinhThanhPho: employee.tinhThanhPho || "",
@@ -279,7 +289,6 @@ function NhanVienTable() {
                 hinhAnh: employee.hinhAnh || employee.anh || "",
                 canCuocCongDan: employee.canCuocCongDan || "",
                 email: employee.email || "",
-                tenTaiKhoan: employee.tenTaiKhoan || "",
                 vaiTro: employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : "",
                 ngaySinh: employee.ngaySinh || "",
                 matKhau: employee.matKhau || "",
@@ -296,7 +305,6 @@ function NhanVienTable() {
         setEditForm({
             maNhanVien: "",
             hoVaTen: "",
-            chucVu: "",
             soDienThoai: "",
             gioiTinh: "",
             tinhThanhPho: "",
@@ -306,7 +314,6 @@ function NhanVienTable() {
             hinhAnh: "",
             canCuocCongDan: "",
             email: "",
-            tenTaiKhoan: "",
             vaiTro: "",
             ngaySinh: "",
             matKhau: "",
@@ -352,7 +359,6 @@ function NhanVienTable() {
                 {
                     maNhanVien: editForm.maNhanVien,
                     hoVaTen: editForm.hoVaTen,
-                    chucVu: editForm.chucVu,
                     soDienThoai: editForm.soDienThoai,
                     gioiTinh: editForm.gioiTinh,
                     tinhThanhPho: editForm.tinhThanhPho,
@@ -362,7 +368,6 @@ function NhanVienTable() {
                     hinhAnh: editForm.hinhAnh,
                     canCuocCongDan: editForm.canCuocCongDan,
                     email: editForm.email,
-                    tenTaiKhoan: editForm.tenTaiKhoan,
                     vaiTro: editForm.vaiTro,
                     ngaySinh: editForm.ngaySinh,
                     matKhau: editForm.matKhau,
@@ -443,10 +448,11 @@ function NhanVienTable() {
             ),
         },
         {
-            name: "chucVu",
+            name: "vaiTro",
             label: "Chức vụ",
             align: "center",
             width: "110px",
+            render: (value, row) => getRoleName(row.vaiTro, roleOptions),
         },
         {
             name: "soDienThoai",
@@ -492,8 +498,8 @@ function NhanVienTable() {
                         display: "inline-block",
                     }}
                 >
-          {getStatusLabel(value, statusOptions)}
-        </span>
+                    {getStatusLabel(value, statusOptions)}
+                </span>
             ),
         },
         {
@@ -537,7 +543,6 @@ function NhanVienTable() {
         id: item.id,
         maNhanVien: item.maNhanVien,
         hoVaTen: item.hoVaTen,
-        chucVu: item.chucVu,
         soDienThoai: item.soDienThoai || item.sdt || "",
         gioiTinh: item.gioiTinh,
         tinhThanhPho: item.tinhThanhPho || "",
@@ -545,6 +550,7 @@ function NhanVienTable() {
         xaPhuong: item.xaPhuong || "",
         diaChi: item.diaChi || "",
         trangThai: item.trangThai,
+        vaiTro: item.vaiTro,
         hinhAnh: item.hinhAnh || item.anh || "",
         actions: "",
     }));
@@ -653,11 +659,12 @@ function NhanVienTable() {
                                             let address = (item.diaChi && item.diaChi.trim() !== "")
                                                 ? item.diaChi
                                                 : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
+                                            let roleName = getRoleName(item.vaiTro, roleOptions);
                                             return [
                                                 currentPage * rowsPerPage + idx + 1,
                                                 item.maNhanVien,
                                                 item.hoVaTen,
-                                                item.chucVu,
+                                                roleName,
                                                 item.soDienThoai || item.sdt,
                                                 getGenderLabel(item.gioiTinh),
                                                 address,
@@ -710,11 +717,12 @@ function NhanVienTable() {
                                         let address = (item.diaChi && item.diaChi.trim() !== "")
                                             ? item.diaChi
                                             : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
+                                        let roleName = getRoleName(item.vaiTro, roleOptions);
                                         return [
                                             currentPage * rowsPerPage + idx + 1,
                                             item.maNhanVien,
                                             item.hoVaTen,
-                                            item.chucVu,
+                                            roleName,
                                             item.soDienThoai || item.sdt,
                                             getGenderLabel(item.gioiTinh),
                                             address,
@@ -891,24 +899,6 @@ function NhanVienTable() {
                                 placeholder="Nhập họ tên nhân viên"
                                 sx={{ background: "#fff", borderRadius: 2 }}
                             />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Chức vụ</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="chucVu"
-                                    value={editForm.chucVu}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                >
-                                    <MenuItem value=""><em>Chọn chức vụ</em></MenuItem>
-                                    <MenuItem value="Nhân viên bán hàng">Nhân viên bán hàng</MenuItem>
-                                    <MenuItem value="Quản lý">Quản lý</MenuItem>
-                                    <MenuItem value="Kế toán">Kế toán</MenuItem>
-                                    <MenuItem value="Thủ kho">Thủ kho</MenuItem>
-                                    <MenuItem value="Thu ngân">Thu ngân</MenuItem>
-                                </Select>
-                            </FormControl>
                         </Box>
                         <Box>
                             <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Số điện thoại</Typography>

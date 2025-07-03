@@ -117,13 +117,16 @@ public class ChiTietSanPhamService {
         return list.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    // Thêm phương thức lấy chi tiết sản phẩm theo mã (cho QR code)
     public ChiTietSanPhamDTO findByMaSanPhamChiTiet(String maSanPhamChiTiet) {
         ChiTietSanPham entity = chiTietSanPhamRepository.findByMaSanPhamChiTiet(maSanPhamChiTiet);
         if (entity == null) {
             throw new NoSuchElementException("Không tìm thấy mã sản phẩm chi tiết: " + maSanPhamChiTiet);
         }
         return toDTO(entity);
+    }
+
+    public List<String> getAllMaChiTietSanPham() {
+        return chiTietSanPhamRepository.findAllMaChiTietSanPham();
     }
 
     private ChiTietSanPhamDTO toDTO(ChiTietSanPham original) {

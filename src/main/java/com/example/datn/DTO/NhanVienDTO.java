@@ -30,11 +30,7 @@ public class NhanVienDTO{
 
     private String diaChi;
 
-    private String tenTaiKhoan;
-
     private String matKhau;
-
-    private String chucVu;
 
     private Integer trangThai;
 

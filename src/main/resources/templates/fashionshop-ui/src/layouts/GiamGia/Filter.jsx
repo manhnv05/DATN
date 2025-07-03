@@ -8,13 +8,17 @@ import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import SoftTypography from "components/SoftTypography";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { FaPlus, FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
+import Box from "@mui/material/Box";
 import "flatpickr/dist/themes/airbnb.css";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { Controller } from "react-hook-form";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 export function debounce(func, timeout = 500) {
     let timer;
@@ -28,6 +32,8 @@ export function debounce(func, timeout = 500) {
 
 const Filter = ({ filter = {}, setFilter }) => {
     const navigate = useNavigate();
+    const [valueBatDau, setValueBatDau] = useState(null)
+    const [valueKetThuc, setValueKetThuc] = useState(null)
     const debounceMapRef = useRef({});
     const searchValue = filter.tenDotGiamGia || "";
     const selectedStatus = STATUS_LIST.find((s) => s.id === filter.trangThai) || null;
@@ -43,23 +49,33 @@ const Filter = ({ filter = {}, setFilter }) => {
         return debounceMapRef.current[key];
     };
 
-    const handleDateChange = (dates) => {
-        const [start, end] = dates || [];
+    // const handleDateChange = (dates) => {
+    //     const [start, end] = dates || [];
+    //     setFilter((pre) => ({
+    //         ...pre,
+    //         ngayBatDau: start,
+    //         ngayKetThuc: end,
+    //     }));
+    // };
+
+    useEffect(() => {
         setFilter((pre) => ({
             ...pre,
-            ngayBatDau: start,
-            ngayKetThuc: end,
+            ngayBatDau: valueBatDau,
+            ngayKetThuc: valueKetThuc,
         }));
+    }, [valueBatDau, valueKetThuc])
+
+    const handleChangeBatDau = (newValue) => {
+        setValueBatDau(newValue);
+    };
+    const handleChangeKetThuc = (newValue) => {
+        setValueKetThuc(newValue);
     };
 
     const handleClearFilter = () => {
-        setFilter((pre) => ({
-            ...pre,
-            tenDotGiamGia: "",
-            trangThai: undefined,
-            ngayBatDau: undefined,
-            ngayKetThuc: undefined,
-        }));
+        setValueBatDau(null)
+        setValueKetThuc(null)
     };
 
     return (
@@ -103,23 +119,72 @@ const Filter = ({ filter = {}, setFilter }) => {
                         )}
                     />
                 </Grid>
-                <Grid item xs={3}>
-                    <Flatpickr
-                        key={dateRange.length === 0 ? "empty" : "filled"}
-                        options={{ mode: "range", dateFormat: "Y-m-d" }}
-                        value={dateRange}
-                        onChange={handleDateChange}
-                        render={(props, ref) => (
-                            <TextField
-                                {...props}
-                                inputRef={ref}
-                                placeholder="Tìm theo khoảng thời gian"
-                                fullWidth
-                                sx={{ background: "#f5f6fa", borderRadius: 2, p: 0.5, color: "#222" }}
+                <Box display="flex" flexDirection="row" gap={2} mb={2}>
+                    <Box sx={{ flex: 1, maxWidth: 220 }}>
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DateTimePicker
+                                label="Ngày bắt đầu"
+                                value={valueBatDau}
+                                onChange={handleChangeBatDau}
+                                renderInput={(props) => (
+                                    <TextField
+                                        {...props}
+                                        fullWidth
+                                        sx={{
+                                            "& .MuiInputBase-root": {
+                                                fontWeight: 700,
+                                                color: "#1769aa",
+                                                background: "#f2f6fa",
+                                                borderRadius: 2,
+                                                height: "56px",
+                                                fontSize: "16px",
+                                            },
+                                            "& .MuiInputBase-input": {
+                                                padding: "16.5px 14px",
+                                            },
+                                            "& .MuiOutlinedInput-notchedOutline": {
+                                                border: "none",
+                                            },
+                                        }}
+                                    />
+                                )}
                             />
-                        )}
-                    />
-                </Grid>
+                        </LocalizationProvider>
+                    </Box>
+                </Box>
+                <Box display="flex" flexDirection="row" gap={2} mb={2}>
+                    <Box sx={{ flex: 1, maxWidth: 220 }}>
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DateTimePicker
+                                label="Ngày kết thúc"
+                                value={valueKetThuc}
+                                onChange={handleChangeKetThuc}
+                                renderInput={(props) => (
+                                    <TextField
+                                        {...props}
+                                        fullWidth
+                                        sx={{
+                                            "& .MuiInputBase-root": {
+                                                fontWeight: 700,
+                                                color: "#1769aa",
+                                                background: "#f2f6fa",
+                                                borderRadius: 2,
+                                                height: "56px",
+                                                fontSize: "16px",
+                                            },
+                                            "& .MuiInputBase-input": {
+                                                padding: "16.5px 14px",
+                                            },
+                                            "& .MuiOutlinedInput-notchedOutline": {
+                                                border: "none",
+                                            },
+                                        }}
+                                    />
+                                )}
+                            />
+                        </LocalizationProvider>
+                    </Box>
+                </Box>
                 <Grid
                     item
                     xs={3}
@@ -134,7 +199,11 @@ const Filter = ({ filter = {}, setFilter }) => {
                     <IconButton
                         size="small"
                         onClick={handleClearFilter}
-                        sx={{ color: "#4acbf2" }}
+                        sx={{
+                            color: "#4acbf2",
+                            marginBottom: 2,
+                            marginRight: 6
+                        }}
                         title="Xóa bộ lọc"
                     >
                         <FaTimes />
@@ -149,6 +218,7 @@ const Filter = ({ filter = {}, setFilter }) => {
                             borderRadius: 2,
                             textTransform: "none",
                             fontWeight: 400,
+                            marginBottom: 2,
                             color: "#49a3f1",
                             borderColor: "#49a3f1",
                             boxShadow: "none",
