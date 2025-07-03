@@ -16,11 +16,6 @@ import {
 import PropTypes from 'prop-types';
 
 const InHoaDon = React.forwardRef(({ orderData }, ref) => {
-    // Log để debug khi nào InHoaDon được render và nhận dữ liệu
-    console.log('InHoaDon component rendering. Received orderData:', orderData);
-
-    // === Đảm bảo dữ liệu tồn tại trước khi render chi tiết ===
-    // Nếu orderData là null/undefined hoặc không có products, trả về thông báo
     if (!orderData || !orderData.products || orderData.products.length === 0) {
         console.log("InHoaDon: Không có dữ liệu hóa đơn hoặc danh sách sản phẩm rỗng.");
         return (

@@ -60,8 +60,7 @@ const OrderDetailPage = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const componentRef = useRef();
-  console.log('Kiểm tra componentRef (khởi tạo):', componentRef);
-  console.log('Giá trị khởi tạo của componentRef.current (khởi tạo):', componentRef.current); // <-- VÀ DÒNG NÀY
+ 
 
 
   // === HÀM XỬ LÝ ===
@@ -222,6 +221,8 @@ const OrderDetailPage = () => {
       orderData && (orderData.status === "Hoàn thành" || orderData.status === "Đã hủy");
   const canUpdateInfo =
       orderData && (orderData.status === "Tạo đơn hàng" || orderData.status === "Chờ xác nhận");
+  
+
   const initialUpdateData = orderData
       ? {
         tenNguoiNhan: orderData.customerName,
@@ -331,6 +332,8 @@ const OrderDetailPage = () => {
                         )}
                       </SoftButton>
                   )}
+                  {
+                 !isCancelButtonDisabled && (
                   <SoftButton
                       variant="outlined"
                       color="error"
@@ -351,6 +354,7 @@ const OrderDetailPage = () => {
                         "Hủy đơn"
                     )}
                   </SoftButton>
+  )}
                   <SoftButton
                       variant="outlined"
                       size="medium"

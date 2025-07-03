@@ -5,8 +5,7 @@ import PropTypes from "prop-types";
 import { useState, useEffect, useCallback } from "react";
 const BASE_SERVER_URL = "http://localhost:8080/";
 const ProductList = ({ orderId }) => {
-    console.log(orderId)
-    const [orderData,setOrderData ] = useState(null); // Lưu toàn bộ phản hồi
+    const [orderData,setOrderData ] = useState(null); 
     const [productsInOrder, setProductsInOrder] = useState([]);
     useEffect(() => {
 

@@ -13,7 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 @Table(name = "chat_lieu")
 public class ChatLieu {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
