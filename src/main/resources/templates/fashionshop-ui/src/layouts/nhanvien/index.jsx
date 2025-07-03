@@ -32,6 +32,7 @@ import Notifications from "layouts/Notifications";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 
 const genderOptions = ["Tất cả", "Nam", "Nữ", "Khác"];
 const rowsPerPageOptions = [5, 10, 20];
@@ -40,6 +41,7 @@ const provinceApiUrl = "https://provinces.open-api.vn/api/?depth=1";
 const districtApiUrl = code => `https://provinces.open-api.vn/api/p/${code}?depth=2`;
 const wardApiUrl = code => `https://provinces.open-api.vn/api/d/${code}?depth=2`;
 const roleListAPI = "http://localhost:8080/vaiTro/list";
+const roleAddAPI = "http://localhost:8080/vaiTro";
 
 function getGenderLabel(gender) {
     if (gender === "Nam" || gender === 1) return "Nam";
@@ -139,7 +141,20 @@ function NhanVienTable() {
         message: "",
         severity: "info",
     });
+    const [openRoleDialog, setOpenRoleDialog] = useState(false);
+    const [roleDialogLoading, setRoleDialogLoading] = useState(false);
+    const [roleDialogValue, setRoleDialogValue] = useState({
+        ten: "",
+        moTaVaiTro: "",
+        id: null,
+    });
     const navigate = useNavigate();
+
+    function fetchRoles() {
+        axios.get(roleListAPI).then(function (response) {
+            setRoleOptions(Array.isArray(response.data) ? response.data : []);
+        });
+    }
 
     useEffect(() => {
         fetchEmployees();
@@ -184,7 +199,7 @@ function NhanVienTable() {
 
     useEffect(() => {
         axios.get(provinceApiUrl).then(res => setProvinces(res.data || []));
-        axios.get(roleListAPI).then(res => setRoleOptions(Array.isArray(res.data) ? res.data : []));
+        fetchRoles();
     }, []);
 
     useEffect(() => {
@@ -427,6 +442,35 @@ function NhanVienTable() {
         setNotification({ ...notification, open: false });
     }
 
+    function handleOpenRoleDialog() {
+        setRoleDialogValue({ ten: "", moTaVaiTro: "", id: null });
+        setOpenRoleDialog(true);
+    }
+
+    function handleCloseRoleDialog() {
+        setOpenRoleDialog(false);
+        setRoleDialogLoading(false);
+        setRoleDialogValue({ ten: "", moTaVaiTro: "", id: null });
+    }
+
+    async function handleSaveRole() {
+        setRoleDialogLoading(true);
+        try {
+            await axios.post(roleAddAPI, {
+                ten: roleDialogValue.ten,
+                moTaVaiTro: roleDialogValue.moTaVaiTro,
+            });
+            fetchRoles();
+            setTimeout(function () {
+                setRoleDialogValue({ ten: "", moTaVaiTro: "", id: null });
+            }, 600);
+            handleCloseRoleDialog();
+        } catch {
+            setRoleDialogLoading(false);
+            alert("Có lỗi khi thêm vai trò.");
+        }
+    }
+
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         {
@@ -449,7 +493,19 @@ function NhanVienTable() {
         },
         {
             name: "vaiTro",
-            label: "Chức vụ",
+            label: (
+                <Box display="flex" alignItems="center">
+                    Chức vụ
+                    <IconButton
+                        size="small"
+                        sx={{ color: "#1976d2", ml: 1 }}
+                        title="Thêm vai trò mới"
+                        onClick={handleOpenRoleDialog}
+                    >
+                        <AddCircleOutlineIcon />
+                    </IconButton>
+                </Box>
+            ),
             align: "center",
             width: "110px",
             render: (value, row) => getRoleName(row.vaiTro, roleOptions),
@@ -1092,6 +1148,63 @@ function NhanVienTable() {
                     </Button>
                     <Button onClick={handleDeleteConfirm} disabled={deleteLoading} variant="contained" color="error" sx={{ borderRadius: 2, minWidth: 110, fontWeight: 700 }} startIcon={deleteLoading ? <CircularProgress size={18} color="inherit" /> : null}>
                         Xóa
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog open={openRoleDialog} onClose={handleCloseRoleDialog} maxWidth="xs" fullWidth>
+                <DialogTitle sx={{ fontWeight: 700, color: "#1769aa" }}>
+                    Thêm vai trò mới
+                </DialogTitle>
+                <DialogContent>
+                    <Box display="flex" flexDirection="column" gap={2} py={1}>
+                        <TextField
+                            label="Tên vai trò"
+                            value={roleDialogValue.ten}
+                            onChange={event =>
+                                setRoleDialogValue(prev => ({
+                                    ...prev,
+                                    ten: event.target.value,
+                                }))
+                            }
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            label="Mô tả vai trò"
+                            value={roleDialogValue.moTaVaiTro}
+                            onChange={event =>
+                                setRoleDialogValue(prev => ({
+                                    ...prev,
+                                    moTaVaiTro: event.target.value,
+                                }))
+                            }
+                            fullWidth
+                            size="small"
+                            multiline
+                            minRows={2}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        onClick={handleCloseRoleDialog}
+                        color="inherit"
+                        variant="outlined"
+                        sx={{ borderRadius: 2, fontWeight: 600 }}
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        onClick={handleSaveRole}
+                        color="info"
+                        variant="contained"
+                        sx={{ borderRadius: 2, fontWeight: 700, minWidth: 120 }}
+                        disabled={roleDialogLoading || !roleDialogValue.ten}
+                        startIcon={
+                            roleDialogLoading ? <CircularProgress size={18} color="inherit" /> : null
+                        }
+                    >
+                        Thêm mới
                     </Button>
                 </DialogActions>
             </Dialog>

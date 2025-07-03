@@ -6,7 +6,6 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-
 import SoftTypography from "components/SoftTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
@@ -20,14 +19,9 @@ import SoftBox from "components/SoftBox";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 import "flatpickr/dist/themes/airbnb.css";
-import useNotify from "./hooks/useNotify";
 import instanceAPIMain from "../../configapi";
-import { toast } from "react-toastify";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import Box from "@mui/material/Box";
-import dayjs from "dayjs";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export function debounce(func, timeout = 500) {
     let timer;
@@ -91,14 +85,12 @@ const AddDiscountEventPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const id = searchParams.get("id");
-    const { notify, Notification } = useNotify();
 
     const {
         reset,
         handleSubmit,
         control,
         watch,
-        formState: { errors },
     } = useForm({
         defaultValues: INIT,
     });
@@ -113,8 +105,6 @@ const AddDiscountEventPage = () => {
                         reset({
                             tenDotGiamGia: payload.tenDotGiamGia,
                             phanTramGiamGia: payload.phanTramGiamGia,
-                            ngayBatDau:payload.ngayBatDau,
-                            ngayKetThuc:payload.ngayKetThuc,
                             trangThai: payload.trangThai,
                             dateRange: [payload.ngayBatDau, payload.ngayKetThuc],
                         });
@@ -149,6 +139,8 @@ const AddDiscountEventPage = () => {
     const [selectedProducts, setSelectedProducts] = useState([]);
     const [details, setDetails] = useState([]);
     const [selectedDetails, setSelectedDetails] = useState([]);
+    const [eventId, setEventId] = useState(id);
+
     const preDetailMap = React.useMemo(() => {
         return details.reduce((acc, item) => {
             if (!acc[item.idSanPham]) acc[item.idSanPham] = [];
@@ -204,19 +196,23 @@ const AddDiscountEventPage = () => {
     }, []);
 
     const handleApply = async () => {
-        if (!eventId || selectedDetails.length === 0) return;
+        if (!eventId || selectedDetails.length === 0) {
+            toast.error("Vui lòng chọn sản phẩm chi tiết để áp dụng!");
+            return;
+        }
         try {
             await applyDotGiamGia({
                 idDotGiamGia: eventId,
                 idSanPhamChiTietList: selectedDetails,
             });
-            notify("Áp dụng thành công", "success");
+            toast.success("Áp dụng thành công");
             navigate("/discount-event");
         } catch (e) {
             console.error(e);
-            notify("Áp dụng thất bại", "error");
+            toast.error("Áp dụng thất bại");
         }
     };
+
     const debounceRef = useRef(
         debounce(async (value) => {
             if (!value) {
@@ -325,28 +321,45 @@ const AddDiscountEventPage = () => {
         [selectedDetails, discountValue]
     );
 
-    const [eventId, setEventId] = useState(id);
-
     const onSubmit = async (data) => {
+        if (!data.tenDotGiamGia || !data.tenDotGiamGia.trim()) {
+            toast.error("Vui lòng nhập tên đợt giảm giá");
+            return;
+        }
+        if (!data.phanTramGiamGia || String(data.phanTramGiamGia).trim() === "") {
+            toast.error("Vui lòng nhập phần trăm giảm giá");
+            return;
+        }
+        if (Number(data.phanTramGiamGia) <= 0) {
+            toast.error("Phần trăm giảm giá phải lớn hơn 0");
+            return;
+        }
+        if (Number(data.phanTramGiamGia) > 100) {
+            toast.error("Phần trăm giảm giá phải nhỏ hơn hoặc bằng 100");
+            return;
+        }
+        if (!data.dateRange || data.dateRange.length !== 2) {
+            toast.error("Vui lòng chọn khoảng thời gian áp dụng");
+            return;
+        }
         try {
             const [start, end] = data.dateRange || [];
             const payload = {
                 tenDotGiamGia: data.tenDotGiamGia,
                 phanTramGiamGia: Number(data.phanTramGiamGia),
-                ngayBatDau: dayjs(data.ngayBatDau).format('YYYY-MM-DDTHH:mm:ss'),
-                ngayKetThuc: dayjs(data.ngayKetThuc).format('YYYY-MM-DDTHH:mm:ss'),
+                ngayBatDau: start,
+                ngayKetThuc: end,
                 trangThai: data.trangThai,
             };
-            console.log(payload)
             const res = eventId
                 ? await updateDotGiamGia(eventId, { ...payload, id: eventId })
                 : await createDotGiamGia(payload);
             const idDotGiamGia = eventId || res.data;
             setEventId(idDotGiamGia);
-            eventId ? toast.success("Cập nhật thành công") : toast.success("Thêm thành công")
+            toast.success(eventId ? "Cập nhật thành công" : "Thêm thành công");
         } catch (e) {
             console.error(e);
-            eventId ? toast.success("Cập nhật không thành công") : toast.error("Thêm không thành công")
+            toast.error("Thao tác thất bại");
         }
     };
 
@@ -361,8 +374,18 @@ const AddDiscountEventPage = () => {
 
     return (
         <DashboardLayout>
+            <ToastContainer
+                position="top-right"
+                autoClose={2500}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <DashboardNavbar />
-            {Notification}
             <Stack direction="row" justifyContent="flex-end">
                 <Button
                     startIcon={<FaArrowLeft />}
@@ -376,183 +399,71 @@ const AddDiscountEventPage = () => {
             <Stack direction="row" spacing={3} mb={3}>
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftTypography sx={{ fontWeight: 500 }}>Chỉnh sửa đợt giảm giá</SoftTypography>
-
                     <Stack
                         spacing={1}
                         component="form"
                         onSubmit={handleSubmit(onSubmit)}
-                        sx={{
-                            width: 400,
-                        }}
+                        sx={{ width: 400 }}
                     >
                         <Stack>
-                            <InputLabel
-                                sx={{
-                                    fontWeight: 400,
-                                    fontSize: 14,
-                                    "& .MuiFormLabel-asterisk": { color: "#CF202F" },
-                                }}
-                                required
-                            >
-                                Tên
-                            </InputLabel>
+                            <InputLabel required>Tên đợt giảm giá</InputLabel>
                             <Controller
                                 name="tenDotGiamGia"
                                 control={control}
-                                rules={{
-                                    required: "Vui lòng nhập tên đợt giảm giá",
-                                    maxLength: {
-                                        value: 100,
-                                        message: "Tên đợt giảm giá không vượt quá 100 ký tự",
-                                    },
-                                }}
                                 render={({ field }) => (
                                     <TextField
                                         id="tenDotGiamGia"
                                         {...field}
-                                        error={!!errors.tenDotGiamGia}
-                                        helperText={errors.tenDotGiamGia?.message}
+                                        placeholder="Nhập tên đợt giảm giá"
                                     />
                                 )}
                             />
                         </Stack>
                         <Stack>
-                            <InputLabel
-                                sx={{
-                                    fontWeight: 400,
-                                    fontSize: 14,
-                                    "& .MuiFormLabel-asterisk": { color: "#CF202F" },
-                                }}
-                                required
-                            >
-                                Phần trăm giảm giá
-                            </InputLabel>
+                            <InputLabel required>Phần trăm giảm giá</InputLabel>
                             <Controller
                                 name="phanTramGiamGia"
                                 control={control}
-                                rules={{
-                                    required: "Vui lòng nhập phần trăm giảm giá",
-                                    min: { value: 1, message: "Phần trăm giảm giá phải lớn hơn 0" },
-                                    max: {
-                                        value: 100,
-                                        message: "Phần trăm giảm giá phải nhỏ hơn hoặc bằng 100",
-                                    },
-                                }}
                                 render={({ field }) => (
                                     <TextField
                                         type="number"
                                         id="phanTramGiamGia"
                                         {...field}
-                                        error={!!errors.phanTramGiamGia}
-                                        helperText={errors.phanTramGiamGia?.message}
+                                        placeholder="Nhập phần trăm giảm giá"
                                     />
                                 )}
                             />
                         </Stack>
                         <Stack>
-                            <InputLabel
-                                required
-                                sx={{
-                                    fontWeight: 400,
-                                    fontSize: 14,
-                                    "& .MuiFormLabel-asterisk": { color: "#CF202F" },
-                                }}
-                            >
-                                Thời gian áp dụng
-                            </InputLabel>
-                            <Box display="flex" flexDirection="row" gap={2} mb={2} sx={{ marginTop: 1 }}>
-                                <Box sx={{ flex: 1, maxWidth: 190 }}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <Controller
-                                            name="ngayBatDau"
-                                            control={control}
-                                            defaultValue={null}
-                                            render={({ field }) => (
-                                                <DateTimePicker
-                                                    label="Ngày bắt đầu"
-                                                    renderInput={(props) => (
-                                                        <TextField
-                                                            {...props}
-                                                            fullWidth
-                                                            sx={{
-                                                                '& .MuiInputBase-root': {
-                                                                    fontWeight: 700,
-                                                                    color: "#1769aa",
-                                                                    background: "#f2f6fa",
-                                                                    borderRadius: 2,
-                                                                    height: '56px',
-                                                                    fontSize: '16px',
-                                                                },
-                                                                '& .MuiInputBase-input': {
-                                                                    padding: '16.5px 14px',
-                                                                },
-                                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                                    border: 'none',
-                                                                }
-                                                            }}
-                                                        />
-                                                    )}
-                                                    value={field.value}
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </LocalizationProvider>
-                                </Box>
-                                <Box sx={{ flex: 1, maxWidth: 190 }}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <Controller
-                                            name="ngayKetThuc"
-                                            control={control}
-                                            defaultValue={null}
-                                            render={({ field }) => (
-                                                <DateTimePicker
-                                                    label="Ngày kết thúc"
-                                                    renderInput={(props) => (
-                                                        <TextField
-                                                            {...props}
-                                                            fullWidth
-                                                            sx={{
-                                                                '& .MuiInputBase-root': {
-                                                                    fontWeight: 700,
-                                                                    color: "#1769aa",
-                                                                    background: "#f2f6fa",
-                                                                    borderRadius: 2,
-                                                                    height: '56px',
-                                                                    fontSize: '16px',
-                                                                },
-                                                                '& .MuiInputBase-input': {
-                                                                    padding: '16.5px 14px',
-                                                                },
-                                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                                    border: 'none',
-                                                                }
-                                                            }}
-                                                        />
-                                                    )}
-                                                    value={field.value}
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </LocalizationProvider>
-                                </Box>
-                            </Box>
+                            <InputLabel required>Thời gian áp dụng</InputLabel>
+                            <Controller
+                                name="dateRange"
+                                control={control}
+                                render={({ field: { onChange, value } }) => (
+                                    <Flatpickr
+                                        options={{
+                                            mode: "range",
+                                            enableTime: true,
+                                            dateFormat: "m/d/Y h:i K",
+                                            minDate: "today",
+                                            time_24hr: false,
+                                        }}
+                                        value={value}
+                                        onChange={(dates) => onChange(dates)}
+                                        render={(props, ref) => (
+                                            <TextField
+                                                {...props}
+                                                inputRef={ref}
+                                                fullWidth
+                                                placeholder="Chọn khoảng thời gian áp dụng"
+                                            />
+                                        )}
+                                    />
+                                )}
+                            />
                         </Stack>
                         <Stack>
-                            <InputLabel
-                                sx={{
-                                    fontWeight: 400,
-                                    fontSize: 14,
-                                    "& .MuiFormLabel-asterisk": { color: "#CF202F" },
-                                }}
-                            >
-                                Trạng thái
-                            </InputLabel>
+                            <InputLabel>Trạng thái</InputLabel>
                             <Controller
                                 name="trangThai"
                                 control={control}
