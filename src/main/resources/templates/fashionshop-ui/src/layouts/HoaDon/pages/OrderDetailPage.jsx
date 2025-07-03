@@ -60,8 +60,7 @@ const OrderDetailPage = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const componentRef = useRef();
-  console.log('Kiểm tra componentRef (khởi tạo):', componentRef);
-  console.log('Giá trị khởi tạo của componentRef.current (khởi tạo):', componentRef.current); // <-- VÀ DÒNG NÀY
+
 
 
   // === HÀM XỬ LÝ ===
@@ -222,13 +221,16 @@ const OrderDetailPage = () => {
       orderData && (orderData.status === "Hoàn thành" || orderData.status === "Đã hủy");
   const canUpdateInfo =
       orderData && (orderData.status === "Tạo đơn hàng" || orderData.status === "Chờ xác nhận");
+
+
   const initialUpdateData = orderData
       ? {
-        tenNguoiNhan: orderData.customerName,
+        tenNguoiNhan: orderData.receiverName,
         soDienThoai: orderData.phoneNumber,
         diaChi: orderData.diaChi,
       }
       : {};
+
   // Hàm xử lý in hóa đơn
   // Trong OrderDetailPage/index.jsx
   const handlePrint = useReactToPrint({
@@ -331,26 +333,29 @@ const OrderDetailPage = () => {
                         )}
                       </SoftButton>
                   )}
-                  <SoftButton
-                      variant="outlined"
-                      color="error"
-                      onClick={handleClickCancelButton}
-                      disabled={isCancelButtonDisabled || actionLoading}
-                      sx={{
-                        textTransform: "none",
-                        // Giữ lại logic style cho trạng thái disabled
-                        ...(isCancelButtonDisabled && {
-                          opacity: 0.5,
-                          cursor: "not-allowed",
-                        }),
-                      }}
-                  >
-                    {actionLoading && !isConfirmButtonDisabled ? (
-                        <CircularProgress size={20} color="inherit" />
-                    ) : (
-                        "Hủy đơn"
-                    )}
-                  </SoftButton>
+                  {
+                      !isCancelButtonDisabled && (
+                          <SoftButton
+                              variant="outlined"
+                              color="error"
+                              onClick={handleClickCancelButton}
+                              disabled={isCancelButtonDisabled || actionLoading}
+                              sx={{
+                                textTransform: "none",
+                                // Giữ lại logic style cho trạng thái disabled
+                                ...(isCancelButtonDisabled && {
+                                  opacity: 0.5,
+                                  cursor: "not-allowed",
+                                }),
+                              }}
+                          >
+                            {actionLoading && !isConfirmButtonDisabled ? (
+                                <CircularProgress size={20} color="inherit" />
+                            ) : (
+                                "Hủy đơn"
+                            )}
+                          </SoftButton>
+                      )}
                   <SoftButton
                       variant="outlined"
                       size="medium"

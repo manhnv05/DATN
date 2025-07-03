@@ -22,6 +22,8 @@ import KhachHang from "layouts/khachhang";
 import AddKhachHang from "layouts/khachhang/add";
 import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
+import detailnhanvien from "layouts/nhanvien/detail";
+
 
 
 
@@ -294,6 +296,14 @@ const routes = [
     name: "Thêm nhân viên",
     route: "/nhanvien/add",
     component: <AddNhanVien />,
+    noCollapse: true,
+    hidden: true,
+  },
+  {
+    key: "detail-staff",
+    name: "chi tiêt nhân viên",
+    route: "/nhanvien/detail/:id",
+    component: <detailnhanvien />,
     noCollapse: true,
     hidden: true,
   },

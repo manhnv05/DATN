@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
-import java.io.Serializable;
 import java.util.List;
 
 @Entity
@@ -19,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "vai_tro")
-public class VaiTro{
+public class VaiTro {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,5 +30,6 @@ public class VaiTro{
     private String moTaVaiTro;
 
     @OneToMany(mappedBy = "vaiTro")
+    @ToString.Exclude
     private List<NhanVien> nhanViens;
 }
