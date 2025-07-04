@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -9,7 +10,7 @@ import FormControl from "@mui/material/FormControl";
 import Avatar from "@mui/material/Avatar";
 import FormHelperText from "@mui/material/FormHelperText";
 import UploadIcon from "@mui/icons-material/Upload";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Fade from "@mui/material/Fade";
@@ -29,7 +30,7 @@ import "react-toastify/dist/ReactToastify.css";
 import CCCDCameraModal from "./modalQuetCCCD";
 import { handleCameraCapture, parseCCCDText } from "./component/handleCameraCapture";
 
-const nhanVienAddAPI = "http://localhost:8080/nhanVien";
+const nhanVienDetailAPI = (id) => `http://localhost:8080/nhanVien/${id}`;
 const roleListAPI = "http://localhost:8080/vaiTro/list";
 const provinceAPI = "https://provinces.open-api.vn/api/?depth=1";
 const districtAPI = (code) => "https://provinces.open-api.vn/api/p/" + code + "?depth=2";
@@ -49,10 +50,19 @@ function findById(array, value, key) {
     return array.find((item) => item && item[key] === value) || null;
 }
 
+function normalizeString(str) {
+    return (str || "").toLowerCase().replace(/\s+/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 const GENDER_OPTIONS = [
     { value: "Nam", label: "Nam" },
     { value: "Nữ", label: "Nữ" },
     { value: "Khác", label: "Khác" }
+];
+
+const STATUS_OPTIONS = [
+    { value: 1, label: "Đang hoạt động" },
+    { value: 0, label: "Ngừng hoạt động" }
 ];
 
 const labelStyle = {
@@ -109,25 +119,34 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
     textShadow: "0 2px 10px #e3f0fa, 0 1px 0 #fff"
 }));
 
-function generateEmployeeCode() {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    const randomNumber = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-    return "NV" + year + month + day + randomNumber;
-}
-
-function generatePassword() {
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let password = "";
-    for (let index = 0; index < 10; index++) {
-        password += characters.charAt(Math.floor(Math.random() * characters.length));
+function getDiaChiString({ xaPhuong, quanHuyen, tinhThanhPho }, provinces, districts, wards) {
+    let xa = "";
+    let huyen = "";
+    let tinh = "";
+    if (wards.length > 0 && xaPhuong) {
+        const foundWard = wards.find((w) => w.code === xaPhuong);
+        xa = foundWard && foundWard.name ? foundWard.name : xaPhuong;
+    } else {
+        xa = xaPhuong;
     }
-    return password;
+    if (districts.length > 0 && quanHuyen) {
+        const foundDistrict = districts.find((d) => d.code === quanHuyen);
+        huyen = foundDistrict && foundDistrict.name ? foundDistrict.name : quanHuyen;
+    } else {
+        huyen = quanHuyen;
+    }
+    if (provinces.length > 0 && tinhThanhPho) {
+        const foundProvince = provinces.find((p) => p.code === tinhThanhPho);
+        tinh = foundProvince && foundProvince.name ? foundProvince.name : tinhThanhPho;
+    } else {
+        tinh = tinhThanhPho;
+    }
+    return [xa, huyen, tinh].filter(Boolean).join(", ");
 }
 
-export default function AddNhanVienForm() {
+export default function UpdateNhanVienForm({ id: propId, onClose }) {
+    const params = useParams();
+    const id = propId || params.id;
     const [employee, setEmployee] = useState({
         hoVaTen: "",
         hinhAnh: "",
@@ -137,7 +156,7 @@ export default function AddNhanVienForm() {
         canCuocCongDan: "",
         email: "",
         vaiTro: null,
-        trangThai: 1, // luôn mặc định là "Đang hoạt động"
+        trangThai: 1,
         tinhThanhPho: "",
         quanHuyen: "",
         xaPhuong: "",
@@ -161,23 +180,13 @@ export default function AddNhanVienForm() {
     const [roleOptions, setRoleOptions] = useState([]);
     const [roleInput, setRoleInput] = useState("");
     const [openCamera, setOpenCamera] = useState(false);
+    const [pendingLocation, setPendingLocation] = useState(null);
 
     function fetchRoles() {
         axios.get(roleListAPI).then(function (response) {
             setRoleOptions(arraySafe(response.data));
         });
     }
-
-    useEffect(function () {
-        setEmployee(function (previous) {
-            return {
-                ...previous,
-                maNhanVien: generateEmployeeCode(),
-                matKhau: generatePassword(),
-                trangThai: 1 // luôn để mặc định
-            };
-        });
-    }, []);
 
     useEffect(function () {
         axios.get(provinceAPI).then(function (response) {
@@ -188,6 +197,165 @@ export default function AddNhanVienForm() {
     useEffect(function () {
         fetchRoles();
     }, []);
+
+    useEffect(function () {
+        async function fetchEmployee() {
+            if (!id) return;
+            try {
+                const res = await axios.get(nhanVienDetailAPI(id));
+                if (!res.data) return;
+                let data = res.data;
+                let tinhThanhPho = data.tinhThanhPho || "";
+                let quanHuyen = data.quanHuyen || "";
+                let xaPhuong = data.xaPhuong || "";
+                let provinceInputName = "";
+                let districtInputName = "";
+                let wardInputName = "";
+                if ((!tinhThanhPho || !quanHuyen || !xaPhuong) && data.diaChi) {
+                    const arr = data.diaChi.split(",").map(s => s.trim());
+                    let nameTinh = "";
+                    let nameHuyen = "";
+                    let nameXa = "";
+                    if (arr.length === 3) [nameXa, nameHuyen, nameTinh] = arr;
+                    else if (arr.length === 2) [nameHuyen, nameTinh] = arr;
+                    else if (arr.length === 1) [nameTinh] = arr;
+                    let codeTinh = "";
+                    if (nameTinh) {
+                        const foundTinh = provinces.find(
+                            p => normalizeString(p.name) === normalizeString(nameTinh)
+                        );
+                        codeTinh = foundTinh?.code || "";
+                    }
+                    tinhThanhPho = codeTinh;
+                    provinceInputName = nameTinh;
+                    if (codeTinh) {
+                        const resDistricts = await axios.get(districtAPI(codeTinh));
+                        const districtsArr = resDistricts.data.districts || [];
+                        setDistricts(districtsArr);
+                        let codeHuyen = "";
+                        let foundHuyen;
+                        if (nameHuyen) {
+                            foundHuyen = districtsArr.find(
+                                d => normalizeString(d.name) === normalizeString(nameHuyen)
+                            );
+                            codeHuyen = foundHuyen?.code || "";
+                        }
+                        quanHuyen = codeHuyen;
+                        districtInputName = nameHuyen;
+                        if (codeHuyen) {
+                            const resWards = await axios.get(wardAPI(codeHuyen));
+                            const wardsArr = resWards.data.wards || [];
+                            setWards(wardsArr);
+                            let codeXa = "";
+                            if (nameXa) {
+                                const foundXa = wardsArr.find(
+                                    w => normalizeString(w.name) === normalizeString(nameXa)
+                                );
+                                codeXa = foundXa?.code || "";
+                            }
+                            xaPhuong = codeXa;
+                            wardInputName = nameXa;
+                            setPendingLocation({
+                                tinhThanhPho,
+                                quanHuyen,
+                                xaPhuong,
+                                provinceInputName,
+                                districtInputName,
+                                wardInputName,
+                                data
+                            });
+                            setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
+                            return;
+                        }
+                        setPendingLocation({
+                            tinhThanhPho,
+                            quanHuyen,
+                            xaPhuong: "",
+                            provinceInputName,
+                            districtInputName,
+                            wardInputName: "",
+                            data
+                        });
+                        setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
+                        return;
+                    }
+                    setPendingLocation({
+                        tinhThanhPho,
+                        quanHuyen: "",
+                        xaPhuong: "",
+                        provinceInputName,
+                        districtInputName: "",
+                        wardInputName: "",
+                        data
+                    });
+                    setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
+                    return;
+                }
+                let districtsArr = [];
+                let wardsArr = [];
+                if (tinhThanhPho) {
+                    const resDistricts = await axios.get(districtAPI(tinhThanhPho));
+                    districtsArr = resDistricts.data.districts || [];
+                    setDistricts(districtsArr);
+                }
+                if (quanHuyen) {
+                    const resWards = await axios.get(wardAPI(quanHuyen));
+                    wardsArr = resWards.data.wards || [];
+                    setWards(wardsArr);
+                }
+                setEmployee({
+                    hoVaTen: data.hoVaTen || "",
+                    hinhAnh: data.hinhAnh || "",
+                    gioiTinh: data.gioiTinh || "",
+                    ngaySinh: data.ngaySinh || "",
+                    soDienThoai: data.soDienThoai || "",
+                    canCuocCongDan: data.canCuocCongDan || "",
+                    email: data.email || "",
+                    vaiTro: data.vaiTro || null,
+                    trangThai: data.trangThai !== undefined ? data.trangThai : 1,
+                    tinhThanhPho,
+                    quanHuyen,
+                    xaPhuong,
+                    maNhanVien: data.maNhanVien || "",
+                    matKhau: data.matKhau || "",
+                    diaChi: data.diaChi || ""
+                });
+                setProvinceInput(provinces.find(p => p.code === tinhThanhPho)?.name || "");
+                setDistrictInput(districtsArr.find(d => d.code === quanHuyen)?.name || "");
+                setWardInput(wardsArr.find(w => w.code === xaPhuong)?.name || "");
+                setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
+            } catch {
+                toast.error("Không lấy được thông tin nhân viên!");
+            }
+        }
+        if (provinces.length) fetchEmployee();
+    }, [id, provinces.length]);
+
+    useEffect(() => {
+        if (pendingLocation) {
+            setEmployee({
+                hoVaTen: pendingLocation.data.hoVaTen || "",
+                hinhAnh: pendingLocation.data.hinhAnh || "",
+                gioiTinh: pendingLocation.data.gioiTinh || "",
+                ngaySinh: pendingLocation.data.ngaySinh || "",
+                soDienThoai: pendingLocation.data.soDienThoai || "",
+                canCuocCongDan: pendingLocation.data.canCuocCongDan || "",
+                email: pendingLocation.data.email || "",
+                vaiTro: pendingLocation.data.vaiTro || null,
+                trangThai: pendingLocation.data.trangThai !== undefined ? pendingLocation.data.trangThai : 1,
+                tinhThanhPho: pendingLocation.tinhThanhPho,
+                quanHuyen: pendingLocation.quanHuyen,
+                xaPhuong: pendingLocation.xaPhuong,
+                maNhanVien: pendingLocation.data.maNhanVien || "",
+                matKhau: pendingLocation.data.matKhau || "",
+                diaChi: pendingLocation.data.diaChi || ""
+            });
+            setProvinceInput(pendingLocation.provinceInputName || "");
+            setDistrictInput(pendingLocation.districtInputName || "");
+            setWardInput(pendingLocation.wardInputName || "");
+            setPendingLocation(null);
+        }
+    }, [districts, wards, pendingLocation]);
 
     useEffect(function () {
         if (employee.tinhThanhPho) {
@@ -201,10 +369,10 @@ export default function AddNhanVienForm() {
         } else {
             setDistricts([]);
         }
-        // KHÔNG reset employee.quanHuyen/xaPhuong ở đây!
         setDistrictInput("");
         setWardInput("");
         setWards([]);
+        // KHÔNG reset employee.quanHuyen/xaPhuong ở đây!
     }, [employee.tinhThanhPho]);
 
     useEffect(function () {
@@ -219,8 +387,24 @@ export default function AddNhanVienForm() {
         } else {
             setWards([]);
         }
-        // KHÔNG reset employee.xaPhuong ở đây!
         setWardInput("");
+        // KHÔNG reset employee.xaPhuong ở đây!
+    }, [employee.quanHuyen]);
+
+    useEffect(function () {
+        if (employee.quanHuyen) {
+            axios.get(wardAPI(employee.quanHuyen)).then(function (response) {
+                if (response.data && Array.isArray(response.data.wards)) {
+                    setWards(response.data.wards);
+                } else {
+                    setWards([]);
+                }
+            });
+        } else {
+            setWards([]);
+        }
+        setWardInput("");
+        // KHÔNG reset employee.xaPhuong ở đây!
     }, [employee.quanHuyen]);
 
     function handleEmployeeChange(event) {
@@ -292,6 +476,10 @@ export default function AddNhanVienForm() {
         }
         if (!employee.gioiTinh) {
             error.gioiTinh = "Vui lòng chọn giới tính";
+            return error;
+        }
+        if (!employee.trangThai && employee.trangThai !== 0) {
+            error.trangThai = "Vui lòng chọn trạng thái";
             return error;
         }
         if (!employee.vaiTro || !employee.vaiTro.id) {
@@ -385,31 +573,7 @@ export default function AddNhanVienForm() {
         setLoading(true);
         setSuccess(false);
         try {
-            const maNhanVien = generateEmployeeCode();
-            const matKhau = generatePassword();
-            let diaChi = "";
-            let xa = "";
-            let huyen = "";
-            let tinh = "";
-            if (wards.length > 0 && employee.xaPhuong) {
-                const foundWard = wards.find((w) => w.code === employee.xaPhuong);
-                xa = foundWard && foundWard.name ? foundWard.name : employee.xaPhuong;
-            } else {
-                xa = employee.xaPhuong;
-            }
-            if (districts.length > 0 && employee.quanHuyen) {
-                const foundDistrict = districts.find((d) => d.code === employee.quanHuyen);
-                huyen = foundDistrict && foundDistrict.name ? foundDistrict.name : employee.quanHuyen;
-            } else {
-                huyen = employee.quanHuyen;
-            }
-            if (provinces.length > 0 && employee.tinhThanhPho) {
-                const foundProvince = provinces.find((p) => p.code === employee.tinhThanhPho);
-                tinh = foundProvince && foundProvince.name ? foundProvince.name : employee.tinhThanhPho;
-            } else {
-                tinh = employee.tinhThanhPho;
-            }
-            diaChi = [xa, huyen, tinh].filter(Boolean).join(", ");
+            const diaChi = getDiaChiString(employee, provinces, districts, wards);
             const data = {
                 hoVaTen: employee.hoVaTen,
                 hinhAnh: typeof employee.hinhAnh === "string" ? employee.hinhAnh : "",
@@ -419,20 +583,24 @@ export default function AddNhanVienForm() {
                 canCuocCongDan: employee.canCuocCongDan,
                 email: employee.email,
                 idVaiTro: employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : null,
-                trangThai: 1, // luôn gửi là 1 (Đang hoạt động)
-                maNhanVien: maNhanVien,
-                matKhau: matKhau,
+                trangThai: employee.trangThai,
+                maNhanVien: employee.maNhanVien,
+                matKhau: employee.matKhau,
                 xaPhuong: employee.xaPhuong,
                 quanHuyen: employee.quanHuyen,
                 tinhThanhPho: employee.tinhThanhPho,
                 diaChi: diaChi
             };
-            await axios.post(nhanVienAddAPI, data);
+            await axios.put(nhanVienDetailAPI(id), data);
             setSuccess(true);
-            toast.success("Thêm nhân viên thành công!");
+            toast.success("Cập nhật nhân viên thành công!");
             setTimeout(function () {
                 setLoading(false);
-                navigate(-1);
+                if (onClose) {
+                    onClose();
+                } else {
+                    navigate(-1);
+                }
             }, 1200);
         } catch {
             setLoading(false);
@@ -475,7 +643,7 @@ export default function AddNhanVienForm() {
                 <Fade in timeout={600}>
                     <GradientCard>
                         <SectionTitle align="center" mb={1}>
-                            Thêm Nhân Viên Mới
+                            Cập nhật Nhân Viên
                         </SectionTitle>
                         <Paper
                             elevation={0}
@@ -490,7 +658,7 @@ export default function AddNhanVienForm() {
                             <Typography variant="subtitle1" color="#1769aa" fontWeight={600}>
                                 <span style={{ color: "#43a047" }}>Nhanh chóng - Chính xác - Thẩm mỹ!</span>
                                 <br />
-                                Vui lòng nhập đầy đủ thông tin nhân viên để quản lý hiệu quả và bảo mật tối ưu.
+                                Vui lòng cập nhật đầy đủ thông tin nhân viên để quản lý hiệu quả và bảo mật tối ưu.
                             </Typography>
                         </Paper>
                         <form onSubmit={handleSubmit} autoComplete="off">
@@ -690,63 +858,21 @@ export default function AddNhanVienForm() {
                                                 <FormHelperText />
                                             </FormControl>
                                         </Grid>
-                                        {/* Không render trường trạng thái ở đây, hoặc nếu muốn hiện thì chỉ hiện trạng thái mặc định và disable */}
-                                        {/* <Grid item xs={12} sm={6} md={4}>
+                                        <Grid item xs={12} sm={6} md={4}>
                                             <label style={labelStyle}>Trạng thái</label>
                                             <FormControl fullWidth size="small" sx={getFieldSx("trangThai")} margin="dense">
                                                 <Select
                                                     name="trangThai"
                                                     value={employee.trangThai}
-                                                    disabled
+                                                    onChange={handleEmployeeChange}
+                                                    required
+                                                    onFocus={() => setFocusField("trangThai")}
+                                                    onBlur={() => setFocusField("")}
                                                     inputProps={{ "aria-label": "Trạng thái" }}
                                                 >
-                                                    <MenuItem value={1}>Đang hoạt động</MenuItem>
-                                                    <MenuItem value={0}>Ngừng hoạt động</MenuItem>
-                                                </Select>
-                                                <FormHelperText />
-                                            </FormControl>
-                                        </Grid> */}
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Vai trò</label>
-                                            <FormControl
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("vaiTro")}
-                                                margin="dense"
-                                            >
-                                                <Select
-                                                    name="vaiTro"
-                                                    value={employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : ""}
-                                                    onChange={function (event) {
-                                                        const selectedId = event.target.value;
-                                                        const foundRole = roleOptions.find(function (role) {
-                                                            return role.id === selectedId || String(role.id) === String(selectedId);
-                                                        });
-                                                        setEmployee(function (previous) {
-                                                            return {
-                                                                ...previous,
-                                                                vaiTro: foundRole || null
-                                                            };
-                                                        });
-                                                        setRoleInput(foundRole ? foundRole.ten : "");
-                                                        setErrors(function (previous) {
-                                                            return {
-                                                                ...previous,
-                                                                vaiTro: undefined
-                                                            };
-                                                        });
-                                                    }}
-                                                    displayEmpty
-                                                    onFocus={() => setFocusField("vaiTro")}
-                                                    onBlur={() => setFocusField("")}
-                                                    inputProps={{ "aria-label": "Vai trò" }}
-                                                >
-                                                    <MenuItem value="">
-                                                        <em>Chọn vai trò</em>
-                                                    </MenuItem>
-                                                    {roleOptions.map((role) => (
-                                                        <MenuItem value={role.id} key={role.id}>
-                                                            {role.ten}
+                                                    {STATUS_OPTIONS.map((status) => (
+                                                        <MenuItem value={status.value} key={status.value}>
+                                                            {status.label}
                                                         </MenuItem>
                                                     ))}
                                                 </Select>
@@ -778,9 +904,7 @@ export default function AddNhanVienForm() {
                                                     if (reason === "clear") {
                                                         setEmployee((previous) => ({
                                                             ...previous,
-                                                            tinhThanhPho: "",
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
+                                                            tinhThanhPho: ""
                                                         }));
                                                     }
                                                 }}
@@ -847,8 +971,7 @@ export default function AddNhanVienForm() {
                                                     if (reason === "clear") {
                                                         setEmployee((previous) => ({
                                                             ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
+                                                            quanHuyen: ""
                                                         }));
                                                     }
                                                 }}
@@ -864,7 +987,7 @@ export default function AddNhanVienForm() {
                                                         setEmployee((previous) => ({
                                                             ...previous,
                                                             quanHuyen: newValue.code,
-                                                            xaPhuong: ""
+                                                            xaPhuong: ""  // Reset xã khi đổi huyện
                                                         }));
                                                         setDistrictInput(newValue.name);
                                                     } else {
@@ -953,6 +1076,53 @@ export default function AddNhanVienForm() {
                                                 }
                                             />
                                         </Grid>
+                                        <Grid item xs={12} sm={6} md={4}>
+                                            <label style={labelStyle}>Vai trò</label>
+                                            <FormControl
+                                                fullWidth
+                                                size="small"
+                                                sx={getFieldSx("vaiTro")}
+                                                margin="dense"
+                                            >
+                                                <Select
+                                                    name="vaiTro"
+                                                    value={employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : ""}
+                                                    onChange={function (event) {
+                                                        const selectedId = event.target.value;
+                                                        const foundRole = roleOptions.find(function (role) {
+                                                            return role.id === selectedId || String(role.id) === String(selectedId);
+                                                        });
+                                                        setEmployee(function (previous) {
+                                                            return {
+                                                                ...previous,
+                                                                vaiTro: foundRole || null
+                                                            };
+                                                        });
+                                                        setRoleInput(foundRole ? foundRole.ten : "");
+                                                        setErrors(function (previous) {
+                                                            return {
+                                                                ...previous,
+                                                                vaiTro: undefined
+                                                            };
+                                                        });
+                                                    }}
+                                                    displayEmpty
+                                                    onFocus={() => setFocusField("vaiTro")}
+                                                    onBlur={() => setFocusField("")}
+                                                    inputProps={{ "aria-label": "Vai trò" }}
+                                                >
+                                                    <MenuItem value="">
+                                                        <em>Chọn vai trò</em>
+                                                    </MenuItem>
+                                                    {roleOptions.map((role) => (
+                                                        <MenuItem value={role.id} key={role.id}>
+                                                            {role.ten}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                                <FormHelperText />
+                                            </FormControl>
+                                        </Grid>
                                     </Grid>
                                 </Grid>
                                 <Grid item xs={12}>
@@ -968,7 +1138,13 @@ export default function AddNhanVienForm() {
                                             variant="outlined"
                                             color="inherit"
                                             size="large"
-                                            onClick={() => navigate(-1)}
+                                            onClick={() => {
+                                                if (onClose) {
+                                                    onClose();
+                                                } else {
+                                                    navigate(-1);
+                                                }
+                                            }}
                                             sx={{
                                                 color: "#020205",
                                                 fontWeight: 700,
@@ -1012,7 +1188,7 @@ export default function AddNhanVienForm() {
                                                 ? "Đang lưu..."
                                                 : success
                                                     ? "Thành công!"
-                                                    : "Thêm nhân viên"}
+                                                    : "Cập nhật nhân viên"}
                                         </Button>
                                     </Box>
                                 </Grid>
@@ -1024,3 +1200,8 @@ export default function AddNhanVienForm() {
         </DashboardLayout>
     );
 }
+
+UpdateNhanVienForm.propTypes = {
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    onClose: PropTypes.func,
+};

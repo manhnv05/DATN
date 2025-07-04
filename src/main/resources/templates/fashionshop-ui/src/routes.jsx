@@ -20,7 +20,9 @@ import KhachHang from "layouts/khachhang";
 import AddKhachHang from "layouts/khachhang/add";
 import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
-import detailnhanvien from "layouts/nhanvien/detail";
+import DetailNhanVien from "layouts/nhanvien/detail";
+import UpdateNhanVien from "layouts/nhanvien/update";
+
 
 
 import SignIn from "layouts/authentication/sign-in";
@@ -292,7 +294,15 @@ const routes = [
     key: "detail-staff",
     name: "chi tiêt nhân viên",
     route: "/nhanvien/detail/:id",
-    component: <detailnhanvien />,
+    component: <DetailNhanVien />,
+    noCollapse: true,
+    hidden: true,
+  },
+  {
+    key: "update-staff",
+    name: "cập nhật nhân viên",
+    route: "/nhanvien/update/:id",
+    component: <UpdateNhanVien />,
     noCollapse: true,
     hidden: true,
   },
