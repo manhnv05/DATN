@@ -1,7 +1,7 @@
-// src/layouts/HoaDon/OrderDetailPage/index.jsx
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // === IMPORT LAYOUT COMPONENTS ===
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -48,7 +48,6 @@ const mapPaymentStatus = (apiStatus) => paymentStatusMap[apiStatus] || apiStatus
 const mapOrderType = (apiType) => orderTypeMap[apiType] || apiType;
 
 const OrderDetailPage = () => {
-  // === HOOKS VÀ STATE ===
   const { orderId } = useParams();
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,9 +60,6 @@ const OrderDetailPage = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const componentRef = useRef();
 
-
-
-  // === HÀM XỬ LÝ ===
   const handleShowHistoryModal = () => setShowHistoryModal(true);
   const handleCloseHistoryModal = () => setShowHistoryModal(false);
   const handleOpenUpdateModal = () => setShowUpdateModal(true);
@@ -126,6 +122,7 @@ const OrderDetailPage = () => {
       setOrderData(transformedData);
     } catch (err) {
       setError(err);
+      toast.error(err.message || "Không thể tải chi tiết đơn hàng.");
     } finally {
       setLoading(false);
     }
@@ -146,36 +143,37 @@ const OrderDetailPage = () => {
       const response = await fetch(
           `http://localhost:8080/api/hoa-don/chuyen-trang-thai-tiep-theo/${orderId}`,
           {
-            method: "PUT", // Xác định HTTP method
+            method: "PUT",
             headers: {
-              "Content-Type": "application/json", // Báo cho server biết body là JSON
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify(payload), // Chuyển payload thành chuỗi JSON
+            body: JSON.stringify(payload),
           }
       );
 
       if (!response.ok) {
-        // Kiểm tra status code cho fetch
         const errorData = await response
             .json()
             .catch(() => ({ message: `HTTP error! status: ${response.status}` }));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
-      await fetchOrderDetail(); // Tải lại dữ liệu hóa đơn để cập nhật giao diện
+      // Thông báo thành công khi chuyển trạng thái
+      toast.success("Chuyển trạng thái đơn hàng thành công.");
+      await fetchOrderDetail();
     } catch (err) {
-      console.error("Lỗi khi chuyển trạng thái tiếp theo:", err);
       setActionError(err.message || "Có lỗi xảy ra khi chuyển trạng thái. Vui lòng thử lại.");
+      toast.error(err.message || "Có lỗi xảy ra khi chuyển trạng thái. Vui lòng thử lại.");
     } finally {
       setActionLoading(false);
     }
   };
+
   const handleConfirmCancelFromDialog = async (ghiChuFromDialog) => {
-    // Có thể thêm loading state riêng cho dialog nếu muốn
     try {
       const payload = {
         ghiChu: ghiChuFromDialog,
-        nguoiThucHien: "Admin", // Hoặc lấy từ context người dùng
+        nguoiThucHien: "Admin",
       };
       const response = await fetch(
           `http://localhost:8080/api/hoa-don/chuyen-trang-thai-huy/${orderId}`,
@@ -196,32 +194,29 @@ const OrderDetailPage = () => {
       }
 
       const data = await response.json();
-      console.log("Hủy đơn hàng thành công:", data);
-      alert(`Hủy đơn hàng thành công: ${data.message}`);
-      await fetchOrderDetail(); // Tải lại dữ liệu hóa đơn sau khi hủy
+      toast.success(data.message || "Hủy đơn hàng thành công.");
+      await fetchOrderDetail();
     } catch (err) {
-      console.error("Lỗi khi hủy đơn hàng:", err);
-      alert(`Lỗi: ${err.message || "Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại."}`);
+      toast.error(err.message || "Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.");
     } finally {
-      setShowCancelDialog(false); // Luôn đóng dialog sau khi xử lý (dù thành công hay thất bại)
+      setShowCancelDialog(false);
     }
   };
+
   const handleClickCancelButton = () => {
     if (orderData.status === "Hoàn thành" || orderData.status === "Đã hủy") {
-      alert("Đơn hàng đã hoàn thành hoặc đã hủy, không thể hủy thêm.");
+      toast.error("Đơn hàng đã hoàn thành hoặc đã hủy, không thể hủy thêm.");
     } else {
       setShowCancelDialog(true);
     }
   };
 
-  // === LOGIC DERIVED STATE ===
   const isConfirmButtonDisabled =
       orderData && (orderData.status === "Hoàn thành" || orderData.status === "Đã hủy");
   const isCancelButtonDisabled =
       orderData && (orderData.status === "Hoàn thành" || orderData.status === "Đã hủy");
   const canUpdateInfo =
       orderData && (orderData.status === "Tạo đơn hàng" || orderData.status === "Chờ xác nhận");
-
 
   const initialUpdateData = orderData
       ? {
@@ -231,17 +226,14 @@ const OrderDetailPage = () => {
       }
       : {};
 
-  // Hàm xử lý in hóa đơn
-  // Trong OrderDetailPage/index.jsx
   const handlePrint = useReactToPrint({
     content: () => {
-      console.log("componentRef.current:", componentRef.current); // <-- THÊM DÒNG NÀY
       return componentRef.current;
     },
     documentTitle: `HoaDon_${orderData?.maHoaDon || "unknown"}`,
     pageStyle: `@page { size: A4; margin: 20mm; }`,
   });
-  // === RENDER LOGIC ===
+
   if (loading) {
     return (
         <DashboardLayout>
@@ -258,6 +250,7 @@ const OrderDetailPage = () => {
             </SoftTypography>
           </SoftBox>
           <Footer />
+          <ToastContainer position="top-right" autoClose={3000} />
         </DashboardLayout>
     );
   }
@@ -270,6 +263,7 @@ const OrderDetailPage = () => {
             <Alert severity="error">{error.message}. Không thể tải chi tiết đơn hàng.</Alert>
           </SoftBox>
           <Footer />
+          <ToastContainer position="top-right" autoClose={3000} />
         </DashboardLayout>
     );
   }
@@ -282,6 +276,7 @@ const OrderDetailPage = () => {
             <Alert severity="warning">Không tìm thấy đơn hàng.</Alert>
           </SoftBox>
           <Footer />
+          <ToastContainer position="top-right" autoClose={3000} />
         </DashboardLayout>
     );
   }
@@ -290,20 +285,18 @@ const OrderDetailPage = () => {
       <DashboardLayout>
         <DashboardNavbar />
         <SoftBox py={3}>
+          <ToastContainer position="top-right" autoClose={3000} />
           {actionError && (
               <SoftBox mb={2} px={3}>
                 <Alert severity="error">{actionError}</Alert>
               </SoftBox>
           )}
-
-          {/* Phần Lịch sử đơn hàng và các nút hành động */}
           <SoftBox mb={3}>
             <Card>
               <SoftBox p={3}>
                 <SoftTypography variant="h5" fontWeight="medium" mb={3} sx={{ color: "#6ea8fe" }}>
                   Lịch sử đơn hàng / {orderData.maHoaDon}
                 </SoftTypography>
-
                 <OrderHistory orderId={orderData.maHoaDon} />
                 <SoftBox display="flex" justifyContent="flex-end" mt={3} gap={1.5}>
                   {!isConfirmButtonDisabled && (
@@ -333,29 +326,27 @@ const OrderDetailPage = () => {
                         )}
                       </SoftButton>
                   )}
-                  {
-                      !isCancelButtonDisabled && (
-                          <SoftButton
-                              variant="outlined"
-                              color="error"
-                              onClick={handleClickCancelButton}
-                              disabled={isCancelButtonDisabled || actionLoading}
-                              sx={{
-                                textTransform: "none",
-                                // Giữ lại logic style cho trạng thái disabled
-                                ...(isCancelButtonDisabled && {
-                                  opacity: 0.5,
-                                  cursor: "not-allowed",
-                                }),
-                              }}
-                          >
-                            {actionLoading && !isConfirmButtonDisabled ? (
-                                <CircularProgress size={20} color="inherit" />
-                            ) : (
-                                "Hủy đơn"
-                            )}
-                          </SoftButton>
-                      )}
+                  {!isCancelButtonDisabled && (
+                      <SoftButton
+                          variant="outlined"
+                          color="error"
+                          onClick={handleClickCancelButton}
+                          disabled={isCancelButtonDisabled || actionLoading}
+                          sx={{
+                            textTransform: "none",
+                            ...(isCancelButtonDisabled && {
+                              opacity: 0.5,
+                              cursor: "not-allowed",
+                            }),
+                          }}
+                      >
+                        {actionLoading && !isConfirmButtonDisabled ? (
+                            <CircularProgress size={20} color="inherit" />
+                        ) : (
+                            "Hủy đơn"
+                        )}
+                      </SoftButton>
+                  )}
                   <SoftButton
                       variant="outlined"
                       size="medium"
@@ -392,8 +383,8 @@ const OrderDetailPage = () => {
                           color: "#1769aa",
                         },
                       }}
-                      onClick={handlePrint} // Trigger print function
-                      disabled={!canUpdateInfo} // Disable if no data to print
+                      onClick={handlePrint}
+                      disabled={!canUpdateInfo}
                   >
                     In hóa đơn
                   </SoftButton>
@@ -401,15 +392,12 @@ const OrderDetailPage = () => {
               </SoftBox>
             </Card>
           </SoftBox>
-
-          {/* Thông tin đơn hàng và nút cập nhật */}
           <SoftBox mb={3}>
             <Card>
               <SoftBox p={3}>
                 <SoftTypography variant="h5" fontWeight="medium" mb={3} sx={{ color: "#6ea8fe" }}>
                   Thông tin đơn hàng
                 </SoftTypography>
-
                 <OrderInfo order={orderData} />
                 {canUpdateInfo && (
                     <SoftBox display="flex" justifyContent="flex-end" mt={3}>
@@ -438,8 +426,6 @@ const OrderDetailPage = () => {
               </SoftBox>
             </Card>
           </SoftBox>
-
-          {/* Lịch sử thanh toán */}
           <SoftBox mb={3}>
             <Card>
               <SoftBox p={3}>
@@ -450,8 +436,6 @@ const OrderDetailPage = () => {
               </SoftBox>
             </Card>
           </SoftBox>
-
-          {/* Danh sách sản phẩm */}
           <SoftBox mb={3}>
             <Card>
               <SoftBox p={3}>
@@ -462,8 +446,6 @@ const OrderDetailPage = () => {
               </SoftBox>
             </Card>
           </SoftBox>
-
-          {/* Tổng tiền */}
           <SoftBox mb={3}>
             <Card>
               <SoftBox p={3}>
@@ -474,8 +456,6 @@ const OrderDetailPage = () => {
               </SoftBox>
             </Card>
           </SoftBox>
-
-          {/* Modals và Dialogs */}
           {showHistoryModal && orderData && (
               <OrderHistoryModal maHoaDon={orderData.maHoaDon} onClose={handleCloseHistoryModal} />
           )}
@@ -494,7 +474,6 @@ const OrderDetailPage = () => {
                   onUpdateSuccess={fetchOrderDetail}
               />
           )}
-
           <div style={{ display: "none" }}>
             {orderData && <InHoaDon ref={componentRef} orderData={orderData} />}
           </div>
