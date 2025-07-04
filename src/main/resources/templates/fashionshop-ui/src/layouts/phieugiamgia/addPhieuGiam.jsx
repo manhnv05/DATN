@@ -221,8 +221,8 @@ export default function AddPhieuGiam() {
         let giaTriMoi = event.target.value;
         if (statusPhieu === 1) {
             let giaTriSo = Number(giaTriMoi);
-            if (giaTriSo > 100) {
-                giaTriMoi = 100;
+            if (giaTriSo > 50) {
+                giaTriMoi = 50;
             }
         }
         setGiaTriGiam(giaTriMoi);

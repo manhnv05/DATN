@@ -33,8 +33,8 @@ public class PhieuGiamGiaVO {
     @NotNull
     int loaiPhieu;
 
-    @Min(value = 0, message = "Phần trăm giảm giá phải lớn hơn 0")
-    @Max(value = 100, message = "Phần trăm giảm giá phải nhỏ hơn 100")
+    @Min(value = 1, message = "Phần trăm giảm giá phải lớn hơn 1")
+    @Max(value = 50, message = "Phần trăm giảm giá phải nhỏ hơn hoặc bằng 50")
     BigDecimal phamTramGiamGia;
 
     BigDecimal soTienGiam;

@@ -540,8 +540,8 @@ function AddDiscountEventPage() {
             toast.error("Phần trăm giảm giá phải lớn hơn 0");
             return;
         }
-        if (Number(data.phanTramGiamGia) > 100) {
-            toast.error("Phần trăm giảm giá phải nhỏ hơn hoặc bằng 100");
+        if (Number(data.phanTramGiamGia) > 50) {
+            toast.error("Phần trăm giảm giá phải nhỏ hơn hoặc bằng 50");
             return;
         }
         if (!data.dateRange || data.dateRange.length !== 2) {
