@@ -18,7 +18,7 @@ import Table from "examples/Tables/Table";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { addVouchers, sendMail } from "./service/PhieuGiamService";
-import { toast, ToastContainer } from "react-toastify";
+import { toast} from "react-toastify";
 import { fetchKhachHang } from "./service/KhachHangService";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -58,7 +58,7 @@ export default function AddPhieuGiam() {
     const [dangTaiDuLieu, setDangTaiDuLieu] = useState(false);
     const [timKiemKhachHang, setTimKiemKhachHang] = useState("");
 
-    const navigation = useNavigate();
+    const navigate = useNavigate();
 
     const tatCaDuocChon = danhSachKhachHang.length > 0 &&
         danhSachKhachHang.every(function (khachHang) { return danhSachDaChon.includes(khachHang.id); });
@@ -180,7 +180,7 @@ export default function AddPhieuGiam() {
             }
             navigate("/discount", {
                 state: {
-                    message: "Cập nhật voucher thành công!",
+                    message: "Thêm voucher thành công!",
                 },
             });
         } else {
@@ -714,7 +714,6 @@ export default function AddPhieuGiam() {
                 </Card>
             </SoftBox>
             <Footer />
-            <ToastContainer />
         </DashboardLayout>
     );
 }
