@@ -22,24 +22,42 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 const statusList = ["Tất cả", 1, 0];
 const viewOptions = [5, 10, 20];
 
-const getTrangThaiText = (val) => {
-    if (val === 1 || val === "1" || val === "Hiển thị") return "Hiển thị";
-    if (val === 0 || val === "0" || val === "Ẩn") return "Ẩn";
-    return val;
+const getStatusText = (value) => {
+    if (value === 1 || value === "1" || value === "Hiển thị") return "Hiển thị";
+    if (value === 0 || value === "0" || value === "Ẩn") return "Ẩn";
+    return value;
 };
 
-// Hàm phân trang: luôn có 2 đầu, 2 cuối, luôn nổi bật trang hiện tại
 function getPaginationItems(current, total) {
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i);
+    if (total <= 5) return Array.from({ length: total }, (_, index) => index);
     if (current <= 1) return [0, 1, "...", total - 2, total - 1];
     if (current >= total - 2) return [0, 1, "...", total - 2, total - 1];
-    // current ở giữa
     return [0, 1, "...", current, "...", total - 2, total - 1];
+}
+
+function generateMaterialCode(existingList = []) {
+    const numbers = existingList
+        .map((item) => {
+            const match = /^CL(\d{4})$/.exec(item.maChatLieu || "");
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((number) => number !== null)
+        .sort((a, b) => a - b);
+
+    let next = 1;
+    for (let index = 0; index < numbers.length; index++) {
+        if (numbers[index] !== index + 1) {
+            next = index + 1;
+            break;
+        }
+        next = numbers.length + 1;
+    }
+    return "CL" + String(next).padStart(4, "0");
 }
 
 function MaterialTable() {
@@ -76,6 +94,15 @@ function MaterialTable() {
     const [anchorEl, setAnchorEl] = useState(null);
 
     useEffect(() => {
+        if (showModal && materialsData.content) {
+            setNewMaterial((previous) => ({
+                ...previous,
+                maChatLieu: generateMaterialCode(materialsData.content),
+            }));
+        }
+    }, [showModal, materialsData.content]);
+
+    useEffect(() => {
         setLoading(true);
         setError("");
         let url = `http://localhost:8080/chatLieu?page=${queryParams.page}&size=${queryParams.size}`;
@@ -84,9 +111,9 @@ function MaterialTable() {
         if (queryParams.trangThai !== "Tất cả")
             url += `&trangThai=${queryParams.trangThai}`;
         fetch(url)
-            .then((res) => {
-                if (!res.ok) throw new Error("Lỗi khi tải dữ liệu chất liệu");
-                return res.json();
+            .then((response) => {
+                if (!response.ok) throw new Error("Lỗi khi tải dữ liệu chất liệu");
+                return response.json();
             })
             .then((data) => setMaterialsData(data))
             .catch((err) => setError(err.message || "Lỗi không xác định"))
@@ -94,8 +121,8 @@ function MaterialTable() {
     }, [queryParams]);
 
     const handleAddMaterial = () => {
-        if (!newMaterial.maChatLieu || !newMaterial.tenChatLieu) {
-            toast.warning("Vui lòng nhập đầy đủ các trường");
+        if (!newMaterial.tenChatLieu) {
+            toast.error("Tên chất liệu không được để trống");
             return;
         }
         setLoading(true);
@@ -107,17 +134,20 @@ function MaterialTable() {
                 trangThai: Number(newMaterial.trangThai),
             }),
         })
-            .then((res) => {
-                if (!res.ok) throw new Error("Lỗi khi thêm chất liệu");
-                return res.text();
+            .then((response) => {
+                if (!response.ok) throw new Error("Lỗi khi thêm chất liệu");
+                return response.text();
             })
             .then(() => {
-                toast.success("Thêm Chất liệu thành cônng")
                 setShowModal(false);
                 setNewMaterial({ maChatLieu: "", tenChatLieu: "", trangThai: 1 });
                 setQueryParams({ ...queryParams, page: 0 });
+                toast.success("Thêm chất liệu thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
@@ -127,8 +157,8 @@ function MaterialTable() {
     };
 
     const handleSaveEdit = () => {
-        if (!editMaterial.maChatLieu || !editMaterial.tenChatLieu) {
-            toast.warning("Vui lòng nhập đầy đủ thông tin");
+        if (!editMaterial.tenChatLieu) {
+            toast.error("Tên chất liệu không được để trống");
             return;
         }
         setLoading(true);
@@ -140,17 +170,20 @@ function MaterialTable() {
                 trangThai: Number(editMaterial.trangThai),
             }),
         })
-            .then((res) => {
-                if (!res.ok) throw new Error("Lỗi khi cập nhật chất liệu");
-                return res.text();
+            .then((response) => {
+                if (!response.ok) throw new Error("Lỗi khi cập nhật chất liệu");
+                return response.text();
             })
             .then(() => {
-                toast.success("Update Chất liệu thành cônng")
                 setShowEditModal(false);
                 setEditMaterial(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Cập nhật chất liệu thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
@@ -158,19 +191,23 @@ function MaterialTable() {
         setDeleteId(id);
         setShowDeleteDialog(true);
     };
+
     const handleConfirmDelete = () => {
         setLoading(true);
         fetch(`http://localhost:8080/chatLieu/${deleteId}`, {
             method: "DELETE",
         })
-            .then((res) => {
-                if (!res.ok) throw new Error("Lỗi khi xóa chất liệu");
-                toast.success("Xóa chất liệu thành công")
+            .then((response) => {
+                if (!response.ok) throw new Error("Lỗi khi xóa chất liệu");
                 setShowDeleteDialog(false);
                 setDeleteId(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Xóa chất liệu thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
@@ -193,9 +230,9 @@ function MaterialTable() {
             render: (value) => (
                 <span
                     style={{
-                        background: getTrangThaiText(value) === "Hiển thị" ? "#e6f4ea" : "#f4f6fb",
-                        color: getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd",
-                        border: `1px solid ${getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd"}`,
+                        background: getStatusText(value) === "Hiển thị" ? "#e6f4ea" : "#f4f6fb",
+                        color: getStatusText(value) === "Hiển thị" ? "#219653" : "#bdbdbd",
+                        border: `1px solid ${getStatusText(value) === "Hiển thị" ? "#219653" : "#bdbdbd"}`,
                         borderRadius: 6,
                         fontWeight: 500,
                         padding: "2px 12px",
@@ -205,8 +242,8 @@ function MaterialTable() {
                         textAlign: "center",
                     }}
                 >
-          {getTrangThaiText(value)}
-        </span>
+                    {getStatusText(value)}
+                </span>
             ),
         },
         {
@@ -239,9 +276,9 @@ function MaterialTable() {
 
     const rows =
         materialsData.content && materialsData.content.length
-            ? materialsData.content.map((material, idx) => ({
+            ? materialsData.content.map((material, index) => ({
                 ...material,
-                stt: queryParams.page * queryParams.size + idx + 1,
+                stt: queryParams.page * queryParams.size + index + 1,
             }))
             : [];
 
@@ -264,24 +301,17 @@ function MaterialTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã chất liệu"
-                        value={newMaterial.maChatLieu}
-                        onChange={(e) => setNewMaterial({ ...newMaterial, maChatLieu: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên chất liệu"
                         value={newMaterial.tenChatLieu}
-                        onChange={(e) => setNewMaterial({ ...newMaterial, tenChatLieu: e.target.value })}
+                        onChange={(event) => setNewMaterial({ ...newMaterial, tenChatLieu: event.target.value })}
                     />
                 </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Select
                         value={Number(newMaterial.trangThai)}
-                        onChange={(e) => setNewMaterial({ ...newMaterial, trangThai: Number(e.target.value) })}
+                        onChange={(event) => setNewMaterial({ ...newMaterial, trangThai: Number(event.target.value) })}
                         size="small"
                     >
                         <MenuItem value={1}>Hiển thị</MenuItem>
@@ -294,7 +324,7 @@ function MaterialTable() {
                     Đóng
                 </Button>
                 <Button variant="contained" onClick={handleAddMaterial} disabled={loading}>
-                    {loading && <CircularProgress size={18} sx={{ mr: 1 }} />}
+                    {loading && <CircularProgress size={18} sx={{ marginRight: 1 }} />}
                     Thêm
                 </Button>
             </DialogActions>
@@ -320,24 +350,17 @@ function MaterialTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã chất liệu"
-                        value={editMaterial?.maChatLieu || ""}
-                        onChange={(e) => setEditMaterial({ ...editMaterial, maChatLieu: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên chất liệu"
                         value={editMaterial?.tenChatLieu || ""}
-                        onChange={(e) => setEditMaterial({ ...editMaterial, tenChatLieu: e.target.value })}
+                        onChange={(event) => setEditMaterial({ ...editMaterial, tenChatLieu: event.target.value })}
                     />
                 </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Select
                         value={Number(editMaterial?.trangThai)}
-                        onChange={(e) => setEditMaterial({ ...editMaterial, trangThai: Number(e.target.value) })}
+                        onChange={(event) => setEditMaterial({ ...editMaterial, trangThai: Number(event.target.value) })}
                         size="small"
                     >
                         <MenuItem value={1}>Hiển thị</MenuItem>
@@ -347,7 +370,7 @@ function MaterialTable() {
             </DialogContent>
             <DialogActions>
                 <Button variant="contained" onClick={handleSaveEdit} disabled={loading}>
-                    {loading && <CircularProgress size={18} sx={{ mr: 1 }} />}
+                    {loading && <CircularProgress size={18} sx={{ marginRight: 1 }} />}
                     Lưu
                 </Button>
             </DialogActions>
@@ -361,11 +384,11 @@ function MaterialTable() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    pr: 2,
+                    paddingRight: 2,
                     fontWeight: 700,
                     fontSize: 20,
-                    pb: 1,
-                    pt: 2,
+                    paddingBottom: 1,
+                    paddingTop: 2,
                 }}
             >
                 <span>Bạn chắc chắn muốn xóa chất liệu này?</span>
@@ -374,14 +397,14 @@ function MaterialTable() {
                     onClick={() => setShowDeleteDialog(false)}
                     sx={{
                         color: (theme) => theme.palette.grey[500],
-                        ml: 2,
+                        marginLeft: 2,
                     }}
                     size="large"
                 >
                     <CloseIcon sx={{ fontSize: 26 }} />
                 </IconButton>
             </DialogTitle>
-            <DialogActions sx={{ pb: 3, pt: 1, justifyContent: "center" }}>
+            <DialogActions sx={{ paddingBottom: 3, paddingTop: 1, justifyContent: "center" }}>
                 <Button
                     variant="outlined"
                     onClick={() => setShowDeleteDialog(false)}
@@ -394,7 +417,7 @@ function MaterialTable() {
                         borderColor: "#49a3f1",
                         boxShadow: "none",
                         background: "#fff",
-                        mr: 1.5,
+                        marginRight: 1.5,
                         "&:hover": {
                             borderColor: "#1769aa",
                             background: "#f0f6fd",
@@ -417,7 +440,7 @@ function MaterialTable() {
                     disabled={loading}
                     sx={{ borderRadius: 2, minWidth: 90, fontWeight: 500 }}
                 >
-                    {loading && <CircularProgress size={18} sx={{ mr: 1 }} />}
+                    {loading && <CircularProgress size={18} sx={{ marginRight: 1 }} />}
                     Xóa
                 </Button>
             </DialogActions>
@@ -432,9 +455,8 @@ function MaterialTable() {
     return (
         <DashboardLayout>
             <DashboardNavbar />
-            <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
-                {/* PHẦN 1: Card filter/search/action */}
-                <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
+            <SoftBox paddingY={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
+                <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
                     <SoftBox
                         display="flex"
                         flexDirection={{ xs: "column", md: "row" }}
@@ -447,10 +469,10 @@ function MaterialTable() {
                                 fullWidth
                                 placeholder="Tìm chất liệu"
                                 value={queryParams.tenChatLieu}
-                                onChange={(e) =>
+                                onChange={(event) =>
                                     setQueryParams({
                                         ...queryParams,
-                                        tenChatLieu: e.target.value,
+                                        tenChatLieu: event.target.value,
                                         page: 0,
                                     })
                                 }
@@ -461,15 +483,15 @@ function MaterialTable() {
                                         </Icon>
                                     </InputAdornment>
                                 }
-                                sx={{ background: "#f5f6fa", borderRadius: 2, p: 0.5, color: "#222" }}
+                                sx={{ background: "#f5f6fa", borderRadius: 2, padding: 0.5, color: "#222" }}
                             />
                             <FormControl sx={{ minWidth: 140 }}>
                                 <Select
                                     value={queryParams.trangThai}
-                                    onChange={(e) =>
+                                    onChange={(event) =>
                                         setQueryParams({
                                             ...queryParams,
-                                            trangThai: e.target.value,
+                                            trangThai: event.target.value,
                                             page: 0,
                                         })
                                     }
@@ -521,22 +543,20 @@ function MaterialTable() {
                     </SoftBox>
                 </Card>
 
-                {/* PHẦN 2: Card Table/Pagination */}
-                <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
+                <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
                     {error && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
+                        <Alert severity="error" sx={{ marginBottom: 2 }}>
                             {error}
                         </Alert>
                     )}
                     <SoftBox>
                         <Table columns={columns} rows={rows} loading={loading} />
                     </SoftBox>
-                    {/* Pagination + View */}
                     <SoftBox
                         display="flex"
                         justifyContent="space-between"
                         alignItems="center"
-                        mt={2}
+                        marginTop={2}
                         flexWrap="wrap"
                         gap={2}
                     >
@@ -544,24 +564,23 @@ function MaterialTable() {
                             <FormControl sx={{ minWidth: 120 }}>
                                 <Select
                                     value={queryParams.size}
-                                    onChange={(e) =>
+                                    onChange={(event) =>
                                         setQueryParams({
                                             ...queryParams,
-                                            size: Number(e.target.value),
+                                            size: Number(event.target.value),
                                             page: 0,
                                         })
                                     }
                                     size="small"
                                 >
-                                    {viewOptions.map((n) => (
-                                        <MenuItem key={n} value={n}>
-                                            Xem {n}
+                                    {viewOptions.map((number) => (
+                                        <MenuItem key={number} value={number}>
+                                            Xem {number}
                                         </MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
                         </SoftBox>
-                        {/* Cải tiến phân trang giống ProductTable */}
                         <SoftBox display="flex" alignItems="center" gap={1}>
                             <Button
                                 variant="text"
@@ -572,10 +591,10 @@ function MaterialTable() {
                             >
                                 Trước
                             </Button>
-                            {paginationItems.map((item, idx) =>
+                            {paginationItems.map((item, index) =>
                                 item === "..." ? (
                                     <Button
-                                        key={`ellipsis-${idx}`}
+                                        key={`ellipsis-${index}`}
                                         variant="text"
                                         size="small"
                                         disabled
@@ -623,6 +642,17 @@ function MaterialTable() {
                 {renderEditMaterialModal()}
                 {renderDeleteDialog()}
             </SoftBox>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <Footer />
         </DashboardLayout>
     );

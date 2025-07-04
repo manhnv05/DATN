@@ -75,7 +75,7 @@ public class KhachHangService {
                     + "    <div style=\"font-size:17px;\">"
                     + "        <span style=\"color:#1976d2;font-weight:600;\">Thông tin đăng nhập của bạn:</span><br>"
                     + "        <table style=\"width:100%;margin-top:12px;font-size:16px;\">"
-                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + kh.getTenTaiKhoan() + "</td></tr>"
+                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + kh.getEmail() + "</td></tr>"
                     + "            <tr><td style=\"padding:6px 0;color:#888;\">Mật khẩu:</td><td style=\"font-weight:700;color:#1976d2;\">" + kh.getMatKhau() + "</td></tr>"
                     + "        </table>"
                     + "        <div style=\"margin-top:20px;color:#444;\">"
@@ -132,9 +132,6 @@ public class KhachHangService {
             if (vO.getMaKhachHang() != null && !vO.getMaKhachHang().trim().isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("maKhachHang")), "%" + vO.getMaKhachHang().trim().toLowerCase() + "%"));
             }
-            if (vO.getTenTaiKhoan() != null && !vO.getTenTaiKhoan().trim().isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("tenTaiKhoan")), "%" + vO.getTenTaiKhoan().trim().toLowerCase() + "%"));
-            }
             if (vO.getMatKhau() != null && !vO.getMatKhau().trim().isEmpty()) {
                 predicates.add(cb.like(root.get("matKhau"), "%" + vO.getMatKhau().trim() + "%"));
             }
@@ -152,9 +149,6 @@ public class KhachHangService {
             }
             if (vO.getNgaySinh() != null) {
                 predicates.add(cb.equal(root.get("ngaySinh"), vO.getNgaySinh()));
-            }
-            if (vO.getGhiChu() != null && !vO.getGhiChu().trim().isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("ghiChu")), "%" + vO.getGhiChu().trim().toLowerCase() + "%"));
             }
             if (vO.getHinhAnh() != null && !vO.getHinhAnh().trim().isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("hinhAnh")), "%" + vO.getHinhAnh().trim().toLowerCase() + "%"));

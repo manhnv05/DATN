@@ -22,7 +22,7 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 const statusList = ["Tất cả", "Hiển thị", "Ẩn"];
 const viewOptions = [5, 10, 20];
@@ -30,7 +30,25 @@ const viewOptions = [5, 10, 20];
 const getTrangThaiText = (val) =>
     val === 1 || val === "1" || val === "Hiển thị" ? "Hiển thị" : "Ẩn";
 
-// Pagination helper: 2 đầu, 2 cuối, luôn nổi bật trang hiện tại nếu ở giữa
+function generateMaMau(existingList = []) {
+    const numbers = existingList
+        .map((item) => {
+            const match = /^MS(\d{4})$/.exec(item.maMau || "");
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((num) => num !== null)
+        .sort((a, b) => a - b);
+    let next = 1;
+    for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] !== i + 1) {
+            next = i + 1;
+            break;
+        }
+        next = numbers.length + 1;
+    }
+    return "MS" + String(next).padStart(4, "0");
+}
+
 function getPaginationItems(current, total) {
     if (total <= 5) return Array.from({ length: total }, (_, i) => i);
     if (current <= 1) return [0, 1, "...", total - 2, total - 1];
@@ -39,7 +57,6 @@ function getPaginationItems(current, total) {
 }
 
 function ColorTable() {
-    // Query params state
     const [queryParams, setQueryParams] = useState({
         tenMauSac: "",
         trangThai: "Tất cả",
@@ -47,7 +64,6 @@ function ColorTable() {
         size: 5,
     });
 
-    // Data/loading/error states
     const [colorsData, setColorsData] = useState({
         content: [],
         totalPages: 1,
@@ -58,7 +74,6 @@ function ColorTable() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Modal states
     const [showModal, setShowModal] = useState(false);
     const [newColor, setNewColor] = useState({
         maMau: "",
@@ -66,22 +81,27 @@ function ColorTable() {
         trangThai: "Hiển thị",
     });
 
-    // Edit states
     const [editColor, setEditColor] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
-    // Delete states
     const [deleteId, setDeleteId] = useState(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    // Menu states
     const [anchorEl, setAnchorEl] = useState(null);
 
     // Menu handlers
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
-    // Fetch colors from API
+    useEffect(() => {
+        if (showModal && colorsData.content) {
+            setNewColor((prev) => ({
+                ...prev,
+                maMau: generateMaMau(colorsData.content),
+            }));
+        }
+    }, [showModal, colorsData.content]);
+
     useEffect(() => {
         setLoading(true);
         setError("");
@@ -90,7 +110,6 @@ function ColorTable() {
             url += `&tenMauSac=${encodeURIComponent(queryParams.tenMauSac)}`;
         if (queryParams.trangThai !== "Tất cả")
             url += `&trangThai=${queryParams.trangThai === "Hiển thị" ? 1 : 0}`;
-
         fetch(url)
             .then((res) => {
                 if (!res.ok) throw new Error("Lỗi khi tải dữ liệu màu sắc");
@@ -101,10 +120,9 @@ function ColorTable() {
             .finally(() => setLoading(false));
     }, [queryParams]);
 
-    // Handler for Add Color
     const handleAddColor = () => {
-        if (!newColor.maMau || !newColor.tenMauSac) {
-            toast.warning("Vui lòng nhập đầy đủ thông tin");
+        if (!newColor.tenMauSac) {
+            toast.error("Tên màu sắc không được để trống");
             return;
         }
         setLoading(true);
@@ -118,19 +136,21 @@ function ColorTable() {
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Lỗi khi thêm màu sắc");
-                toast.success("Thêm màu sắc thành công")
                 return res.text();
             })
             .then(() => {
                 setShowModal(false);
                 setNewColor({ maMau: "", tenMauSac: "", trangThai: "Hiển thị" });
                 setQueryParams({ ...queryParams, page: 0 });
+                toast.success("Thêm màu sắc thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Edit Color
     const handleEditClick = (color) => {
         setEditColor({
             ...color,
@@ -140,8 +160,8 @@ function ColorTable() {
     };
 
     const handleSaveEdit = () => {
-        if (!editColor.maMau || !editColor.tenMauSac) {
-            toast.warning("Vui lòng nhập đầy đủ thông tin");
+        if (!editColor.tenMauSac) {
+            toast.error("Tên màu sắc không được để trống");
             return;
         }
         setLoading(true);
@@ -155,19 +175,21 @@ function ColorTable() {
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Lỗi khi cập nhật màu sắc");
-                toast.success("Cập nhật màu sắc thành công !")
                 return res.text();
             })
             .then(() => {
                 setShowEditModal(false);
                 setEditColor(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Cập nhật màu sắc thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Delete Color
     const handleDelete = (id) => {
         setDeleteId(id);
         setShowDeleteDialog(true);
@@ -179,21 +201,22 @@ function ColorTable() {
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Lỗi khi xóa màu sắc");
-                toast.success("Xóa màu sắc thành công !")
                 setShowDeleteDialog(false);
                 setDeleteId(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Xóa màu sắc thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Pagination
     const handlePageChange = (newPage) => {
         setQueryParams({ ...queryParams, page: newPage });
     };
 
-    // Table columns
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         { name: "maMau", label: "Mã", align: "left", width: "100px" },
@@ -218,8 +241,8 @@ function ColorTable() {
                         textAlign: "center",
                     }}
                 >
-          {getTrangThaiText(value)}
-        </span>
+                    {getTrangThaiText(value)}
+                </span>
             ),
         },
         {
@@ -258,10 +281,8 @@ function ColorTable() {
             }))
             : [];
 
-    // Pagination items
     const paginationItems = getPaginationItems(colorsData.number, colorsData.totalPages || 1);
 
-    // Modal Add
     const renderAddColorModal = () => (
         <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -281,13 +302,6 @@ function ColorTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã màu sắc"
-                        value={newColor.maMau}
-                        onChange={(e) => setNewColor({ ...newColor, maMau: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên màu sắc"
@@ -318,7 +332,6 @@ function ColorTable() {
         </Dialog>
     );
 
-    // Modal Edit
     const renderEditColorModal = () => (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -338,13 +351,6 @@ function ColorTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã màu sắc"
-                        value={editColor?.maMau || ""}
-                        onChange={(e) => setEditColor({ ...editColor, maMau: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên màu sắc"
@@ -372,7 +378,6 @@ function ColorTable() {
         </Dialog>
     );
 
-    // Dialog xác nhận xóa màu sắc
     const renderDeleteDialog = () => (
         <Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
             <DialogTitle
@@ -447,7 +452,6 @@ function ColorTable() {
         <DashboardLayout>
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
-                {/* PHẦN 1: Card filter/search/action */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftBox
                         display="flex"
@@ -534,8 +538,6 @@ function ColorTable() {
                         </SoftBox>
                     </SoftBox>
                 </Card>
-
-                {/* PHẦN 2: Card Table/Pagination */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
@@ -545,7 +547,6 @@ function ColorTable() {
                     <SoftBox>
                         <Table columns={columns} rows={rows} loading={loading} />
                     </SoftBox>
-                    {/* Pagination + View */}
                     <SoftBox
                         display="flex"
                         justifyContent="space-between"
@@ -575,7 +576,6 @@ function ColorTable() {
                                 </Select>
                             </FormControl>
                         </SoftBox>
-                        {/* Pagination đẹp */}
                         <SoftBox display="flex" alignItems="center" gap={1}>
                             <Button
                                 variant="text"
@@ -637,6 +637,17 @@ function ColorTable() {
                 {renderEditColorModal()}
                 {renderDeleteDialog()}
             </SoftBox>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <Footer />
         </DashboardLayout>
     );

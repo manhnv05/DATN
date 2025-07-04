@@ -20,15 +20,10 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import CloseIcon from "@mui/icons-material/Close";
-import Divider from "@mui/material/Divider";
 import DialogContentText from "@mui/material/DialogContentText";
 import Avatar from "@mui/material/Avatar";
-import Notifications from "layouts/Notifications";
 import dayjs from "dayjs";
 
 const genderList = ["Tất cả", "Nam", "Nữ", "Khác"];
@@ -80,18 +75,6 @@ function CustomerTable() {
     const [statusFilter, setStatusFilter] = useState("Tất cả");
     const [viewCount, setViewCount] = useState(5);
     const [page, setPage] = useState(0);
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [editingCustomer, setEditingCustomer] = useState(null);
-    const [editForm, setEditForm] = useState({
-        maKhachHang: "",
-        tenKhachHang: "",
-        email: "",
-        ngaySinh: "",
-        gioiTinh: "",
-        trangThai: 1,
-        anh: "",
-    });
-    const [editSaving, setEditSaving] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingCustomer, setDeletingCustomer] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -173,90 +156,6 @@ function CustomerTable() {
         setPage(0);
     }
 
-    async function handleEditOpen(customer) {
-        setEditingCustomer(customer);
-        try {
-            const response = await axios.get(`http://localhost:8080/khachHang/${customer.id}`);
-            const detail = response.data;
-            setEditForm({
-                maKhachHang: detail.maKhachHang || "",
-                tenKhachHang: detail.tenKhachHang || "",
-                email: detail.email || "",
-                ngaySinh: detail.ngaySinh || "",
-                gioiTinh: detail.gioiTinh || "",
-                trangThai: detail.trangThai !== undefined ? detail.trangThai : 1,
-                anh: detail.anh || "",
-            });
-        } catch (error) {
-            setEditForm({
-                maKhachHang: customer.maKhachHang || "",
-                tenKhachHang: customer.tenKhachHang || "",
-                email: customer.email || "",
-                ngaySinh: customer.ngaySinh || "",
-                gioiTinh: customer.gioiTinh || "",
-                trangThai: customer.trangThai !== undefined ? customer.trangThai : 1,
-                anh: customer.anh || "",
-            });
-        }
-        setEditModalOpen(true);
-    }
-
-    function handleEditClose() {
-        setEditModalOpen(false);
-        setEditingCustomer(null);
-        setEditForm({
-            maKhachHang: "",
-            tenKhachHang: "",
-            email: "",
-            ngaySinh: "",
-            gioiTinh: "",
-            trangThai: 1,
-            anh: "",
-        });
-    }
-
-    function handleEditChange(event) {
-        let value = event.target.value;
-        if (event.target.name === "trangThai") {
-            value = Number(value);
-        }
-        setEditForm({ ...editForm, [event.target.name]: value });
-    }
-
-    async function handleEditSave() {
-        if (!editingCustomer) return;
-        setEditSaving(true);
-        try {
-            await axios.put(
-                `http://localhost:8080/khachHang/${editingCustomer.id}`,
-                {
-                    maKhachHang: editForm.maKhachHang,
-                    tenKhachHang: editForm.tenKhachHang,
-                    email: editForm.email,
-                    ngaySinh: editForm.ngaySinh,
-                    gioiTinh: editForm.gioiTinh,
-                    trangThai: editForm.trangThai,
-                    anh: editForm.anh,
-                }
-            );
-            handleEditClose();
-            setNotification({
-                open: true,
-                message: "Cập nhật khách hàng thành công!",
-                severity: "success",
-            });
-            fetchCustomers();
-        } catch (error) {
-            setNotification({
-                open: true,
-                message: "Sửa khách hàng thất bại!",
-                severity: "error",
-            });
-        } finally {
-            setEditSaving(false);
-        }
-    }
-
     function handleDeleteOpen(customer) {
         setDeletingCustomer(customer);
         setDeleteDialogOpen(true);
@@ -288,11 +187,6 @@ function CustomerTable() {
         } finally {
             setDeleteLoading(false);
         }
-    }
-
-    function handleNotificationClose(event, reason) {
-        if (reason === "clickaway") return;
-        setNotification({ ...notification, open: false });
     }
 
     const columns = [
@@ -411,13 +305,6 @@ function CustomerTable() {
 
     return (
         <DashboardLayout>
-            <Notifications
-                open={notification.open}
-                onClose={handleNotificationClose}
-                message={notification.message}
-                severity={notification.severity}
-                autoHideDuration={2500}
-            />
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
                 <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
@@ -599,114 +486,7 @@ function CustomerTable() {
                     </SoftBox>
                 </Card>
             </SoftBox>
-            <Dialog open={editModalOpen} onClose={handleEditClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4, background: "#fafdff" } }}>
-                <DialogTitle sx={{ fontWeight: 800, fontSize: 26, paddingBottom: 1, color: "#1976d2", letterSpacing: 0.5 }}>
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <span>Cập nhật khách hàng</span>
-                        <IconButton
-                            aria-label="close"
-                            onClick={handleEditClose}
-                            sx={{
-                                color: "#eb5757",
-                                marginLeft: 1,
-                                background: "#f5f6fa",
-                                "&:hover": { background: "#ffeaea" }
-                            }}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    </Box>
-                </DialogTitle>
-                <Divider sx={{ marginBottom: 1 }} />
-                <DialogContent sx={{ background: "#f7fbff", paddingBottom: 2 }}>
-                    <Box display="flex" flexDirection="column" gap={2}>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Mã khách hàng <span style={{ color: "#e74c3c" }}>*</span></Typography>
-                            <TextField
-                                value={editForm.maKhachHang}
-                                name="maKhachHang"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập mã khách hàng"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Tên khách hàng <span style={{ color: "#e74c3c" }}>*</span></Typography>
-                            <TextField
-                                value={editForm.tenKhachHang}
-                                name="tenKhachHang"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập tên khách hàng"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Email</Typography>
-                            <TextField
-                                value={editForm.email}
-                                name="email"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập email"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Ngày sinh</Typography>
-                            <TextField
-                                type="date"
-                                value={editForm.ngaySinh}
-                                name="ngaySinh"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Giới tính</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="gioiTinh"
-                                    value={editForm.gioiTinh}
-                                    onChange={handleEditChange}
-                                >
-                                    <MenuItem value="Nam">Nam</MenuItem>
-                                    <MenuItem value="Nữ">Nữ</MenuItem>
-                                    <MenuItem value="Khác">Khác</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Trạng thái</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="trangThai"
-                                    value={editForm.trangThai}
-                                    onChange={handleEditChange}
-                                >
-                                    <MenuItem value={1}>Online</MenuItem>
-                                    <MenuItem value={0}>Offline</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ padding: 2, background: "#fafdff", borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
-                    <Button onClick={handleEditClose} disabled={editSaving} color="inherit" variant="outlined" sx={{ borderRadius: 2, fontWeight: 600 }}>
-                        Hủy
-                    </Button>
-                    <Button onClick={handleEditSave} disabled={editSaving} variant="contained" color="info" sx={{ borderRadius: 2, minWidth: 120, fontWeight: 700, fontSize: 17, boxShadow: 3 }} startIcon={editSaving ? <CircularProgress size={18} color="inherit" /> : null}>
-                        Lưu
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            {/**/}
             <Dialog open={deleteDialogOpen} onClose={handleDeleteClose} maxWidth="xs" fullWidth>
                 <DialogTitle fontWeight={800} color="#e74c3c" sx={{ fontSize: 22 }}>
                     Xác nhận xóa khách hàng

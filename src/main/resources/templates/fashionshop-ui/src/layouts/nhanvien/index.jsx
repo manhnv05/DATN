@@ -13,33 +13,21 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Icon from "@mui/material/Icon";
 import Table from "examples/Tables/Table";
-import { useNavigate } from "react-router-dom";
-import { FaPlus, FaEye, FaTrash, FaFileExcel, FaFilePdf, FaEdit } from "react-icons/fa";
+import { FaPlus, FaEye, FaEdit, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import axios from "axios";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
-import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import CloseIcon from "@mui/icons-material/Close";
-import Divider from "@mui/material/Divider";
-import DialogContentText from "@mui/material/DialogContentText";
 import Avatar from "@mui/material/Avatar";
-import Notifications from "layouts/Notifications";
+// import Notifications from "layouts/Notifications";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { toast } from "react-toastify";
+import NhanVienDetail from "./detail"; // <-- import detail component
 
 const genderOptions = ["Tất cả", "Nam", "Nữ", "Khác"];
 const rowsPerPageOptions = [5, 10, 20];
 const apiBaseUrl = "http://localhost:8080/nhanVien";
 const provinceApiUrl = "https://provinces.open-api.vn/api/?depth=1";
 const districtApiUrl = code => `https://provinces.open-api.vn/api/p/${code}?depth=2`;
-const wardApiUrl = code => `https://provinces.open-api.vn/api/d/${code}?depth=2`;
 const roleListAPI = "http://localhost:8080/vaiTro/list";
 
 function getGenderLabel(gender) {
@@ -49,15 +37,15 @@ function getGenderLabel(gender) {
 }
 
 const STATUS_OPTIONS = [
-    { value: 1, label: "Đang làm" },
-    { value: 0, label: "Nghỉ" },
+    { value: 1, label: "Đang hoạt động" },
+    { value: 0, label: "Ngừng hoạt động" },
 ];
 
 function getStatusLabel(status, statusOptions) {
     const found = statusOptions.find(s => s.value === status || s.label === status);
     if (found) return found.label;
-    if (status === 1 || status === "Đang làm") return "Đang làm";
-    return "Nghỉ";
+    if (status === 1 || status === "Đang hoạt động") return "Đang hoạt động";
+    return "Ngừng hoạt động";
 }
 
 function getPaginationArray(currentPage, totalPages) {
@@ -71,6 +59,22 @@ function getPaginationArray(currentPage, totalPages) {
         return [0, 1, "...", totalPages - 2, totalPages - 1];
     }
     return [0, 1, "...", currentPage, "...", totalPages - 2, totalPages - 1];
+}
+
+// Tạo roleMap từ roleOptions (id -> ten)
+function getRoleMap(roleOptions) {
+    const map = {};
+    roleOptions.forEach(r => {
+        map[r.id] = r.ten;
+    });
+    return map;
+}
+
+// Lấy tên vai trò: ưu tiên tenVaiTro, sau đó map từ idVaiTro
+function getRoleName(row, roleMap) {
+    if (row && row.tenVaiTro) return row.tenVaiTro;
+    if (row && row.idVaiTro && roleMap && roleMap[row.idVaiTro]) return roleMap[row.idVaiTro];
+    return "Chưa xác định";
 }
 
 function NhanVienTable() {
@@ -90,45 +94,18 @@ function NhanVienTable() {
     const [roleOptions, setRoleOptions] = useState([]);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(0);
-    const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [editingEmployee, setEditingEmployee] = useState(null);
-    const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
-    const [editForm, setEditForm] = useState({
-        maNhanVien: "",
-        hoVaTen: "",
-        chucVu: "",
-        soDienThoai: "",
-        gioiTinh: "",
-        tinhThanhPho: "",
-        quanHuyen: "",
-        xaPhuong: "",
-        trangThai: "",
-        hinhAnh: "",
-        canCuocCongDan: "",
-        email: "",
-        tenTaiKhoan: "",
-        vaiTro: "",
-        ngaySinh: "",
-        matKhau: "",
-        diaChi: "",
-        diaChiCuThe: ""
-    });
-    const [editSaving, setEditSaving] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deletingEmployee, setDeletingEmployee] = useState(null);
-    const [deleteLoading, setDeleteLoading] = useState(false);
     const [notification, setNotification] = useState({
         open: false,
         message: "",
         severity: "info",
     });
-    const navigate = useNavigate();
+
+    // State để show detail form
+    const [showDetail, setShowDetail] = useState(false);
+    const [detailId, setDetailId] = useState(null);
 
     useEffect(() => {
         fetchEmployees();
-        // eslint-disable-next-line
     }, [search, genderFilter, statusFilter, rowsPerPage, currentPage]);
 
     async function fetchEmployees() {
@@ -169,34 +146,9 @@ function NhanVienTable() {
     }
 
     useEffect(() => {
-        axios.get(provinceApiUrl).then(res => setProvinces(res.data || []));
+        axios.get(provinceApiUrl).then(res => {});
         axios.get(roleListAPI).then(res => setRoleOptions(Array.isArray(res.data) ? res.data : []));
     }, []);
-
-    useEffect(() => {
-        if (editForm.tinhThanhPho) {
-            axios.get(districtApiUrl(editForm.tinhThanhPho)).then(res => {
-                setDistricts(res.data && res.data.districts ? res.data.districts : []);
-            });
-        } else {
-            setDistricts([]);
-        }
-        setEditForm(f => ({ ...f, quanHuyen: "", xaPhuong: "" }));
-        setWards([]);
-        // eslint-disable-next-line
-    }, [editForm.tinhThanhPho]);
-
-    useEffect(() => {
-        if (editForm.quanHuyen) {
-            axios.get(wardApiUrl(editForm.quanHuyen)).then(res => {
-                setWards(res.data && res.data.wards ? res.data.wards : []);
-            });
-        } else {
-            setWards([]);
-        }
-        setEditForm(f => ({ ...f, xaPhuong: "" }));
-        // eslint-disable-next-line
-    }, [editForm.quanHuyen]);
 
     function handlePageChange(newPage) {
         if (
@@ -226,185 +178,24 @@ function NhanVienTable() {
         setCurrentPage(0);
     }
 
-    async function handleEditOpen(employee) {
-        setEditingEmployee(employee);
-        try {
-            const response = await axios.get(`${apiBaseUrl}/${employee.id}`);
-            const detail = response.data;
-            let diaChiCuThe = "";
-            let xa = "";
-            let huyen = "";
-            let tinh = "";
-            if (detail.diaChi) {
-                let arr = detail.diaChi.split(" - ");
-                if (arr.length > 3) {
-                    diaChiCuThe = arr.slice(0, arr.length - 3).join(" - ");
-                    xa = arr[arr.length - 3];
-                    huyen = arr[arr.length - 2];
-                    tinh = arr[arr.length - 1];
-                } else {
-                    diaChiCuThe = "";
-                }
-            }
-            setEditForm({
-                maNhanVien: detail.maNhanVien || "",
-                hoVaTen: detail.hoVaTen || "",
-                chucVu: detail.chucVu || "",
-                soDienThoai: detail.soDienThoai || detail.sdt || "",
-                gioiTinh: detail.gioiTinh || "",
-                tinhThanhPho: detail.tinhThanhPho || tinh || "",
-                quanHuyen: detail.quanHuyen || huyen || "",
-                xaPhuong: detail.xaPhuong || xa || "",
-                trangThai: detail.trangThai !== undefined ? detail.trangThai : "",
-                hinhAnh: detail.hinhAnh || detail.anh || "",
-                canCuocCongDan: detail.canCuocCongDan || "",
-                email: detail.email || "",
-                tenTaiKhoan: detail.tenTaiKhoan || "",
-                vaiTro: detail.vaiTro && detail.vaiTro.id ? detail.vaiTro.id : "",
-                ngaySinh: detail.ngaySinh || "",
-                matKhau: detail.matKhau || "",
-                diaChi: detail.diaChi || "",
-                diaChiCuThe: diaChiCuThe
-            });
-        } catch (error) {
-            setEditForm({
-                maNhanVien: employee.maNhanVien || "",
-                hoVaTen: employee.hoVaTen || employee.hoTen || "",
-                chucVu: employee.chucVu || "",
-                soDienThoai: employee.soDienThoai || employee.sdt || "",
-                gioiTinh: employee.gioiTinh || "",
-                tinhThanhPho: employee.tinhThanhPho || "",
-                quanHuyen: employee.quanHuyen || "",
-                xaPhuong: employee.xaPhuong || "",
-                trangThai: employee.trangThai !== undefined ? employee.trangThai : "",
-                hinhAnh: employee.hinhAnh || employee.anh || "",
-                canCuocCongDan: employee.canCuocCongDan || "",
-                email: employee.email || "",
-                tenTaiKhoan: employee.tenTaiKhoan || "",
-                vaiTro: employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : "",
-                ngaySinh: employee.ngaySinh || "",
-                matKhau: employee.matKhau || "",
-                diaChi: employee.diaChi || "",
-                diaChiCuThe: ""
-            });
-        }
-        setEditDialogOpen(true);
-    }
-
-    function handleEditClose() {
-        setEditDialogOpen(false);
-        setEditingEmployee(null);
-        setEditForm({
-            maNhanVien: "",
-            hoVaTen: "",
-            chucVu: "",
-            soDienThoai: "",
-            gioiTinh: "",
-            tinhThanhPho: "",
-            quanHuyen: "",
-            xaPhuong: "",
-            trangThai: "",
-            hinhAnh: "",
-            canCuocCongDan: "",
-            email: "",
-            tenTaiKhoan: "",
-            vaiTro: "",
-            ngaySinh: "",
-            matKhau: "",
-            diaChi: "",
-            diaChiCuThe: ""
-        });
-    }
-
-    function handleEditChange(event) {
-        let value = event.target.value;
-        setEditForm({ ...editForm, [event.target.name]: value });
-    }
-
-    async function handleEditSave() {
-        if (!editingEmployee) return;
-        setEditSaving(true);
-        try {
-            let xa = "";
-            let huyen = "";
-            let tinh = "";
-            if (wards.length > 0 && editForm.xaPhuong) {
-                const foundWard = wards.find(w => w.code === editForm.xaPhuong);
-                xa = foundWard && foundWard.name ? foundWard.name : editForm.xaPhuong;
-            } else {
-                xa = editForm.xaPhuong;
-            }
-            if (districts.length > 0 && editForm.quanHuyen) {
-                const foundDistrict = districts.find(d => d.code === editForm.quanHuyen);
-                huyen = foundDistrict && foundDistrict.name ? foundDistrict.name : editForm.quanHuyen;
-            } else {
-                huyen = editForm.quanHuyen;
-            }
-            if (provinces.length > 0 && editForm.tinhThanhPho) {
-                const foundProvince = provinces.find(p => p.code === editForm.tinhThanhPho);
-                tinh = foundProvince && foundProvince.name ? foundProvince.name : editForm.tinhThanhPho;
-            } else {
-                tinh = editForm.tinhThanhPho;
-            }
-            const diaChiCuThe = editForm.diaChiCuThe || "";
-            const diaChi = [diaChiCuThe, xa, huyen, tinh].filter(Boolean).join(" - ");
-            await axios.put(
-                `${apiBaseUrl}/${editingEmployee.id}`,
-                {
-                    maNhanVien: editForm.maNhanVien,
-                    hoVaTen: editForm.hoVaTen,
-                    chucVu: editForm.chucVu,
-                    soDienThoai: editForm.soDienThoai,
-                    gioiTinh: editForm.gioiTinh,
-                    tinhThanhPho: editForm.tinhThanhPho,
-                    quanHuyen: editForm.quanHuyen,
-                    xaPhuong: editForm.xaPhuong,
-                    trangThai: editForm.trangThai,
-                    hinhAnh: editForm.hinhAnh,
-                    canCuocCongDan: editForm.canCuocCongDan,
-                    email: editForm.email,
-                    tenTaiKhoan: editForm.tenTaiKhoan,
-                    vaiTro: editForm.vaiTro,
-                    ngaySinh: editForm.ngaySinh,
-                    matKhau: editForm.matKhau,
-                    diaChi: diaChi
-                }
-            );
-            handleEditClose();
-            toast.success("Cập nhật nhân viên thành công!")
-            fetchEmployees();
-        } catch (error) {
-            toast.error("Sửa nhân viên thất bại!")
-        } finally {
-            setEditSaving(false);
-        }
-    }
-
-    function handleDeleteOpen(employee) {
-        setDeletingEmployee(employee);
-        setDeleteDialogOpen(true);
-    }
-    function handleDeleteClose() {
-        setDeleteDialogOpen(false);
-        setDeletingEmployee(null);
-    }
-    async function handleDeleteConfirm() {
-        if (!deletingEmployee) return;
-        setDeleteLoading(true);
-        try {
-            await axios.delete(`${apiBaseUrl}/${deletingEmployee.id}`);
-            handleDeleteClose();
-            toast.success("Xóa nhân viên thành công !")
-            fetchEmployees();
-        } catch (error) {
-            toast.error("Xóa nhân viên không thành công !")
-        } finally {
-            setDeleteLoading(false);
-        }
-    }
     function handleNotificationClose(event, reason) {
         if (reason === "clickaway") return;
         setNotification({ ...notification, open: false });
+    }
+
+    const roleMap = getRoleMap(roleOptions);
+
+    // CHUYỂN FORM: Nếu đang xem chi tiết thì show component detail
+    if (showDetail && detailId) {
+        return (
+            <NhanVienDetail
+                id={detailId}
+                onClose={() => {
+                    setShowDetail(false);
+                    setDetailId(null);
+                }}
+            />
+        );
     }
 
     const columns = [
@@ -428,10 +219,11 @@ function NhanVienTable() {
             ),
         },
         {
-            name: "chucVu",
+            name: "vaiTro",
             label: "Chức vụ",
             align: "center",
             width: "110px",
+            render: (_, row) => getRoleName(row, roleMap),
         },
         {
             name: "soDienThoai",
@@ -467,7 +259,7 @@ function NhanVienTable() {
             render: value => (
                 <span
                     style={{
-                        background: getStatusLabel(value, statusOptions) === "Đang làm" ? "#e6f4ea" : "#f4f6fb",
+                        background: getStatusLabel(value, statusOptions) === "Đang làm" ? "#bdbdbd" : "#b6e6f6",
                         color: getStatusLabel(value, statusOptions) === "Đang làm" ? "#219653" : "#bdbdbd",
                         border: "1px solid " + (getStatusLabel(value, statusOptions) === "Đang làm" ? "#219653" : "#bdbdbd"),
                         borderRadius: 6,
@@ -477,8 +269,8 @@ function NhanVienTable() {
                         display: "inline-block",
                     }}
                 >
-          {getStatusLabel(value, statusOptions)}
-        </span>
+                    {getStatusLabel(value, statusOptions)}
+                </span>
             ),
         },
         {
@@ -492,7 +284,10 @@ function NhanVienTable() {
                         size="small"
                         sx={{ color: "#4acbf2" }}
                         title="Chi tiết"
-                        onClick={() => navigate("/nhanvien/chitiet/" + row.id)}
+                        onClick={() => {
+                            setShowDetail(true);
+                            setDetailId(row.id);
+                        }}
                     >
                         <FaEye />
                     </IconButton>
@@ -500,17 +295,9 @@ function NhanVienTable() {
                         size="small"
                         sx={{ color: "#f7b731" }}
                         title="Sửa"
-                        onClick={() => handleEditOpen(row)}
+                        onClick={() => {/* handleEditOpen(row) */}}
                     >
                         <FaEdit />
-                    </IconButton>
-                    <IconButton
-                        size="small"
-                        sx={{ color: "#e74c3c" }}
-                        title="Xóa"
-                        onClick={() => handleDeleteOpen(row)}
-                    >
-                        <FaTrash />
                     </IconButton>
                 </SoftBox>
             ),
@@ -522,7 +309,6 @@ function NhanVienTable() {
         id: item.id,
         maNhanVien: item.maNhanVien,
         hoVaTen: item.hoVaTen,
-        chucVu: item.chucVu,
         soDienThoai: item.soDienThoai || item.sdt || "",
         gioiTinh: item.gioiTinh,
         tinhThanhPho: item.tinhThanhPho || "",
@@ -530,6 +316,8 @@ function NhanVienTable() {
         xaPhuong: item.xaPhuong || "",
         diaChi: item.diaChi || "",
         trangThai: item.trangThai,
+        idVaiTro: item.idVaiTro,
+        tenVaiTro: item.tenVaiTro,
         hinhAnh: item.hinhAnh || item.anh || "",
         actions: "",
     }));
@@ -538,13 +326,13 @@ function NhanVienTable() {
 
     return (
         <DashboardLayout>
-            <Notifications
-                open={notification.open}
-                onClose={handleNotificationClose}
-                message={notification.message}
-                severity={notification.severity}
-                autoHideDuration={2500}
-            />
+            {/*<Notifications*/}
+            {/*    open={notification.open}*/}
+            {/*    onClose={handleNotificationClose}*/}
+            {/*    message={notification.message}*/}
+            {/*    severity={notification.severity}*/}
+            {/*    autoHideDuration={2500}*/}
+            {/*/>*/}
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
                 <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
@@ -638,11 +426,12 @@ function NhanVienTable() {
                                             let address = (item.diaChi && item.diaChi.trim() !== "")
                                                 ? item.diaChi
                                                 : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
+                                            let roleName = getRoleName(item, roleMap);
                                             return [
                                                 currentPage * rowsPerPage + idx + 1,
                                                 item.maNhanVien,
                                                 item.hoVaTen,
-                                                item.chucVu,
+                                                roleName,
                                                 item.soDienThoai || item.sdt,
                                                 getGenderLabel(item.gioiTinh),
                                                 address,
@@ -695,11 +484,12 @@ function NhanVienTable() {
                                         let address = (item.diaChi && item.diaChi.trim() !== "")
                                             ? item.diaChi
                                             : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
+                                        let roleName = getRoleName(item, roleMap);
                                         return [
                                             currentPage * rowsPerPage + idx + 1,
                                             item.maNhanVien,
                                             item.hoVaTen,
-                                            item.chucVu,
+                                            roleName,
                                             item.soDienThoai || item.sdt,
                                             getGenderLabel(item.gioiTinh),
                                             address,
@@ -735,7 +525,7 @@ function NhanVienTable() {
                                         color: "#1769aa",
                                     },
                                 }}
-                                onClick={() => navigate("/nhanvien/add")}
+                                onClick={() => window.location.assign("/nhanvien/add")}
                             >
                                 Thêm nhân viên
                             </Button>
@@ -832,264 +622,6 @@ function NhanVienTable() {
                     </SoftBox>
                 </Card>
             </SoftBox>
-            <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4, background: "#fafdff" } }}>
-                <DialogTitle sx={{ fontWeight: 800, fontSize: 26, paddingBottom: 1, color: "#1976d2", letterSpacing: 0.5 }}>
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <span>Cập nhật nhân viên</span>
-                        <IconButton
-                            aria-label="close"
-                            onClick={handleEditClose}
-                            sx={{
-                                color: "#eb5757",
-                                marginLeft: 1,
-                                background: "#f5f6fa",
-                                "&:hover": { background: "#ffeaea" }
-                            }}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    </Box>
-                </DialogTitle>
-                <Divider sx={{ marginBottom: 1 }} />
-                <DialogContent sx={{ background: "#f7fbff", paddingBottom: 2 }}>
-                    <Box display="flex" flexDirection="column" gap={2}>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Mã nhân viên <span style={{ color: "#e74c3c" }}>*</span></Typography>
-                            <TextField
-                                value={editForm.maNhanVien}
-                                name="maNhanVien"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập mã nhân viên"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Họ và tên <span style={{ color: "#e74c3c" }}>*</span></Typography>
-                            <TextField
-                                value={editForm.hoVaTen}
-                                name="hoVaTen"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập họ tên nhân viên"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Chức vụ</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="chucVu"
-                                    value={editForm.chucVu}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                >
-                                    <MenuItem value=""><em>Chọn chức vụ</em></MenuItem>
-                                    <MenuItem value="Nhân viên bán hàng">Nhân viên bán hàng</MenuItem>
-                                    <MenuItem value="Quản lý">Quản lý</MenuItem>
-                                    <MenuItem value="Kế toán">Kế toán</MenuItem>
-                                    <MenuItem value="Thủ kho">Thủ kho</MenuItem>
-                                    <MenuItem value="Thu ngân">Thu ngân</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Số điện thoại</Typography>
-                            <TextField
-                                value={editForm.soDienThoai}
-                                name="soDienThoai"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập số điện thoại"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Giới tính</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="gioiTinh"
-                                    value={editForm.gioiTinh}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                >
-                                    <MenuItem value=""><em>Chọn giới tính</em></MenuItem>
-                                    <MenuItem value="Nam">Nam</MenuItem>
-                                    <MenuItem value="Nữ">Nữ</MenuItem>
-                                    <MenuItem value="Khác">Khác</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Ngày sinh</Typography>
-                            <TextField
-                                value={editForm.ngaySinh}
-                                name="ngaySinh"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                type="date"
-                                placeholder="YYYY-MM-DD"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Email</Typography>
-                            <TextField
-                                value={editForm.email}
-                                name="email"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập email"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Căn cước công dân</Typography>
-                            <TextField
-                                value={editForm.canCuocCongDan}
-                                name="canCuocCongDan"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập số căn cước công dân"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Vai trò</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="vaiTro"
-                                    value={editForm.vaiTro}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                >
-                                    <MenuItem value=""><em>Chọn vai trò</em></MenuItem>
-                                    {roleOptions.map(role => (
-                                        <MenuItem value={role.id} key={role.id}>
-                                            {role.ten}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Địa chỉ cụ thể</Typography>
-                            <TextField
-                                value={editForm.diaChiCuThe || ""}
-                                name="diaChiCuThe"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập số nhà, tên đường, thôn xóm..."
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Tỉnh/Thành phố</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="tinhThanhPho"
-                                    value={editForm.tinhThanhPho}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                >
-                                    <MenuItem value=""><em>Chọn Tỉnh/Thành phố</em></MenuItem>
-                                    {provinces.map(province => (
-                                        <MenuItem value={province.code} key={province.code}>
-                                            {province.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Quận/Huyện</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="quanHuyen"
-                                    value={editForm.quanHuyen}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                    disabled={!editForm.tinhThanhPho}
-                                >
-                                    <MenuItem value=""><em>Chọn Quận/Huyện</em></MenuItem>
-                                    {districts.map(district => (
-                                        <MenuItem value={district.code} key={district.code}>
-                                            {district.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Phường/Xã</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="xaPhuong"
-                                    value={editForm.xaPhuong}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                    disabled={!editForm.quanHuyen}
-                                >
-                                    <MenuItem value=""><em>Chọn Phường/Xã</em></MenuItem>
-                                    {wards.map(ward => (
-                                        <MenuItem value={ward.code} key={ward.code}>
-                                            {ward.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Trạng thái</Typography>
-                            <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
-                                <Select
-                                    name="trangThai"
-                                    value={editForm.trangThai}
-                                    onChange={handleEditChange}
-                                    displayEmpty
-                                >
-                                    <MenuItem value={1}>Đang làm</MenuItem>
-                                    <MenuItem value={0}>Nghỉ</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ padding: 2, background: "#fafdff", borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
-                    <Button onClick={handleEditClose} disabled={editSaving} color="inherit" variant="outlined" sx={{ borderRadius: 2, fontWeight: 600 }}>
-                        Hủy
-                    </Button>
-                    <Button onClick={handleEditSave} disabled={editSaving} variant="contained" color="info" sx={{ borderRadius: 2, minWidth: 120, fontWeight: 700, fontSize: 17, boxShadow: 3 }} startIcon={editSaving ? <CircularProgress size={18} color="inherit" /> : null}>
-                        Lưu
-                    </Button>
-                </DialogActions>
-            </Dialog>
-            <Dialog open={deleteDialogOpen} onClose={handleDeleteClose} maxWidth="xs" fullWidth>
-                <DialogTitle fontWeight={800} color="#e74c3c" sx={{ fontSize: 22 }}>
-                    Xác nhận xóa nhân viên
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Bạn có chắc chắn muốn xóa nhân viên <strong>{deletingEmployee && (deletingEmployee.hoVaTen || deletingEmployee.hoTen)}</strong> không? Thao tác này không thể hoàn tác.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ padding: 2 }}>
-                    <Button onClick={handleDeleteClose} disabled={deleteLoading} variant="outlined" color="inherit" sx={{ borderRadius: 2, fontWeight: 600 }}>
-                        Hủy
-                    </Button>
-                    <Button onClick={handleDeleteConfirm} disabled={deleteLoading} variant="contained" color="error" sx={{ borderRadius: 2, minWidth: 110, fontWeight: 700 }} startIcon={deleteLoading ? <CircularProgress size={18} color="inherit" /> : null}>
-                        Xóa
-                    </Button>
-                </DialogActions>
-            </Dialog>
             <Footer />
         </DashboardLayout>
     );

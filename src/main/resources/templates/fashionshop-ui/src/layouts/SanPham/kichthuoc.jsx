@@ -22,7 +22,7 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 const statusList = ["Tất cả", "Hiển thị", "Ẩn"];
 const viewOptions = [5, 10, 20];
@@ -30,7 +30,25 @@ const viewOptions = [5, 10, 20];
 const getTrangThaiText = (val) =>
     val === 1 || val === "1" || val === "Hiển thị" ? "Hiển thị" : "Ẩn";
 
-// Phân trang đẹp: luôn có 2 đầu, 2 cuối, và nổi bật trang hiện tại
+function generateMaKichThuoc(existingList = []) {
+    const numbers = existingList
+        .map((item) => {
+            const match = /^SZ(\d{4})$/.exec(item.ma || "");
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((num) => num !== null)
+        .sort((a, b) => a - b);
+    let next = 1;
+    for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] !== i + 1) {
+            next = i + 1;
+            break;
+        }
+        next = numbers.length + 1;
+    }
+    return "SZ" + String(next).padStart(4, "0");
+}
+
 function getPaginationItems(current, total) {
     if (total <= 5) return Array.from({ length: total }, (_, i) => i);
     if (current <= 1) return [0, 1, "...", total - 2, total - 1];
@@ -56,7 +74,6 @@ function SizeTable() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Modal states
     const [showModal, setShowModal] = useState(false);
     const [newSize, setNewSize] = useState({
         ma: "",
@@ -64,18 +81,23 @@ function SizeTable() {
         trangThai: "Hiển thị",
     });
 
-    // Edit states
     const [editSize, setEditSize] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
-    // Delete states
     const [deleteId, setDeleteId] = useState(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    // Menu states
     const [anchorEl, setAnchorEl] = useState(null);
 
-    // Fetch sizes from API
+    useEffect(() => {
+        if (showModal && sizesData.content) {
+            setNewSize((prev) => ({
+                ...prev,
+                ma: generateMaKichThuoc(sizesData.content),
+            }));
+        }
+    }, [showModal, sizesData.content]);
+
     useEffect(() => {
         setLoading(true);
         setError("");
@@ -95,10 +117,9 @@ function SizeTable() {
             .finally(() => setLoading(false));
     }, [queryParams]);
 
-    // Handler for Add Size
     const handleAddSize = () => {
-        if (!newSize.ma || !newSize.tenKichCo) {
-            toast.warning("Vui lòng nhập đầy đủ thông tin");
+        if (!newSize.tenKichCo) {
+            toast.error("Tên kích thước không được để trống");
             return;
         }
         setLoading(true);
@@ -112,19 +133,21 @@ function SizeTable() {
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Có lỗi xảy ra khi thêm kích thước!");
-                toast.success("Thêm kích thước thành công !")
                 return res.text();
             })
             .then(() => {
                 setShowModal(false);
                 setNewSize({ ma: "", tenKichCo: "", trangThai: "Hiển thị" });
                 setQueryParams({ ...queryParams, page: 0 });
+                toast.success("Thêm kích thước thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Edit Size
     const handleEditClick = (size) => {
         setEditSize({
             ...size,
@@ -134,8 +157,8 @@ function SizeTable() {
     };
 
     const handleSaveEdit = () => {
-        if (!editSize.ma || !editSize.tenKichCo) {
-            toast.warning("Vui lòng nhập đầy đủ thông tin");
+        if (!editSize.tenKichCo) {
+            toast.error("Tên kích thước không được để trống");
             return;
         }
         setLoading(true);
@@ -149,19 +172,21 @@ function SizeTable() {
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Có lỗi xảy ra khi cập nhật kích thước!");
-                toast.success("Cập nhật thành công")
                 return res.text();
             })
             .then(() => {
                 setShowEditModal(false);
                 setEditSize(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Cập nhật kích thước thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Delete Size
     const handleDelete = (id) => {
         setDeleteId(id);
         setShowDeleteDialog(true);
@@ -173,25 +198,25 @@ function SizeTable() {
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Có lỗi xảy ra khi xóa kích thước!");
-                toast.success("Xóa thành công !")
                 setShowDeleteDialog(false);
                 setDeleteId(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Xóa kích thước thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Pagination
     const handlePageChange = (newPage) => {
         setQueryParams({ ...queryParams, page: newPage });
     };
 
-    // Menu actions
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
-    // Table columns
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         { name: "ma", label: "Mã", align: "left", width: "100px" },
@@ -218,8 +243,8 @@ function SizeTable() {
                         textAlign: "center",
                     }}
                 >
-          {getTrangThaiText(value)}
-        </span>
+                    {getTrangThaiText(value)}
+                </span>
             ),
         },
         {
@@ -258,7 +283,6 @@ function SizeTable() {
             }))
             : [];
 
-    // Modal Thêm kích thước
     const renderAddSizeModal = () => (
         <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -278,13 +302,6 @@ function SizeTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã kích thước"
-                        value={newSize.ma}
-                        onChange={(e) => setNewSize({ ...newSize, ma: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên kích thước"
@@ -315,7 +332,6 @@ function SizeTable() {
         </Dialog>
     );
 
-    // Modal sửa kích thước
     const renderEditSizeModal = () => (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -335,13 +351,6 @@ function SizeTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã kích thước"
-                        value={editSize?.ma || ""}
-                        onChange={(e) => setEditSize({ ...editSize, ma: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên kích thước"
@@ -369,7 +378,6 @@ function SizeTable() {
         </Dialog>
     );
 
-    // Dialog xác nhận xóa kích thước
     const renderDeleteDialog = () => (
         <Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
             <DialogTitle
@@ -440,14 +448,12 @@ function SizeTable() {
         </Dialog>
     );
 
-    // Pagination Items
     const paginationItems = getPaginationItems(sizesData.number, sizesData.totalPages || 1);
 
     return (
         <DashboardLayout>
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
-                {/* PHẦN 1: Card filter/search/action */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftBox
                         display="flex"
@@ -534,8 +540,6 @@ function SizeTable() {
                         </SoftBox>
                     </SoftBox>
                 </Card>
-
-                {/* PHẦN 2: Card Table/Pagination */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
@@ -545,7 +549,6 @@ function SizeTable() {
                     <SoftBox>
                         <Table columns={columns} rows={rows} loading={loading} />
                     </SoftBox>
-                    {/* Pagination */}
                     <SoftBox
                         display="flex"
                         justifyContent="space-between"
@@ -575,7 +578,6 @@ function SizeTable() {
                                 </Select>
                             </FormControl>
                         </SoftBox>
-                        {/* Pagination đẹp */}
                         <SoftBox display="flex" alignItems="center" gap={1}>
                             <Button
                                 variant="text"
@@ -637,6 +639,17 @@ function SizeTable() {
                 {renderEditSizeModal()}
                 {renderDeleteDialog()}
             </SoftBox>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <Footer />
         </DashboardLayout>
     );

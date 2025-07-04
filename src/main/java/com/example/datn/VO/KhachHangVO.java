@@ -17,8 +17,6 @@ public class KhachHangVO {
     @NotBlank(message = "Mã khách hàng không để trống")
     private String maKhachHang;
 
-    private String tenTaiKhoan;
-
     private String matKhau;
 
     @NotBlank(message = "Tên khách hàng không để trống")
@@ -38,8 +36,6 @@ public class KhachHangVO {
     private String sdt;
 
     private Date ngaySinh;
-
-    private String ghiChu;
 
     private String hinhAnh;
 

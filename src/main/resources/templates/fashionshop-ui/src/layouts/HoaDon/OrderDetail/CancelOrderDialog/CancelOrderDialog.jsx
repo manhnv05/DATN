@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './CancelOrderDialog.module.css';
 import PropTypes from 'prop-types';
+import { toast } from "react-toastify";
 
 const predefinedMessages = [
     "Khách hàng yêu cầu hủy đơn hàng.",
@@ -15,7 +16,6 @@ const CancelOrderDialog = ({ onClose, onConfirmCancel }) => {
     const [customMessage, setCustomMessage] = useState('');
 
     useEffect(() => {
-        // Đặt mặc định là mẫu tin nhắn đầu tiên khi dialog mở
         setSelectedMessage(predefinedMessages[0]);
         setCustomMessage(predefinedMessages[0]);
     }, []);
@@ -23,38 +23,26 @@ const CancelOrderDialog = ({ onClose, onConfirmCancel }) => {
     const handleRadioChange = (e) => {
         const message = e.target.value;
         setSelectedMessage(message);
-        // Nếu chọn "Lý do khác", cho phép người dùng nhập tùy chỉnh, nếu không thì dùng mẫu
         if (message === "Lý do khác: Vui lòng ghi rõ.") {
-            setCustomMessage(""); // Xóa nếu chuyển sang tùy chỉnh
-        }
-        else{
-            setCustomMessage(message)
+            setCustomMessage("");
+        } else {
+            setCustomMessage(message);
         }
     };
 
-// Trong file CancelOrderDialog.jsx
-
     const handleConfirm = () => {
-        // >> ĐIỂM DEBUG 1: Kiểm tra xem hàm có được gọi khi nhấn nút không.
-        console.log("1. [Dialog] Nút 'Xác nhận' đã được nhấn.");
-
         const finalGhiChu = selectedMessage === "Lý do khác: Vui lòng ghi rõ."
             ? customMessage
             : selectedMessage;
 
-        console.log("2. [Dialog] Ghi chú cuối cùng (finalGhiChu):", `'${finalGhiChu}'`);
-
         if (!finalGhiChu.trim()) {
-
-            console.warn("3. [Dialog] Ghi chú rỗng, dừng lại và hiện alert.");
-            alert("Vui lòng nhập ghi chú hủy đơn hàng.");
+            toast.error("Vui lòng nhập ghi chú hủy đơn hàng.");
             return;
         }
 
-
-        console.log("4. [Dialog] Ghi chú hợp lệ. Chuẩn bị gọi onConfirmCancel...");
         onConfirmCancel(finalGhiChu);
     };
+
     return (
         <div className={styles.dialogOverlay}>
             <div className={styles.dialogContent}>
@@ -86,7 +74,7 @@ const CancelOrderDialog = ({ onClose, onConfirmCancel }) => {
                         onChange={(e) => setCustomMessage(e.target.value)}
                         placeholder="Nhập ghi chú hủy đơn hàng..."
                         rows="4"
-                        disabled={selectedMessage !== "Lý do khác: Vui lòng ghi rõ." && selectedMessage !== ""} // Disable nếu không phải "Lý do khác"
+                        disabled={selectedMessage !== "Lý do khác: Vui lòng ghi rõ." && selectedMessage !== ""}
                     />
                 </div>
 
@@ -95,8 +83,10 @@ const CancelOrderDialog = ({ onClose, onConfirmCancel }) => {
         </div>
     );
 };
+
 CancelOrderDialog.propTypes = {
     onClose: PropTypes.func.isRequired,
     onConfirmCancel: PropTypes.func.isRequired,
 };
+
 export default CancelOrderDialog;

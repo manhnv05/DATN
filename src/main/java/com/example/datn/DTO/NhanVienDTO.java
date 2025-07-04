@@ -14,6 +14,9 @@ public class NhanVienDTO{
 
     private String maNhanVien;
 
+
+    private String tenVaiTro;
+
     private String hoVaTen;
 
     private String hinhAnh;
@@ -30,11 +33,7 @@ public class NhanVienDTO{
 
     private String diaChi;
 
-    private String tenTaiKhoan;
-
     private String matKhau;
-
-    private String chucVu;
 
     private Integer trangThai;
 
