@@ -115,7 +115,7 @@ const TableList = ({
                     }
                     size="small"
                 >
-                    {[5, 10, 15, 20].map((n) => (
+                    {[5, 10, 20].map((n) => (
                         <MenuItem key={n} value={n}>
                             Hiển thị {n}
                         </MenuItem>
