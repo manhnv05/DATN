@@ -75,7 +75,7 @@ public class KhachHangService {
                     + "    <div style=\"font-size:17px;\">"
                     + "        <span style=\"color:#1976d2;font-weight:600;\">Thông tin đăng nhập của bạn:</span><br>"
                     + "        <table style=\"width:100%;margin-top:12px;font-size:16px;\">"
-                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + kh.getTenTaiKhoan() + "</td></tr>"
+                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + kh.getEmail() + "</td></tr>"
                     + "            <tr><td style=\"padding:6px 0;color:#888;\">Mật khẩu:</td><td style=\"font-weight:700;color:#1976d2;\">" + kh.getMatKhau() + "</td></tr>"
                     + "        </table>"
                     + "        <div style=\"margin-top:20px;color:#444;\">"

@@ -22,11 +22,7 @@ import KhachHang from "layouts/khachhang";
 import AddKhachHang from "layouts/khachhang/add";
 import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
-
-
-
-
-
+import UpdateNhanVien from "layouts/nhanvien/update";
 
 import RTL from "layouts/rtl";
 import Profile from "layouts/profile";
@@ -289,6 +285,7 @@ const routes = [
     noCollapse: true,
     hidden: true,
   },
+
   {
     key: "add-staff",
     name: "Thêm nhân viên",
@@ -297,6 +294,14 @@ const routes = [
     noCollapse: true,
     hidden: true,
   },
+  {
+    key: "update-staff",
+    name: "Sửa nhân viên",
+    route: "/nhanvien/update/:id",
+    component: <UpdateNhanVien />,
+    noCollapse: true,
+    hidden: true,
+  }
 ];
 
 export default routes;

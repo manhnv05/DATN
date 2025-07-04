@@ -8,7 +8,6 @@ import java.io.Serializable;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class NhanVienUpdateVO extends NhanVienVO implements Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class NhanVienUpdateVO extends NhanVienVO  {
+    Integer status;
 }

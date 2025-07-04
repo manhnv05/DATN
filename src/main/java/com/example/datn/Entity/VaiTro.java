@@ -30,7 +30,4 @@ public class VaiTro{
 
     @Column(name = "mo_ta_vai_tro")
     private String moTaVaiTro;
-
-    @OneToMany(mappedBy = "vaiTro")
-    private List<NhanVien> nhanViens;
 }

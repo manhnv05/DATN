@@ -22,51 +22,31 @@ import java.util.List;
 @AllArgsConstructor
 @Table(name = "khach_hang")
 public class KhachHang{
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
     @Column(name = "ma_khach_hang")
     private String maKhachHang;
-
-    @Column(name = "ten_tai_khoan")
-    private String tenTaiKhoan;
-
-    @Column(name = "mat_khau")
-    private String matKhau;
-
     @Column(name = "ten_khach_hang")
     private String tenKhachHang;
-
-    @Column(name = "email")
-    private String email;
-
     @Column(name = "gioi_tinh")
     private Integer gioiTinh;
-
-    @Column(name = "sdt")
-    private String sdt;
-
     @Column(name = "ngay_sinh")
     private Date ngaySinh;
-
-    @Column(name = "ghi_chu")
-    private String ghiChu;
-
+    @Column(name = "sdt")
+    private String sdt;
+    @Column(name = "email")
+    private String email;
+    @Column(name = "mat_khau")
+    private String matKhau;
     @Column(name = "hinh_anh")
     private String hinhAnh;
-
     @Column(name = "trang_thai")
     private Integer trangThai;
-
     @OneToMany(mappedBy = "khachHang")
     private List<HoaDon> hoaDons;
-
     @OneToMany(mappedBy = "khachHang")
     private List<ChiTietPhieuGiamGia> chiTietPhieuGiamGias;
-
     @OneToMany(mappedBy = "khachHang")
     private List<DiaChi> diaChis;
 }

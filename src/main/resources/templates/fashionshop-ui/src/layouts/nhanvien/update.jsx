@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
     Card, Box, Typography, Grid, TextField, Button, FormControl,
-    Avatar, CircularProgress, Divider, Select, MenuItem,
+    Avatar, CircularProgress, Divider, Select, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from "@mui/material";
 import { Upload, CheckCircle } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import Fade from "@mui/material/Fade";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import dayjs from "dayjs";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import axios from "axios";
@@ -18,7 +14,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // API URLs
-const nhanVienAddAPI = "http://localhost:8080/nhanVien";
+const nhanVienAPI = "http://localhost:8080/nhanVien";
 const provinceAPI = "https://provinces.open-api.vn/api/?depth=1";
 const districtAPI = code => `https://provinces.open-api.vn/api/p/${code}?depth=2`;
 const wardAPI = code => `https://provinces.open-api.vn/api/d/${code}?depth=2`;
@@ -26,6 +22,7 @@ const wardAPI = code => `https://provinces.open-api.vn/api/d/${code}?depth=2`;
 // Constants
 const GENDER_OPTIONS = [{ value: "Nam", label: "Nam" }, { value: "Nữ", label: "Nữ" }];
 const ROLE_OPTIONS = [{ value: 1, label: "Quản Lí" }, { value: 2, label: "Nhân viên" }];
+const STATUS_OPTIONS = [{ value: 1, label: "Đang làm" }, { value: 0, label: "Nghỉ" }];
 
 // UI Styles
 const labelStyle = { fontWeight: 600, color: "#1769aa", mb: 0.5, fontSize: 15, display: "block" };
@@ -55,21 +52,31 @@ const getFieldSx = (focusField, name) => ({
 });
 
 const arraySafe = arr => (Array.isArray(arr) ? arr : []);
-const findById = (arr, val, key = "code") => arr.find(item => item?.[key] === val) || null;
+const findByName = (arr, name) => {
+    if (!name || !arr) return null;
+    return arr.find(item => item?.name.toLowerCase() === name.toLowerCase()) || null;
+};
+const getNameByCode = (arr, code) => {
+    if (!arr || !code) return "";
+    return arr.find(item => item.code === code)?.name || "";
+};
 
-function AddNhanVienForm() {
+function UpdateNhanVien() {
+    const { id } = useParams();
     const [employee, setEmployee] = useState({
         hinhAnh: "",
         hoVaTen: "", soDienThoai: "", email: "",
         canCuocCongDan: "", ngaySinh: "",
         gioiTinh: "Nam", idVaiTro: 2,
         tinhThanhPho: "", quanHuyen: "", xaPhuong: "",
+        status: 1
     });
     const [avatarPreview, setAvatarPreview] = useState("");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [focusField, setFocusField] = useState("");
     const [addressData, setAddressData] = useState({ provinces: [], districts: [], wards: [] });
+    const [confirmOpen, setConfirmOpen] = useState(false);
     const navigate = useNavigate();
 
     const validPrefixes = [
@@ -80,8 +87,11 @@ function AddNhanVienForm() {
     ];
 
     const today = new Date();
-    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
+        .toISOString()
+        .split("T")[0];
 
+    // Fetch address data
     const fetchAddress = async (type, code) => {
         const api = { provinces: provinceAPI, districts: districtAPI(code), wards: wardAPI(code) }[type];
         if (!api) return [];
@@ -94,22 +104,103 @@ function AddNhanVienForm() {
         }
     };
 
-    useEffect(() => {
-        document.body.style.overflow = "hidden";
-        return () => (document.body.style.overflow = "auto");
-    }, []);
+    // Parse address string into province, district, ward
+    const parseAddress = (address) => {
+        if (!address) return { province: "", district: "", ward: "" };
+        //["Xã Thanh Lâm", "Huyện Ba Chẽ", "Tỉnh Quảng Ninh"]
+        const parts = address.split(", ").map(part => part.trim());
+        if (parts.length !== 3) return { province: "", district: "", ward: "" };
+        return {
+            ward: parts[0],       // giữ nguyên "Xã Thanh Lâm"
+            district: parts[1],   // giữ nguyên "Huyện Ba Chẽ"
+            province: parts[2]    // giữ nguyên "Tỉnh Quảng Ninh"
+        };
+    };
 
+    // Fetch employee and address data
     useEffect(() => {
-        fetchAddress("provinces").then(provinces => {
-            setAddressData(prev => ({ ...prev, provinces }));
-        });
-    }, []);
+        const fetchInitialData = async () => {
+            try {
+                setLoading(true);
+                // Fetch provinces
+                const provinces = await fetchAddress("provinces");
+                console.log("Provinces:", provinces);
+                setAddressData(prev => ({ ...prev, provinces }));
+                console.log("addressData loaded:", addressData);
 
+                // Fetch employee data
+                const response = await axios.get(`${nhanVienAPI}/${id}`);
+                const data = response.data;
+
+                // Parse address from diaChi field
+                const { province, district, ward } = parseAddress(data.diaChi);
+
+                // Map address names to codes
+                let tinhThanhPhoCode = "";
+                let quanHuyenCode = "";
+                let xaPhuongCode = "";
+
+                // Find province code
+                const provinceMatch = findByName(provinces, province);
+                console.log("Province Match:", provinceMatch);
+
+                if (provinceMatch) {
+                    tinhThanhPhoCode = provinceMatch.code;
+                    // Fetch districts
+                    const districts = await fetchAddress("districts", tinhThanhPhoCode);
+                    setAddressData(prev => ({ ...prev, districts }));
+
+                    // Find district code
+                    const districtMatch = findByName(districts, district);
+                    if (districtMatch) {
+                        quanHuyenCode = districtMatch.code;
+                        // Fetch wards
+                        const wards = await fetchAddress("wards", quanHuyenCode);
+                        setAddressData(prev => ({ ...prev, wards }));
+
+                        // Find ward code
+                        const wardMatch = findByName(wards, ward);
+                        if (wardMatch) {
+                            xaPhuongCode = wardMatch.code;
+                        }
+                    }
+                }
+
+                // Initialize employee data
+                const employeeData = {
+                    hinhAnh: data.hinhAnh || "",
+                    hoVaTen: data.hoVaTen || "", // Fixed: Use hoVaTen instead of hinhAnh
+                    soDienThoai: data.soDienThoai || "",
+                    email: data.email || "",
+                    canCuocCongDan: data.canCuocCongDan || "",
+                    ngaySinh: data.ngaySinh ? new Date(data.ngaySinh).toISOString().split("T")[0] : "",
+                    gioiTinh: data.gioiTinh || "Nam",
+                    idVaiTro: data.idVaiTro || 2,
+                    tinhThanhPho: tinhThanhPhoCode,
+                    quanHuyen: quanHuyenCode,
+                    xaPhuong: xaPhuongCode,
+                    status: data.trangThai !== null ? data.trangThai : 1 // Use trangThai instead of status
+                };
+
+                setEmployee(employeeData);
+                setAvatarPreview(data.hinhAnh || "/default-avatar.png");
+            } catch (error) {
+                toast.error("Không thể tải dữ liệu nhân viên!");
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) fetchInitialData();
+    }, [id]);
+
+    // Fetch districts when tinhThanhPho changes
     useEffect(() => {
         if (employee.tinhThanhPho) {
             fetchAddress("districts", employee.tinhThanhPho).then(districts => {
                 setAddressData(prev => ({ ...prev, districts, wards: [] }));
-                setEmployee(prev => ({ ...prev, quanHuyen: "", xaPhuong: "" }));
+                if (!districts.some(d => d.code === employee.quanHuyen)) {
+                    setEmployee(prev => ({ ...prev, quanHuyen: "", xaPhuong: "" }));
+                }
             });
         } else {
             setAddressData(prev => ({ ...prev, districts: [], wards: [] }));
@@ -117,11 +208,14 @@ function AddNhanVienForm() {
         }
     }, [employee.tinhThanhPho]);
 
+    // Fetch wards when quanHuyen changes
     useEffect(() => {
         if (employee.quanHuyen) {
             fetchAddress("wards", employee.quanHuyen).then(wards => {
                 setAddressData(prev => ({ ...prev, wards }));
-                setEmployee(prev => ({ ...prev, xaPhuong: "" }));
+                if (!wards.some(w => w.code === employee.xaPhuong)) {
+                    setEmployee(prev => ({ ...prev, xaPhuong: "" }));
+                }
             });
         } else {
             setAddressData(prev => ({ ...prev, wards: [] }));
@@ -129,6 +223,7 @@ function AddNhanVienForm() {
         }
     }, [employee.quanHuyen]);
 
+    // Handle input changes
     const handleChange = ({ target: { name, value } }) => {
         if (name === "soDienThoai") {
             if (/^\d*$/.test(value) && value.length <= 10) {
@@ -155,14 +250,7 @@ function AddNhanVienForm() {
         }
     };
 
-    const handleDateChange = (date) => {
-        if (date && dayjs(date).isValid()) {
-            setEmployee(prev => ({ ...prev, ngaySinh: dayjs(date).format("YYYY-MM-DD") }));
-        } else {
-            setEmployee(prev => ({ ...prev, ngaySinh: "" }));
-        }
-    };
-
+    // Validation
     const validate = () => {
         if (!employee.hoVaTen) return "Vui lòng nhập họ tên";
         if (employee.hoVaTen.length > 30) return "Họ tên không được vượt quá 30 ký tự";
@@ -186,27 +274,34 @@ function AddNhanVienForm() {
         if (!employee.tinhThanhPho) return "Vui lòng chọn tỉnh/thành phố";
         if (!employee.quanHuyen) return "Vui lòng chọn quận/huyện";
         if (!employee.xaPhuong) return "Vui lòng chọn phường/xã";
+        if (employee.status === undefined) return "Vui lòng chọn trạng thái";
         return null;
     };
 
-    const handleSubmit = async e => {
-        e.preventDefault();
-        const error = validate();
-        if (error) return toast.error(error);
+    // Handle submit
+    const handleConfirmUpdate = async () => {
+        setConfirmOpen(false);
         setLoading(true);
         setSuccess(false);
+
         try {
+            //19 / 5581 / 167.
             const { tinhThanhPho, quanHuyen, xaPhuong } = employee;
+            console.log("Submitting employee data:", employee);
             const { provinces, districts, wards } = addressData;
+            console.log("Address data:", { provinces, districts, wards });
             const diaChi = [
-                findById(wards, xaPhuong)?.name || xaPhuong,
-                findById(districts, quanHuyen)?.name || quanHuyen,
-                findById(provinces, tinhThanhPho)?.name || tinhThanhPho,
+                getNameByCode(wards, xaPhuong),
+                getNameByCode(districts, quanHuyen),
+                getNameByCode(provinces, tinhThanhPho)
             ].filter(Boolean).join(", ");
-            await axios.post(nhanVienAddAPI, { ...employee, diaChi });
+            console.log("Formatted address:", diaChi);
+
+            await axios.put(`${nhanVienAPI}/${id}`, { ...employee, diaChi });
+
             setSuccess(true);
-            toast.success("Thêm nhân viên thành công!");
-            setTimeout(() => navigate(-1), 1200);
+            toast.success("Cập nhật nhân viên thành công!");
+            setTimeout(() => navigate("/staff-management"), 1200);
         } catch {
             toast.error("Đã có lỗi, vui lòng thử lại!");
         } finally {
@@ -214,18 +309,32 @@ function AddNhanVienForm() {
         }
     };
 
+    const handleConfirmClose = () => {
+        setConfirmOpen(false);
+    };
+
+    const handleSubmit = async e => {
+        e.preventDefault();
+        const error = validate();
+        if (error) return toast.error(error);
+        setConfirmOpen(true);
+    };
+
     return (
         <DashboardLayout>
             <DashboardNavbar />
             <Box sx={{ overflowY: "hidden", minHeight: "100vh", background: "linear-gradient(130deg,#f2f9fe 70%,#e9f0fa 100%)", display: "flex", alignItems: "flex-start", justifyContent: "center", py: 4 }}>
-                {addressData.provinces.length > 0 ? (
+                {addressData.provinces.length > 0 && !loading ? (
                     <Fade in timeout={600}>
                         <div>
                             <GradientCard>
-                                <SectionTitle align="center" mb={1}>Thêm Nhân Viên Mới</SectionTitle>
+                                <SectionTitle align="center" mb={1}>Cập Nhật Thông Tin Nhân Viên</SectionTitle>
                                 <Box sx={{ background: "linear-gradient(130deg,#f2f9fe 70%,#e9f0fa 100%)", mb: 2, p: 2, borderRadius: 3, textAlign: "center" }}>
                                     <Typography variant="subtitle1" color="#1769aa" fontWeight={600}>
-                                        <span style={{ color: "#43a047" }}>Nhanh chóng - Chính xác - Thẩm mỹ!</span> Vui lòng nhập đầy đủ thông tin.
+                                        <Typography component="span" style={{ color: "#43a047" }} fontWeight={600}>
+                                            Chính xác - Cẩn thận!
+                                        </Typography>{" "}
+                                        Vui lòng kiểm tra và cập nhật thông tin.
                                     </Typography>
                                 </Box>
                                 <form onSubmit={handleSubmit} autoComplete="off">
@@ -282,6 +391,7 @@ function AddNhanVienForm() {
                                                         onFocus={() => setFocusField("canCuocCongDan")}
                                                         onBlur={() => setFocusField("")}
                                                         inputProps={{ maxLength: 12, inputMode: "numeric" }}
+                                                        disabled={true}
                                                     />
                                                 </Box>
                                             </Box>
@@ -333,25 +443,21 @@ function AddNhanVienForm() {
                                                         onBlur={() => setFocusField("")}
                                                     />
                                                 </Grid>
-                                                <Grid item xs={12}>
+                                                <Grid item xs={12} sm={6}>
                                                     <label style={labelStyle}>Ngày sinh</label>
-                                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                                        <DatePicker
-                                                            value={employee.ngaySinh ? dayjs(employee.ngaySinh) : null}
-                                                            onChange={handleDateChange}
-                                                            maxDate={dayjs(maxDate)}
-                                                            slotProps={{
-                                                                textField: {
-                                                                    fullWidth: true,
-                                                                    size: "small",
-                                                                    sx: getFieldSx(focusField, "ngaySinh"),
-                                                                    onFocus: () => setFocusField("ngaySinh"),
-                                                                    onBlur: () => setFocusField(""),
-                                                                    placeholder: "VD: 01/01/2000",
-                                                                },
-                                                            }}
-                                                        />
-                                                    </LocalizationProvider>
+                                                    <TextField
+                                                        type="date"
+                                                        name="ngaySinh"
+                                                        value={employee.ngaySinh || ""}
+                                                        onChange={handleChange}
+                                                        fullWidth
+                                                        size="small"
+                                                        InputLabelProps={{ shrink: true }}
+                                                        sx={getFieldSx(focusField, "ngaySinh")}
+                                                        onFocus={() => setFocusField("ngaySinh")}
+                                                        onBlur={() => setFocusField("")}
+                                                        inputProps={{ max: maxDate }}
+                                                    />
                                                 </Grid>
                                                 <Grid item xs={12} sm={6}>
                                                     <label style={labelStyle}>Giới tính</label>
@@ -393,6 +499,30 @@ function AddNhanVienForm() {
                                                         {ROLE_OPTIONS.map((role) => (
                                                             <MenuItem key={role.value} value={role.value}>
                                                                 {role.label}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </TextField>
+                                                </Grid>
+                                                <Grid item xs={12} sm={6}>
+                                                    <label style={labelStyle}>Trạng thái</label>
+                                                    <TextField
+                                                        select
+                                                        fullWidth
+                                                        size="small"
+                                                        name="status"
+                                                        value={employee.status !== undefined ? employee.status : 1}
+                                                        onChange={(e) =>
+                                                            handleChange({
+                                                                target: { name: "status", value: parseInt(e.target.value) },
+                                                            })
+                                                        }
+                                                        onFocus={() => setFocusField("status")}
+                                                        onBlur={() => setFocusField("")}
+                                                        sx={getFieldSx(focusField, "status")}
+                                                    >
+                                                        {STATUS_OPTIONS.map((status) => (
+                                                            <MenuItem key={status.value} value={status.value}>
+                                                                {status.label}
                                                             </MenuItem>
                                                         ))}
                                                     </TextField>
@@ -481,7 +611,7 @@ function AddNhanVienForm() {
                                                         variant="outlined"
                                                         color="inherit"
                                                         size="large"
-                                                        onClick={() => navigate(-1)}
+                                                        onClick={() => navigate("/staff-management")}
                                                         disabled={loading}
                                                         sx={{
                                                             fontWeight: 700, borderRadius: 3, minWidth: 120,
@@ -503,7 +633,7 @@ function AddNhanVienForm() {
                                                             minWidth: 200, boxShadow: "0 2px 10px 0 #90caf9"
                                                         }}
                                                     >
-                                                        {loading ? "Đang lưu..." : success ? "Thành công!" : "Thêm nhân viên"}
+                                                        {loading ? "Đang cập nhật..." : success ? "Thành công!" : "Cập nhật nhân viên"}
                                                     </Button>
                                                 </Box>
                                             </Box>
@@ -511,6 +641,26 @@ function AddNhanVienForm() {
                                     </Grid>
                                 </form>
                             </GradientCard>
+                            <Dialog
+                                open={confirmOpen}
+                                onClose={handleConfirmClose}
+                                aria-labelledby="confirm-dialog-title"
+                            >
+                                <DialogTitle id="confirm-dialog-title">Xác nhận cập nhật</DialogTitle>
+                                <DialogContent>
+                                    <DialogContentText>
+                                        Bạn có chắc chắn muốn cập nhật thông tin nhân viên {employee.hoVaTen}?
+                                    </DialogContentText>
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button onClick={handleConfirmClose} color="inherit">
+                                        Hủy
+                                    </Button>
+                                    <Button onClick={handleConfirmUpdate} color="info" autoFocus>
+                                        Xác nhận
+                                    </Button>
+                                </DialogActions>
+                            </Dialog>
                         </div>
                     </Fade>
                 ) : (
@@ -524,4 +674,4 @@ function AddNhanVienForm() {
     );
 }
 
-export default AddNhanVienForm;
+export default UpdateNhanVien;

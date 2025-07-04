@@ -46,14 +46,14 @@ public class NhanVienService {
     public Integer save(NhanVienVO vO) {
         NhanVien bean = new NhanVien();
         BeanUtils.copyProperties(vO, bean);
-
+        System.out.println( " id vai tro "+ vO.getIdVaiTro());
         if (vO.getIdVaiTro() != null) {
             VaiTro vaiTro = vaiTroRepository.findById(vO.getIdVaiTro()).orElse(null);
             bean.setVaiTro(vaiTro);
         } else {
             bean.setVaiTro(null);
         }
-
+        System.out.println("Bean thêm db: "+ bean);
         bean = nhanVienRepository.save(bean);
 
         // Gửi email tài khoản/mật khẩu cho nhân viên nếu có email và emailConfigService cấu hình
@@ -70,7 +70,7 @@ public class NhanVienService {
                     + "    <div style=\"font-size:17px;\">"
                     + "        <span style=\"color:#1976d2;font-weight:600;\">Thông tin đăng nhập của bạn:</span><br>"
                     + "        <table style=\"width:100%;margin-top:12px;font-size:16px;\">"
-                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getTenTaiKhoan() + "</td></tr>"
+                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getEmail() + "</td></tr>"
                     + "            <tr><td style=\"padding:6px 0;color:#888;\">Mật khẩu:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getMatKhau() + "</td></tr>"
                     + "        </table>"
                     + "        <div style=\"margin-top:20px;color:#444;\">"
@@ -109,14 +109,12 @@ public class NhanVienService {
     public void update(Integer id, NhanVienUpdateVO vO) {
         NhanVien bean = requireOne(id);
         BeanUtils.copyProperties(vO, bean);
-
         if (vO.getIdVaiTro() != null) {
             VaiTro vaiTro = vaiTroRepository.findById(vO.getIdVaiTro()).orElse(null);
             bean.setVaiTro(vaiTro);
         } else {
             bean.setVaiTro(null);
         }
-
         nhanVienRepository.save(bean);
     }
 
@@ -138,6 +136,7 @@ public class NhanVienService {
     }
 
     private NhanVienDTO toDTO(NhanVien original) {
+        System.out.println("original: " + original.toString());
         NhanVienDTO bean = new NhanVienDTO();
         BeanUtils.copyProperties(original, bean);
         if (original.getVaiTro() != null) {
@@ -145,6 +144,7 @@ public class NhanVienService {
         } else {
             bean.setIdVaiTro(null);
         }
+        System.out.println("bean: " + bean.toString());
         return bean;
     }
 

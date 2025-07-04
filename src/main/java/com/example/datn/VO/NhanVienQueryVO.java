@@ -1,47 +1,22 @@
 package com.example.datn.VO;
 
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.sql.Date;
 
 @Data
-public class NhanVienQueryVO implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private Integer id;
-
-    private Integer idVaiTro;
-
-    private String maNhanVien;
-
-    private String hoVaTen;
-
-    private String hinhAnh;
-
-    private String gioiTinh;
-
-    private Date ngaySinh;
-
-    private String soDienThoai;
-
-    private String canCuocCongDan;
-
-    private String email;
-
-    private String diaChi;
-
-
-    private String tenTaiKhoan;
-
-    private String matKhau;
-
-    private String chucVu;
-
-    private Integer trangThai;
-
-
-    private Integer page;
-    private Integer size;
-
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class NhanVienQueryVO  {
+     Integer idVaiTro;
+     String maNhanVien;
+     String hoVaTen;
+     String gioiTinh;
+     String soDienThoai;
+     Integer trangThai;
+     Integer page;
+     Integer size;
 }

@@ -1,41 +1,26 @@
 package com.example.datn.DTO;
 
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.sql.Date;
 
 @Data
-public class NhanVienDTO{
-    private Integer id;
-
-    private Integer idVaiTro;
-
-    private String maNhanVien;
-
-    private String hoVaTen;
-
-    private String hinhAnh;
-
-    private String gioiTinh;
-
-    private Date ngaySinh;
-
-    private String soDienThoai;
-
-    private String canCuocCongDan;
-
-    private String email;
-
-    private String diaChi;
-
-    private String tenTaiKhoan;
-
-    private String matKhau;
-
-    private String chucVu;
-
-    private Integer trangThai;
-
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class NhanVienDTO {
+    Integer id;
+    String hinhAnh;
+    String maNhanVien;
+    String hoVaTen;
+    String email;
+    String soDienThoai;
+    Date ngaySinh;
+    String gioiTinh;
+    Integer idVaiTro;
+    String diaChi;
+    Integer trangThai;
+    String canCuocCongDan;
 }
