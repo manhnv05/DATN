@@ -17,7 +17,7 @@ import { FaPlus, FaEye, FaEdit, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import axios from "axios";
 import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
-import Notifications from "layouts/Notifications";
+// import Notifications from "layouts/Notifications";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -326,13 +326,13 @@ function NhanVienTable() {
 
     return (
         <DashboardLayout>
-            <Notifications
-                open={notification.open}
-                onClose={handleNotificationClose}
-                message={notification.message}
-                severity={notification.severity}
-                autoHideDuration={2500}
-            />
+            {/*<Notifications*/}
+            {/*    open={notification.open}*/}
+            {/*    onClose={handleNotificationClose}*/}
+            {/*    message={notification.message}*/}
+            {/*    severity={notification.severity}*/}
+            {/*    autoHideDuration={2500}*/}
+            {/*/>*/}
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
                 <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
