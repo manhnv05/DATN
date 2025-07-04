@@ -24,7 +24,7 @@ public class DotGiamGiaVO {
 
     @NotNull(message = "Phần trăm giảm giá là bắt buộc")
     @Min(value = 1, message = "Phần trăm giảm giá phải lớn hơn 0")
-    @Max(value = 100, message = "Phần trăm giảm giá phải nhỏ hơn hoặc bằng 100")
+    @Max(value = 50, message = "Phần trăm giảm giá phải nhỏ hơn hoặc bằng 50")
     private Integer phanTramGiamGia;
 
     private Date ngayBatDau;
