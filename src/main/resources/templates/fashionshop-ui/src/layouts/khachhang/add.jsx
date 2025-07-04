@@ -269,7 +269,7 @@ export default function AddKhachHangForm() {
                 <Fade in timeout={600}>
                     <Card
                         sx={{
-                            maxWidth: 1180,
+                            maxWidth: 1500,
                             width: "100%",
                             borderRadius: 7,
                             boxShadow: "0 10px 50px 0 rgba(28, 72, 180, 0.13)",
@@ -661,6 +661,7 @@ export default function AddKhachHangForm() {
                                             size="large"
                                             onClick={() => navigate(-1)}
                                             sx={{
+                                                color: "#090a0c",
                                                 fontWeight: 700,
                                                 borderRadius: 3,
                                                 minWidth: 120,
