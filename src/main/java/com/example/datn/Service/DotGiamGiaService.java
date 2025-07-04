@@ -57,7 +57,7 @@ public class DotGiamGiaService {
 
     public Page<DotGiamGiaDTO> query(DotGiamGiaQueryVO vO) {
         int page = vO.getPage() != null ? vO.getPage() : 0;
-        int size = vO.getSize() != null ? vO.getSize() : 10;
+        int size = vO.getSize() != null ? vO.getSize() : 5;
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         Specification<DotGiamGia> spec = (root, query, cb) -> {

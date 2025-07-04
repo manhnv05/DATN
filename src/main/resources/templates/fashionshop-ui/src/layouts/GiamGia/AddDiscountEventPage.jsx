@@ -11,29 +11,30 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import React, { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaTimes } from "react-icons/fa";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { STATUS_LIST } from "./Filter";
 import Table from "examples/Tables/Table";
 import SoftBox from "components/SoftBox";
-import Flatpickr from "react-flatpickr";
-import "flatpickr/dist/flatpickr.min.css";
-import "flatpickr/dist/themes/airbnb.css";
-import instanceAPIMain from "../../configapi";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Box from "@mui/material/Box";
-import dayjs from "dayjs";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import instanceAPIMain from "../../configapi";
+import Modal from "@mui/material/Modal";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import PropTypes from "prop-types";
 
-export function debounce(func, timeout = 500) {
+export function debounce(functionCallback, timeout = 500) {
     let timer;
-    return (...args) => {
+    return (...argumentsList) => {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            func(...args);
+            functionCallback(...argumentsList);
         }, timeout);
     };
 }
@@ -71,11 +72,34 @@ export const getImageByChiTiet = (idChiTiet) =>
         params: { idSanPhamChiTiet: idChiTiet, page: 0, size: 1 },
     });
 
-const formatPrice = (value) =>
-    value !== undefined && value !== null ? value.toLocaleString("vi-VN") + " ₫" : "";
+function formatPrice(value) {
+    if (value !== undefined && value !== null) {
+        return value.toLocaleString("vi-VN") + " ₫";
+    }
+    return "";
+}
 
-const getDiscountPrice = (price, percent) =>
-    price !== undefined && price !== null ? price - (price * (Number(percent) || 0)) / 100 : price;
+function getDiscountPrice(price, percent) {
+    if (price !== undefined && price !== null) {
+        return price - (price * (Number(percent) || 0)) / 100;
+    }
+    return price;
+}
+
+function getPaginationItems(current, total) {
+    if (total <= 4) {
+        return Array.from({ length: total }, function (_, index) { return index; });
+    }
+    if (current <= 1) {
+        return [0, 1, "...", total - 2, total - 1];
+    }
+    if (current >= total - 2) {
+        return [0, 1, "...", total - 2, total - 1];
+    }
+    return [0, 1, "...", current, "...", total - 2, total - 1];
+}
+
+const viewOptions = [5, 10, 20];
 
 const INIT = {
     trangThai: 1,
@@ -86,249 +110,424 @@ const INIT = {
     dateRange: [],
 };
 
-const AddDiscountEventPage = () => {
+function ProductFilter({ filter = {}, setFilter, categories = [], onClose }) {
+    const debounceMapRef = useRef({});
+
+    function getDebouncedHandler(key) {
+        if (!debounceMapRef.current[key]) {
+            debounceMapRef.current[key] = debounce((newValue) => {
+                setFilter((pre) => ({ ...pre, [key]: newValue }));
+            }, 500);
+        }
+        return debounceMapRef.current[key];
+    }
+
+    function handleClear() {
+        setFilter((pre) => ({
+            ...pre,
+            tenSanPham: "",
+            tenDanhMuc: "",
+        }));
+    }
+
+    return (
+        <Card sx={{ p: 2, minWidth: 350 }}>
+            <Grid container spacing={2}>
+                <Grid item xs={12}>
+                    <TextField
+                        fullWidth
+                        label="Tên sản phẩm"
+                        placeholder="Nhập tên sản phẩm"
+                        value={filter.tenSanPham || ""}
+                        onChange={e => getDebouncedHandler("tenSanPham")(e.target.value)}
+                    />
+                </Grid>
+                <Grid item xs={12}>
+                    <TextField
+                        select
+                        fullWidth
+                        label="Danh mục"
+                        value={filter.tenDanhMuc || ""}
+                        onChange={e => setFilter((pre) => ({ ...pre, tenDanhMuc: e.target.value }))}
+                    >
+                        <MenuItem value="">Tất cả</MenuItem>
+                        {(categories || []).map((cat) => (
+                            <MenuItem value={cat} key={cat}>{cat}</MenuItem>
+                        ))}
+                    </TextField>
+                </Grid>
+                <Grid item xs={12} container justifyContent="flex-end" spacing={1}>
+                    <Grid item>
+                        <IconButton size="small" onClick={handleClear} color="error" title="Xóa lọc">
+                            <FaTimes />
+                        </IconButton>
+                    </Grid>
+                    <Grid item>
+                        <Button
+                            variant="contained"
+                            startIcon={<FilterListIcon />}
+                            onClick={onClose}
+                        >
+                            Áp dụng
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Card>
+    );
+}
+
+ProductFilter.propTypes = {
+    filter: PropTypes.object,
+    setFilter: PropTypes.func,
+    categories: PropTypes.array,
+    onClose: PropTypes.func,
+};
+
+function AddDiscountEventPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const id = searchParams.get("id");
-
-    const {
-        reset,
-        handleSubmit,
-        control,
-        watch,
-    } = useForm({
+    const { reset, handleSubmit, control, watch } = useForm({
         defaultValues: INIT,
     });
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                if (id) {
-                    const res = await getDotGiamGiaById(id);
-                    if (res.status === 200) {
-                        const payload = res.data || {};
-                        reset({
-                            tenDotGiamGia: payload.tenDotGiamGia,
-                            phanTramGiamGia: payload.phanTramGiamGia,
-                            ngayBatDau:payload.ngayBatDau,
-                            ngayKetThuc:payload.ngayKetThuc,
-                            trangThai: payload.trangThai,
-                            dateRange: [payload.ngayBatDau, payload.ngayKetThuc],
-                        });
-                        setEventId(payload.id);
-                        const detailRes = await getChiTietDotGiamGiaByDot(payload.id);
-                        if (detailRes.status === 200) {
-                            const list = detailRes.data || [];
-                            setSelectedDetails(list.map((d) => d.idSanPhamChiTiet));
-                            const proIds = Array.from(new Set(list.map((d) => d.idSanPham)));
-                            for (const pid of proIds) {
-                                const proRes = await getSanPhamById(pid);
-                                if (proRes.status === 200) {
-                                    setSelectedProducts((pre) => [...pre, proRes.data]);
-                                }
-                                await fetchDetails(pid);
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        };
-        fetchData();
-        // eslint-disable-next-line
-    }, [id, reset]);
-
-    const discountValue = watch("phanTramGiamGia");
-
-    const [search, setSearch] = useState("");
     const [products, setProducts] = useState([]);
     const [selectedProducts, setSelectedProducts] = useState([]);
     const [details, setDetails] = useState([]);
     const [selectedDetails, setSelectedDetails] = useState([]);
     const [eventId, setEventId] = useState(id);
+    const [productPage, setProductPage] = useState(0);
+    const [productTotalPages, setProductTotalPages] = useState(1);
+    const [productPageSize, setProductPageSize] = useState(10);
 
-    const preDetailMap = React.useMemo(() => {
-        return details.reduce((acc, item) => {
+    const [filterModalOpen, setFilterModalOpen] = useState(false);
+    const [productFilter, setProductFilter] = useState({ tenSanPham: "", tenDanhMuc: "" });
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        async function fetchCategories() {
+            try {
+                const res = await instanceAPIMain.get("/danhMuc/all");
+                if (res.status === 200) {
+                    setCategories(res.data ? res.data.map(function (d) { return d.tenDanhMuc; }) : []);
+                }
+            } catch { }
+        }
+        fetchCategories();
+    }, []);
+
+    useEffect(function () {
+        async function fetchData() {
+            if (id) {
+                const res = await getDotGiamGiaById(id);
+                if (res.status === 200) {
+                    const payload = res.data || {};
+                    reset({
+                        tenDotGiamGia: payload.tenDotGiamGia,
+                        phanTramGiamGia: payload.phanTramGiamGia,
+                        ngayBatDau: payload.ngayBatDau,
+                        ngayKetThuc: payload.ngayKetThuc,
+                        trangThai: payload.trangThai,
+                        dateRange: [payload.ngayBatDau, payload.ngayKetThuc],
+                    });
+                    setEventId(payload.id);
+                    const detailRes = await getChiTietDotGiamGiaByDot(payload.id);
+                    if (detailRes.status === 200) {
+                        const list = detailRes.data || [];
+                        setSelectedDetails(list.map(function (d) { return d.idSanPhamChiTiet; }));
+                        const proIds = Array.from(new Set(list.map(function (d) { return d.idSanPham; })));
+                        for (let pid of proIds) {
+                            const proRes = await getSanPhamById(pid);
+                            if (proRes.status === 200) {
+                                setSelectedProducts(function (pre) { return [...pre, proRes.data]; });
+                            }
+                            await fetchDetails(pid);
+                        }
+                    }
+                }
+            }
+        }
+        fetchData();
+    }, [id, reset]);
+
+    const discountValue = watch("phanTramGiamGia");
+
+    const preDetailMap = React.useMemo(function () {
+        return details.reduce(function (acc, item) {
             if (!acc[item.idSanPham]) acc[item.idSanPham] = [];
             acc[item.idSanPham].push(item.id);
             return acc;
         }, {});
     }, [details]);
 
-    const fetchDetails = async (idSanPham) => {
-        try {
-            const res = await getChiTietBySanPham(idSanPham);
-            if (res.status === 200) {
-                const list = res.data || [];
-                const detailWithImg = await Promise.all(
-                    list.map(async (it) => {
-                        try {
-                            const imgRes = await getImageByChiTiet(it.id);
-                            return {
-                                ...it,
-                                idSanPham,
-                                image: imgRes.data?.content?.[0]?.duongDanAnh || "",
-                            };
-                        } catch {
-                            return { ...it, idSanPham, image: "" };
-                        }
-                    })
-                );
-                setDetails((pre) => {
-                    const existedIds = new Set(pre.map((d) => d.id));
-                    const add = detailWithImg.filter((d) => !existedIds.has(d.id));
-                    return [...pre, ...add];
-                });
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const fetchProductsList = async () => {
-        try {
-            const res = await getSanPham({ page: 0, size: 10 });
-            if (res.status === 200) {
-                const list = res.data?.content || res.data || [];
-                setProducts(list);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    useEffect(() => {
-        fetchProductsList();
-    }, []);
-
-    const handleApply = async () => {
-        if (!eventId || selectedDetails.length === 0) {
-            toast.error("Vui lòng chọn sản phẩm chi tiết để áp dụng!");
-            return;
-        }
-        try {
-            await applyDotGiamGia({
-                idDotGiamGia: eventId,
-                idSanPhamChiTietList: selectedDetails,
+    async function fetchDetails(idSanPham) {
+        const res = await getChiTietBySanPham(idSanPham);
+        if (res.status === 200) {
+            const list = res.data || [];
+            const detailWithImg = await Promise.all(
+                list.map(async function (it) {
+                    try {
+                        const imgRes = await getImageByChiTiet(it.id);
+                        return {
+                            ...it,
+                            idSanPham: idSanPham,
+                            image: imgRes.data && imgRes.data.content && imgRes.data.content[0] && imgRes.data.content[0].duongDanAnh ? imgRes.data.content[0].duongDanAnh : "",
+                        };
+                    } catch {
+                        return { ...it, idSanPham: idSanPham, image: "" };
+                    }
+                })
+            );
+            setDetails(function (pre) {
+                const existedIds = new Set(pre.map(function (d) { return d.id; }));
+                const add = detailWithImg.filter(function (d) { return !existedIds.has(d.id); });
+                return [...pre, ...add];
             });
-            toast.success("Áp dụng thành công");
-            navigate("/discount-event");
-        } catch (e) {
-            console.error(e);
-            toast.error("Áp dụng thất bại");
         }
-    };
+    }
+
+    async function fetchProductsList(page = 0, size = productPageSize, filter = productFilter) {
+        const params = { page: page, size: size };
+        if (filter.tenSanPham) params.tenSanPham = filter.tenSanPham;
+        if (filter.tenDanhMuc) params.tenDanhMuc = filter.tenDanhMuc;
+        const res = await getSanPham(params);
+        if (res.status === 200) {
+            const list = res.data && res.data.content ? res.data.content : res.data || [];
+            setProducts(list);
+            setProductTotalPages(res.data && res.data.totalPages ? res.data.totalPages : 1);
+            setProductPage(res.data && typeof res.data.number === "number" ? res.data.number : 0);
+        }
+    }
+
+    useEffect(function () {
+        fetchProductsList(productPage, productPageSize, productFilter);
+    }, [productPage, productPageSize, productFilter]);
 
     const debounceRef = useRef(
-        debounce(async (value) => {
-            if (!value) {
-                await fetchProductsList();
-                return;
-            }
-            const res = await searchSanPham(value);
-            if (res.status === 200) setProducts(res.data || []);
+        debounce(function (value) {
+            setProductPage(0);
+            setProductFilter(function (prev) { return { ...prev, tenSanPham: value }; });
         }, 500)
     );
 
     const productColumns = React.useMemo(
-        () => [
-            {
-                name: "checkbox",
-                label: "",
-                width: "50px",
-                align: "center",
-                render: (_, row) => (
-                    <Checkbox
-                        checked={!!selectedProducts.find((p) => p.id === row.id)}
-                        onChange={(_, checked) => {
-                            if (checked) {
-                                if (!selectedProducts.find((p) => p.id === row.id)) {
-                                    setSelectedProducts((pre) => [...pre, row]);
-                                }
-                                fetchDetails(row.id);
-                            } else {
-                                setSelectedProducts((pre) => pre.filter((p) => p.id !== row.id));
-                                setDetails((pre) => pre.filter((d) => d.idSanPham !== row.id));
-                                setSelectedDetails((pre) =>
-                                    pre.filter((id) => !preDetailMap[row.id]?.includes(id))
-                                );
+        function () {
+            return [
+                {
+                    name: "checkbox",
+                    label: (
+                        <Checkbox
+                            sx={{
+                                color: "#111",
+                                "&.Mui-checked": { color: "#111" },
+                                "& .MuiSvgIcon-root": {
+                                    border: "1.5px solid #111",
+                                    borderRadius: "4px",
+                                },
+                            }}
+                            checked={
+                                products.length > 0 &&
+                                products.every(function (p) {
+                                    return selectedProducts.some(function (sp) {
+                                        return sp.id === p.id;
+                                    });
+                                })
                             }
-                        }}
-                    />
-                ),
-            },
-            { name: "tenSanPham", label: "Tên", align: "center" },
-            { name: "tenDanhMuc", label: "Danh mục", align: "center" },
-        ],
-        [selectedProducts, details, preDetailMap]
+                            indeterminate={
+                                products.length > 0 &&
+                                products.some(function (p) {
+                                    return selectedProducts.some(function (sp) {
+                                        return sp.id === p.id;
+                                    });
+                                }) &&
+                                !products.every(function (p) {
+                                    return selectedProducts.some(function (sp) {
+                                        return sp.id === p.id;
+                                    });
+                                })
+                            }
+                            onChange={function (_, checked) {
+                                if (checked) {
+                                    const newSelected = products.filter(function (p) {
+                                        return !selectedProducts.some(function (sp) { return sp.id === p.id; });
+                                    });
+                                    setSelectedProducts(function (pre) { return [...pre, ...newSelected]; });
+                                    newSelected.forEach(function (row) { fetchDetails(row.id); });
+                                } else {
+                                    setSelectedProducts(function (pre) {
+                                        return pre.filter(function (p) {
+                                            return !products.some(function (prod) { return prod.id === p.id; });
+                                        });
+                                    });
+                                    setDetails(function (pre) {
+                                        return pre.filter(function (d) {
+                                            return !products.some(function (prod) { return prod.id === d.idSanPham; });
+                                        });
+                                    });
+                                    setSelectedDetails(function (pre) {
+                                        return pre.filter(function (id) {
+                                            return !products.some(function (prod) {
+                                                return preDetailMap[prod.id] && preDetailMap[prod.id].includes(id);
+                                            });
+                                        });
+                                    });
+                                }
+                            }}
+                        />
+                    ),
+                    width: "50px",
+                    align: "center",
+                    render: function (_, row) {
+                        return (
+                            <Checkbox
+                                sx={{
+                                    color: "#111",
+                                    "&.Mui-checked": { color: "#111" },
+                                    "& .MuiSvgIcon-root": {
+                                        border: "1.5px solid #111",
+                                        borderRadius: "4px",
+                                    },
+                                }}
+                                checked={!!selectedProducts.find(function (p) { return p.id === row.id; })}
+                                onChange={function (_, checked) {
+                                    if (checked) {
+                                        if (!selectedProducts.find(function (p) { return p.id === row.id; })) {
+                                            setSelectedProducts(function (pre) { return [...pre, row]; });
+                                        }
+                                        fetchDetails(row.id);
+                                    } else {
+                                        setSelectedProducts(function (pre) { return pre.filter(function (p) { return p.id !== row.id; }); });
+                                        setDetails(function (pre) { return pre.filter(function (d) { return d.idSanPham !== row.id; }); });
+                                        setSelectedDetails(function (pre) {
+                                            return pre.filter(function (id) {
+                                                return !(preDetailMap[row.id] && preDetailMap[row.id].includes(id));
+                                            });
+                                        });
+                                    }
+                                }}
+                            />
+                        );
+                    },
+                },
+                { name: "tenSanPham", label: "Tên", align: "center" },
+                { name: "tenDanhMuc", label: "Danh mục", align: "center" },
+            ];
+        },
+        [selectedProducts, details, preDetailMap, products]
     );
 
     const selectedColumns = React.useMemo(
-        () => [
-            {
-                name: "checkbox",
-                label: "",
-                width: "50px",
-                align: "center",
-                render: (_, row) => (
-                    <Checkbox
-                        checked={selectedDetails.includes(row.id)}
-                        onChange={(_, checked) => {
-                            if (checked) {
-                                setSelectedDetails((pre) => [...pre, row.id]);
-                            } else {
-                                setSelectedDetails((pre) => pre.filter((id) => id !== row.id));
+        function () {
+            return [
+                {
+                    name: "checkbox",
+                    label: (
+                        <Checkbox
+                            sx={{
+                                color: "#111",
+                                "&.Mui-checked": { color: "#111" },
+                                "& .MuiSvgIcon-root": {
+                                    border: "1.5px solid #111",
+                                    borderRadius: "4px",
+                                },
+                            }}
+                            checked={
+                                details.length > 0 &&
+                                details.every(function (d) { return selectedDetails.includes(d.id); })
                             }
-                        }}
-                    />
-                ),
-            },
-            {
-                name: "image",
-                label: "Ảnh",
-                width: "80px",
-                align: "center",
-                render: (v) => (v ? <img src={v} alt="img" width={50} /> : null),
-            },
-            {
-                name: "info",
-                label: "Thông tin chung",
-                align: "center",
-                render: (_, row) => (
-                    <SoftBox lineHeight={1.2}>
-                        <SoftTypography display="block" variant="button" fontWeight="medium">
-                            {row.tenSanPham} - {row.maSanPhamChiTiet}
-                        </SoftTypography>
-                        <SoftTypography display="block" variant="caption" color="text">
-                            Giá sau mã: {formatPrice(getDiscountPrice(row.gia, discountValue))}
-                        </SoftTypography>
-                        <SoftTypography display="block" variant="caption" color="text">
-                            Giá gốc: {formatPrice(row.gia)}
-                        </SoftTypography>
-                    </SoftBox>
-                ),
-            },
-            {
-                name: "detail",
-                label: "Chi tiết",
-                align: "center",
-                render: (_, row) => (
-                    <SoftBox lineHeight={1.2}>
-                        <SoftTypography display="block" variant="caption" color="text">
-                            Kích cỡ: {row.tenKichThuoc}
-                        </SoftTypography>
-                        <SoftTypography display="block" variant="caption" color="text">
-                            Màu sắc: {row.tenMauSac}
-                        </SoftTypography>
-                    </SoftBox>
-                ),
-            },
-        ],
-        [selectedDetails, discountValue]
+                            indeterminate={
+                                selectedDetails.length > 0 &&
+                                selectedDetails.length < details.length
+                            }
+                            onChange={function (_, checked) {
+                                if (checked) {
+                                    const allIds = details
+                                        .filter(function (d) { return !selectedDetails.includes(d.id); })
+                                        .map(function (d) { return d.id; });
+                                    setSelectedDetails(function (pre) { return [...pre, ...allIds]; });
+                                } else {
+                                    setSelectedDetails(function (pre) { return pre.filter(function (id) { return !details.find(function (d) { return d.id === id; }); }); });
+                                }
+                            }}
+                        />
+                    ),
+                    width: "50px",
+                    align: "center",
+                    render: function (_, row) {
+                        return (
+                            <Checkbox
+                                sx={{
+                                    color: "#111",
+                                    "&.Mui-checked": { color: "#111" },
+                                    "& .MuiSvgIcon-root": {
+                                        border: "1.5px solid #111",
+                                        borderRadius: "4px",
+                                    },
+                                }}
+                                checked={selectedDetails.includes(row.id)}
+                                onChange={function (_, checked) {
+                                    if (checked) {
+                                        setSelectedDetails(function (pre) { return [...pre, row.id]; });
+                                    } else {
+                                        setSelectedDetails(function (pre) { return pre.filter(function (id) { return id !== row.id; }); });
+                                    }
+                                }}
+                            />
+                        );
+                    },
+                },
+                {
+                    name: "image",
+                    label: "Ảnh",
+                    width: "80px",
+                    align: "center",
+                    render: function (v) {
+                        return v ? <img src={v} alt="img" width={50} /> : null;
+                    },
+                },
+                {
+                    name: "info",
+                    label: "Thông tin chung",
+                    align: "center",
+                    render: function (_, row) {
+                        return (
+                            <SoftBox lineHeight={1.2}>
+                                <SoftTypography display="block" variant="button" fontWeight="medium">
+                                    {row.tenSanPham} - {row.maSanPhamChiTiet}
+                                </SoftTypography>
+                                <SoftTypography display="block" variant="caption" color="text">
+                                    Giá sau mã: {formatPrice(getDiscountPrice(row.gia, discountValue))}
+                                </SoftTypography>
+                                <SoftTypography display="block" variant="caption" color="text">
+                                    Giá gốc: {formatPrice(row.gia)}
+                                </SoftTypography>
+                            </SoftBox>
+                        );
+                    },
+                },
+                {
+                    name: "detail",
+                    label: "Chi tiết",
+                    align: "center",
+                    render: function (_, row) {
+                        return (
+                            <SoftBox lineHeight={1.2}>
+                                <SoftTypography display="block" variant="caption" color="text">
+                                    Kích cỡ: {row.tenKichThuoc}
+                                </SoftTypography>
+                                <SoftTypography display="block" variant="caption" color="text">
+                                    Màu sắc: {row.tenMauSac}
+                                </SoftTypography>
+                            </SoftBox>
+                        );
+                    },
+                },
+            ];
+        },
+        [selectedDetails, discountValue, details]
     );
 
-    const onSubmit = async (data) => {
+    async function onSubmit(data) {
         if (!data.tenDotGiamGia || !data.tenDotGiamGia.trim()) {
             toast.error("Vui lòng nhập tên đợt giảm giá");
             return;
@@ -350,7 +549,8 @@ const AddDiscountEventPage = () => {
             return;
         }
         try {
-            const [start, end] = data.dateRange || [];
+            const start = data.dateRange[0];
+            const end = data.dateRange[1];
             const payload = {
                 tenDotGiamGia: data.tenDotGiamGia,
                 phanTramGiamGia: Number(data.phanTramGiamGia),
@@ -358,26 +558,42 @@ const AddDiscountEventPage = () => {
                 ngayKetThuc: end,
                 trangThai: data.trangThai,
             };
-            const res = eventId
-                ? await updateDotGiamGia(eventId, { ...payload, id: eventId })
-                : await createDotGiamGia(payload);
+            let res;
+            if (eventId) {
+                res = await updateDotGiamGia(eventId, { ...payload, id: eventId });
+            } else {
+                res = await createDotGiamGia(payload);
+            }
             const idDotGiamGia = eventId || res.data;
             setEventId(idDotGiamGia);
             toast.success(eventId ? "Cập nhật thành công" : "Thêm thành công");
         } catch (e) {
-            console.error(e);
             toast.error("Thao tác thất bại");
         }
-    };
+    }
 
-    const handleReset = () => {
+    async function handleApply() {
+        if (!eventId || selectedDetails.length === 0) {
+            toast.error("Vui lòng chọn sản phẩm chi tiết để áp dụng!");
+            return;
+        }
+        try {
+            await applyDotGiamGia({
+                idDotGiamGia: eventId,
+                idSanPhamChiTietList: selectedDetails,
+            });
+            toast.success("Áp dụng thành công");
+            navigate("/discount-event");
+        } catch (e) {
+            toast.error("Áp dụng thất bại");
+        }
+    }
+
+    function handleReset() {
         reset();
-        setSelectedProducts([]);
-        setDetails([]);
-        setSelectedDetails([]);
-        setSearch("");
-        setProducts([]);
-    };
+    }
+
+    const productPaginationItems = getPaginationItems(productPage, productTotalPages);
 
     return (
         <DashboardLayout>
@@ -396,7 +612,7 @@ const AddDiscountEventPage = () => {
             <Stack direction="row" justifyContent="flex-end">
                 <Button
                     startIcon={<FaArrowLeft />}
-                    onClick={() => {
+                    onClick={function () {
                         navigate("/discount-event");
                     }}
                 >
@@ -417,13 +633,15 @@ const AddDiscountEventPage = () => {
                             <Controller
                                 name="tenDotGiamGia"
                                 control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        id="tenDotGiamGia"
-                                        {...field}
-                                        placeholder="Nhập tên đợt giảm giá"
-                                    />
-                                )}
+                                render={function ({ field }) {
+                                    return (
+                                        <TextField
+                                            id="tenDotGiamGia"
+                                            {...field}
+                                            placeholder="Nhập tên đợt giảm giá"
+                                        />
+                                    );
+                                }}
                             />
                         </Stack>
                         <Stack>
@@ -431,14 +649,16 @@ const AddDiscountEventPage = () => {
                             <Controller
                                 name="phanTramGiamGia"
                                 control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        type="number"
-                                        id="phanTramGiamGia"
-                                        {...field}
-                                        placeholder="Nhập phần trăm giảm giá"
-                                    />
-                                )}
+                                render={function ({ field }) {
+                                    return (
+                                        <TextField
+                                            type="number"
+                                            id="phanTramGiamGia"
+                                            {...field}
+                                            placeholder="Nhập phần trăm giảm giá"
+                                        />
+                                    );
+                                }}
                             />
                         </Stack>
                         <Stack>
@@ -450,37 +670,41 @@ const AddDiscountEventPage = () => {
                                             name="ngayBatDau"
                                             control={control}
                                             defaultValue={null}
-                                            render={({ field }) => (
-                                                <DateTimePicker
-                                                    label="Ngày bắt đầu"
-                                                    renderInput={(props) => (
-                                                        <TextField
-                                                            {...props}
-                                                            fullWidth
-                                                            sx={{
-                                                                '& .MuiInputBase-root': {
-                                                                    fontWeight: 700,
-                                                                    color: "#1769aa",
-                                                                    background: "#f2f6fa",
-                                                                    borderRadius: 2,
-                                                                    height: '56px',
-                                                                    fontSize: '16px',
-                                                                },
-                                                                '& .MuiInputBase-input': {
-                                                                    padding: '16.5px 14px',
-                                                                },
-                                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                                    border: 'none',
-                                                                }
-                                                            }}
-                                                        />
-                                                    )}
-                                                    value={field.value}
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
-                                                    }}
-                                                />
-                                            )}
+                                            render={function ({ field }) {
+                                                return (
+                                                    <DateTimePicker
+                                                        label="Ngày bắt đầu"
+                                                        renderInput={function (props) {
+                                                            return (
+                                                                <TextField
+                                                                    {...props}
+                                                                    fullWidth
+                                                                    sx={{
+                                                                        "& .MuiInputBase-root": {
+                                                                            fontWeight: 700,
+                                                                            color: "#1769aa",
+                                                                            background: "#f2f6fa",
+                                                                            borderRadius: 2,
+                                                                            height: "56px",
+                                                                            fontSize: "16px",
+                                                                        },
+                                                                        "& .MuiInputBase-input": {
+                                                                            padding: "16.5px 14px",
+                                                                        },
+                                                                        "& .MuiOutlinedInput-notchedOutline": {
+                                                                            border: "none",
+                                                                        },
+                                                                    }}
+                                                                />
+                                                            );
+                                                        }}
+                                                        value={field.value}
+                                                        onChange={function (newValue) {
+                                                            field.onChange(newValue);
+                                                        }}
+                                                    />
+                                                );
+                                            }}
                                         />
                                     </LocalizationProvider>
                                 </Box>
@@ -490,37 +714,41 @@ const AddDiscountEventPage = () => {
                                             name="ngayKetThuc"
                                             control={control}
                                             defaultValue={null}
-                                            render={({ field }) => (
-                                                <DateTimePicker
-                                                    label="Ngày kết thúc"
-                                                    renderInput={(props) => (
-                                                        <TextField
-                                                            {...props}
-                                                            fullWidth
-                                                            sx={{
-                                                                '& .MuiInputBase-root': {
-                                                                    fontWeight: 700,
-                                                                    color: "#1769aa",
-                                                                    background: "#f2f6fa",
-                                                                    borderRadius: 2,
-                                                                    height: '56px',
-                                                                    fontSize: '16px',
-                                                                },
-                                                                '& .MuiInputBase-input': {
-                                                                    padding: '16.5px 14px',
-                                                                },
-                                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                                    border: 'none',
-                                                                }
-                                                            }}
-                                                        />
-                                                    )}
-                                                    value={field.value}
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
-                                                    }}
-                                                />
-                                            )}
+                                            render={function ({ field }) {
+                                                return (
+                                                    <DateTimePicker
+                                                        label="Ngày kết thúc"
+                                                        renderInput={function (props) {
+                                                            return (
+                                                                <TextField
+                                                                    {...props}
+                                                                    fullWidth
+                                                                    sx={{
+                                                                        "& .MuiInputBase-root": {
+                                                                            fontWeight: 700,
+                                                                            color: "#1769aa",
+                                                                            background: "#f2f6fa",
+                                                                            borderRadius: 2,
+                                                                            height: "56px",
+                                                                            fontSize: "16px",
+                                                                        },
+                                                                        "& .MuiInputBase-input": {
+                                                                            padding: "16.5px 14px",
+                                                                        },
+                                                                        "& .MuiOutlinedInput-notchedOutline": {
+                                                                            border: "none",
+                                                                        },
+                                                                    }}
+                                                                />
+                                                            );
+                                                        }}
+                                                        value={field.value}
+                                                        onChange={function (newValue) {
+                                                            field.onChange(newValue);
+                                                        }}
+                                                    />
+                                                );
+                                            }}
                                         />
                                     </LocalizationProvider>
                                 </Box>
@@ -531,20 +759,24 @@ const AddDiscountEventPage = () => {
                             <Controller
                                 name="trangThai"
                                 control={control}
-                                render={({ field: { onChange, ...otherFieldProps } }) => (
-                                    <Select
-                                        onChange={(event, child) => {
-                                            onChange(event, child);
-                                        }}
-                                        {...otherFieldProps}
-                                    >
-                                        {STATUS_LIST.map((item) => (
-                                            <MenuItem key={item.id} value={item.id}>
-                                                {item.label}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                )}
+                                render={function ({ field: { onChange, ...otherFieldProps } }) {
+                                    return (
+                                        <Select
+                                            onChange={function (event, child) {
+                                                onChange(event, child);
+                                            }}
+                                            {...otherFieldProps}
+                                        >
+                                            {STATUS_LIST.map(function (item) {
+                                                return (
+                                                    <MenuItem key={item.id} value={item.id}>
+                                                        {item.label}
+                                                    </MenuItem>
+                                                );
+                                            })}
+                                        </Select>
+                                    );
+                                }}
                             />
                         </Stack>
                         <Stack direction="row" spacing={2} pt={2}>
@@ -565,6 +797,7 @@ const AddDiscountEventPage = () => {
                                     width: 90,
                                     px: 0,
                                     textTransform: "unset",
+                                    color: "#090a0c",
                                 }}
                                 variant="outlined"
                                 size="small"
@@ -578,15 +811,139 @@ const AddDiscountEventPage = () => {
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2, flex: 1 }}>
                     <SoftTypography sx={{ fontWeight: 500 }}>Danh sách sản phẩm</SoftTypography>
                     <Stack spacing={1} mt={1}>
-                        <TextField
-                            placeholder="Tìm kiếm sản phẩm"
-                            value={search}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                                debounceRef.current(e.target.value);
-                            }}
-                        />
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <TextField
+                                placeholder="Tìm kiếm sản phẩm"
+                                value={productFilter.tenSanPham || ""}
+                                onChange={function (e) {
+                                    setProductFilter(function (filter) { return { ...filter, tenSanPham: e.target.value }; });
+                                    debounceRef.current(e.target.value);
+                                }}
+                                sx={{ flex: 1 }}
+                            />
+                            <Button
+                                variant="outlined"
+                                startIcon={<FilterListIcon />}
+                                sx={{
+                                    minWidth: 40,
+                                    px: 1,
+                                    color: "#090a0c",
+                                    borderRadius: 2,
+                                }}
+                                onClick={function () { setFilterModalOpen(true); }}
+                            >
+                                Lọc
+                            </Button>
+                        </Stack>
                         <Table columns={productColumns} rows={products} />
+                        <SoftBox
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            marginTop={2}
+                            flexWrap="wrap"
+                            gap={2}
+                        >
+                            <SoftBox>
+                                <Select
+                                    value={productPageSize}
+                                    onChange={function (e) {
+                                        setProductPageSize(Number(e.target.value));
+                                        setProductPage(0);
+                                    }}
+                                    size="small"
+                                    sx={{ minWidth: 120 }}
+                                >
+                                    {viewOptions.map(function (number) {
+                                        return (
+                                            <MenuItem key={number} value={number}>
+                                                Xem {number}
+                                            </MenuItem>
+                                        );
+                                    })}
+                                </Select>
+                            </SoftBox>
+                            <SoftBox display="flex" alignItems="center" gap={1}>
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    disabled={productPage === 0}
+                                    onClick={function () { setProductPage(productPage - 1); }}
+                                    sx={{ color: productPage === 0 ? "#bdbdbd" : "#49a3f1" }}
+                                >
+                                    Trước
+                                </Button>
+                                {productPaginationItems.map(function (item, index) {
+                                    if (item === "...") {
+                                        return (
+                                            <Button
+                                                key={"ellipsis-" + index}
+                                                variant="text"
+                                                size="small"
+                                                disabled
+                                                sx={{
+                                                    minWidth: 32,
+                                                    borderRadius: 2,
+                                                    color: "#bdbdbd",
+                                                    pointerEvents: "none",
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                ...
+                                            </Button>
+                                        );
+                                    } else {
+                                        return (
+                                            <Button
+                                                key={item}
+                                                variant={productPage === item ? "contained" : "text"}
+                                                color={productPage === item ? "info" : "inherit"}
+                                                size="small"
+                                                onClick={function () { setProductPage(item); }}
+                                                sx={{
+                                                    minWidth: 32,
+                                                    borderRadius: 2,
+                                                    color: productPage === item ? "#fff" : "#495057",
+                                                    background: productPage === item ? "#49a3f1" : "transparent",
+                                                }}
+                                            >
+                                                {item + 1}
+                                            </Button>
+                                        );
+                                    }
+                                })}
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    disabled={productPage === productTotalPages - 1}
+                                    onClick={function () { setProductPage(productPage + 1); }}
+                                    sx={{ color: productPage === productTotalPages - 1 ? "#bdbdbd" : "#49a3f1" }}
+                                >
+                                    Sau
+                                </Button>
+                            </SoftBox>
+                        </SoftBox>
+                        <Modal open={filterModalOpen} onClose={function () { setFilterModalOpen(false); }}>
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    top: "50%",
+                                    left: "50%",
+                                    transform: "translate(-50%, -50%)",
+                                    bgcolor: "background.paper",
+                                    borderRadius: 2,
+                                    boxShadow: 24,
+                                    p: 0,
+                                }}
+                            >
+                                <ProductFilter
+                                    filter={productFilter}
+                                    setFilter={setProductFilter}
+                                    categories={categories}
+                                    onClose={function () { setFilterModalOpen(false); }}
+                                />
+                            </Box>
+                        </Modal>
                     </Stack>
                 </Card>
             </Stack>
@@ -595,15 +952,17 @@ const AddDiscountEventPage = () => {
                     <SoftTypography sx={{ fontWeight: 500, mt: 2 }}>Sản phẩm chi tiết</SoftTypography>
                     <Table
                         columns={selectedColumns}
-                        rows={details.map((item) => ({
-                            id: item.id,
-                            image: item.image,
-                            tenSanPham: item.tenSanPham,
-                            maSanPhamChiTiet: item.maSanPhamChiTiet,
-                            gia: item.gia,
-                            tenMauSac: item.tenMauSac,
-                            tenKichThuoc: item.tenKichThuoc,
-                        }))}
+                        rows={details.map(function (item) {
+                            return {
+                                id: item.id,
+                                image: item.image,
+                                tenSanPham: item.tenSanPham,
+                                maSanPhamChiTiet: item.maSanPhamChiTiet,
+                                gia: item.gia,
+                                tenMauSac: item.tenMauSac,
+                                tenKichThuoc: item.tenKichThuoc,
+                            };
+                        })}
                     />
                     <Stack direction="row" justifyContent="flex-end" mt={1}>
                         <Button
@@ -619,6 +978,6 @@ const AddDiscountEventPage = () => {
             )}
         </DashboardLayout>
     );
-};
+}
 
 export default AddDiscountEventPage;
