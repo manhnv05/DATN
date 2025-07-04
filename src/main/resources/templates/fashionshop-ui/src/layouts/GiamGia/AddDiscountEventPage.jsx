@@ -16,7 +16,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { STATUS_LIST } from "./Filter";
 import Table from "examples/Tables/Table";
 import SoftBox from "components/SoftBox";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
@@ -544,13 +544,13 @@ function AddDiscountEventPage() {
             toast.error("Phần trăm giảm giá phải nhỏ hơn hoặc bằng 50");
             return;
         }
-        if (!data.dateRange || data.dateRange.length !== 2) {
+        if (!data.ngayBatDau || !data.ngayKetThuc) {
             toast.error("Vui lòng chọn khoảng thời gian áp dụng");
             return;
         }
         try {
-            const start = data.dateRange[0];
-            const end = data.dateRange[1];
+            const start = data.ngayBatDau;
+            const end = data.ngayKetThuc;
             const payload = {
                 tenDotGiamGia: data.tenDotGiamGia,
                 phanTramGiamGia: Number(data.phanTramGiamGia),
@@ -559,6 +559,7 @@ function AddDiscountEventPage() {
                 trangThai: data.trangThai,
             };
             let res;
+            console.log(payload)
             if (eventId) {
                 res = await updateDotGiamGia(eventId, { ...payload, id: eventId });
             } else {
@@ -597,17 +598,6 @@ function AddDiscountEventPage() {
 
     return (
         <DashboardLayout>
-            <ToastContainer
-                position="top-right"
-                autoClose={2500}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
             <DashboardNavbar />
             <Stack direction="row" justifyContent="flex-end">
                 <Button
