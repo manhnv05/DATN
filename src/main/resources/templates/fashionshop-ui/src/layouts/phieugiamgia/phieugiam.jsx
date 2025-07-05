@@ -74,27 +74,26 @@ export default function PhieuGiamPage() {
     useEffect(() => {
         if (location.state?.message) {
             toast.success(location.state.message);
-            console.log(location.state.message)
-            // Xóa message sau khi hiển thị để khi back lại không hiển thị lại
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
+
     // Handlers cho view count menu
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
     const handleStatusChange = async (id, status) => {
         const res = await updateStatustVoucher(id, status)
-        if(status == 1 && res.code == 200){
+        if (status == 1 && res.code == 200) {
             toast.success("Đổi trạng thái thành thành công, Đang diễn ra")
         }
-        else if(status == 3 && res.code == 200){
+        else if (status == 3 && res.code == 200) {
             toast.success("Đổi trạng thái thành thành công, Tạm dừng")
         }
-        else if(status == 0 && res.code == 200){
+        else if (status == 0 && res.code == 200) {
             toast.success("Đổi trạng thái thành thành công, Kết thúc")
         }
-        else{
+        else {
             toast.error("Đôi trạng thái không thành công")
         }
         fetchData()
