@@ -132,9 +132,6 @@ public class KhachHangService {
             if (vO.getMaKhachHang() != null && !vO.getMaKhachHang().trim().isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("maKhachHang")), "%" + vO.getMaKhachHang().trim().toLowerCase() + "%"));
             }
-            if (vO.getTenTaiKhoan() != null && !vO.getTenTaiKhoan().trim().isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("tenTaiKhoan")), "%" + vO.getTenTaiKhoan().trim().toLowerCase() + "%"));
-            }
             if (vO.getMatKhau() != null && !vO.getMatKhau().trim().isEmpty()) {
                 predicates.add(cb.like(root.get("matKhau"), "%" + vO.getMatKhau().trim() + "%"));
             }
@@ -152,9 +149,6 @@ public class KhachHangService {
             }
             if (vO.getNgaySinh() != null) {
                 predicates.add(cb.equal(root.get("ngaySinh"), vO.getNgaySinh()));
-            }
-            if (vO.getGhiChu() != null && !vO.getGhiChu().trim().isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("ghiChu")), "%" + vO.getGhiChu().trim().toLowerCase() + "%"));
             }
             if (vO.getHinhAnh() != null && !vO.getHinhAnh().trim().isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("hinhAnh")), "%" + vO.getHinhAnh().trim().toLowerCase() + "%"));

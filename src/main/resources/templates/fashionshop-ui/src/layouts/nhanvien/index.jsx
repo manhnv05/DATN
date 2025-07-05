@@ -13,6 +13,8 @@ import Notifications from "layouts/Notifications";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import NhanVienDetail from "./detail";
+import UpdateNhanVien from "./update"; // import update component
 
 // API URLs
 const API_BASE_URL = "http://localhost:8080/nhanVien";
@@ -21,8 +23,8 @@ const API_BASE_URL = "http://localhost:8080/nhanVien";
 const GENDER_OPTIONS = ["Tất cả", "Nam", "Nữ"];
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20];
 const STATUS_OPTIONS = [
-    { value: 1, label: "Đang làm" },
-    { value: 0, label: "Nghỉ" },
+    { value: 1, label: "Đang hoạt động" },
+    { value: 0, label: "Ngừng hoạt động" },
 ];
 
 // Utility functions

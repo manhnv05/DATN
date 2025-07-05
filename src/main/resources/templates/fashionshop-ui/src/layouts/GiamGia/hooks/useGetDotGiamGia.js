@@ -15,7 +15,7 @@ const useGetDotGiamGia = (initialFilter = {}) => {
   const [total, setTotal] = useState(0);
   const [pagination, setPagination] = useState({
     page: 0,
-    size: 10,
+    size: 5,
     totalElements: 0,
     totalPages: 0,
     last: false,

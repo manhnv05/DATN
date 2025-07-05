@@ -12,7 +12,7 @@ public enum TrangThai {
     CHO_XAC_NHAN("Chờ xác nhận"),
     CHO_GIAO_HANG("Chờ giao hàng"),
     DANG_VAN_CHUYEN("Đang vận chuyển"),
-//    DA_GIAO("Đã giao hàng"),
+    //    DA_GIAO("Đã giao hàng"),
 //    CHO_THANH_TOAN("Chờ thanh toán"),
 //    DA_THANH_TOAN("Đã thanh toán"),
     HOAN_THANH("Hoàn thành"),
@@ -49,6 +49,31 @@ public enum TrangThai {
             // Thêm các trường hợp khác nếu cần
             default:
                 return false; // Mặc định không cho phép chuyển đổi nếu không định nghĩa
+        }
+    }
+
+    public boolean canRevertTo(TrangThai newStatus) {
+        switch (this) {
+            case TAO_DON_HANG:
+                return false; // Không thể quay lại từ trạng thái đầu tiên
+            case CHO_XAC_NHAN:
+
+                return newStatus == TAO_DON_HANG;
+            case CHO_GIAO_HANG:
+
+                return newStatus == CHO_XAC_NHAN;
+            case DANG_VAN_CHUYEN:
+
+                return newStatus == CHO_GIAO_HANG;
+            case HOAN_THANH:
+
+                return false;
+            case HUY:
+
+                return false;
+
+            default:
+                return false;
         }
     }
 }

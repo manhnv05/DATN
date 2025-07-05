@@ -12,8 +12,6 @@ public class KhachHangDTO {
 
     private String maKhachHang;
 
-    private String tenTaiKhoan;
-
     private String matKhau;
 
     private String tenKhachHang;
@@ -25,8 +23,6 @@ public class KhachHangDTO {
     private String sdt;
 
     private Date ngaySinh;
-
-    private String ghiChu;
 
     private String hinhAnh;
 

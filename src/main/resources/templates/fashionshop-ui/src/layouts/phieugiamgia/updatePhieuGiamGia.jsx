@@ -18,7 +18,7 @@ import Table from "examples/Tables/Table";
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from "react-hook-form";
 import { updateVouchers, fetchOneVouchers, sendMail } from "./service/PhieuGiamService";
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import { fetchKhachHang } from "./service/KhachHangService";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -145,7 +145,6 @@ export default function UpdatePhieuGiam() {
             toast.error("Giá trị không để trống")
             return
         }
-        toast.success("Cập nhật voucher thành công!");
         const dataDelete = selectedCustomerOld.filter((customerold) => (!selectedRows.includes(customerold.khachHang.id)))
         const datacreate = selectedRows.filter((data) => (!oldSelected.includes(data)))
         const dataPDDKH = datacreate.flatMap((data) => [
@@ -174,7 +173,11 @@ export default function UpdatePhieuGiam() {
         const result = await updateVouchers(data);
         if (result) {
             sendMail(datasendMail)
-            navigate("/PhieuGiam");
+            navigate("/discount", {
+                state: {
+                    message: "Cập nhật voucher thành công!",
+                },
+            });
         } else {
             toast.error("Cập nhật voucher thất bại");
         }
@@ -716,7 +719,6 @@ export default function UpdatePhieuGiam() {
                 </Card>
             </SoftBox>
             <Footer />
-            <ToastContainer />
         </DashboardLayout>
     )
 }

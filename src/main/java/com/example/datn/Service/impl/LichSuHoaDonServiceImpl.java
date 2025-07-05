@@ -31,7 +31,7 @@ public class LichSuHoaDonServiceImpl implements LichSuHoaDonService {
                 .noiDungThayDoi(noiDungThayDoi)
                 .nguoiThucHien(nguoiThucHien)
                 .ghiChu(ghiChu)
-                .trangThai(1)
+                .trangThai(hoaDon.getTrangThai().ordinal())
                 .thoiGianThayDoi(LocalDateTime.now())
                 .trangThaiMoiHoaDon(trangThaiMoi.name())
                 .build();
@@ -44,5 +44,11 @@ public class LichSuHoaDonServiceImpl implements LichSuHoaDonService {
         return lichSuList.stream()
                 .map(lichSuHoaDonMapper::toHoaDonHistoryResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public HoaDonHistoryDTO layLichSuThayDoiTrangThaiGanNhat(Integer idHoaDon) {
+        HoaDonHistoryDTO lichSuGanNhat = lichSuHoaDonRepository.findTrangThaiGanNhatCuaHoaDon(idHoaDon);
+        return lichSuGanNhat;
     }
 }

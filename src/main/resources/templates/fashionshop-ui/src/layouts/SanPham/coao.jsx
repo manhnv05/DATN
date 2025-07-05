@@ -22,10 +22,9 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
+import { toast, ToastContainer } from "react-toastify";
 
-
-
-const statusList = ["Tất cả", 1, 0]; // integer
+const statusList = ["Tất cả", 1, 0];
 const viewOptions = [5, 10, 20];
 
 const getTrangThaiText = (val) => {
@@ -34,7 +33,6 @@ const getTrangThaiText = (val) => {
     return val;
 };
 
-// Improved pagination: always shows 2 first, 2 last, and current page if in the middle
 function getPaginationItems(current, total) {
     if (total <= 5) return Array.from({ length: total }, (_, i) => i);
     if (current <= 1) return [0, 1, "...", total - 2, total - 1];
@@ -42,8 +40,26 @@ function getPaginationItems(current, total) {
     return [0, 1, "...", current, "...", total - 2, total - 1];
 }
 
+function generateMaCoAo(existingList = []) {
+    const numbers = existingList
+        .map((item) => {
+            const match = /^CA(\d{4})$/.exec(item.ma || "");
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((num) => num !== null)
+        .sort((a, b) => a - b);
+    let next = 1;
+    for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] !== i + 1) {
+            next = i + 1;
+            break;
+        }
+        next = numbers.length + 1;
+    }
+    return "CA" + String(next).padStart(4, "0");
+}
+
 function CollarTable() {
-    // Query params state
     const [queryParams, setQueryParams] = useState({
         tenCoAo: "",
         trangThai: "Tất cả",
@@ -51,7 +67,6 @@ function CollarTable() {
         size: 5,
     });
 
-    // Data/loading/error states
     const [collarsData, setCollarsData] = useState({
         content: [],
         totalPages: 1,
@@ -62,7 +77,6 @@ function CollarTable() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Modal states
     const [showModal, setShowModal] = useState(false);
     const [newCollar, setNewCollar] = useState({
         ma: "",
@@ -70,18 +84,23 @@ function CollarTable() {
         trangThai: 1,
     });
 
-    // Edit states
     const [editCollar, setEditCollar] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
-    // Delete states
     const [deleteId, setDeleteId] = useState(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    // Menu states
     const [anchorEl, setAnchorEl] = useState(null);
 
-    // Fetch collars from API
+    useEffect(() => {
+        if (showModal && collarsData.content) {
+            setNewCollar((prev) => ({
+                ...prev,
+                ma: generateMaCoAo(collarsData.content),
+            }));
+        }
+    }, [showModal, collarsData.content]);
+
     useEffect(() => {
         setLoading(true);
         setError("");
@@ -100,10 +119,9 @@ function CollarTable() {
             .finally(() => setLoading(false));
     }, [queryParams]);
 
-    // Handler for Add Collar
     const handleAddCollar = () => {
-        if (!newCollar.ma || !newCollar.tenCoAo) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!newCollar.tenCoAo) {
+            toast.error("Tên cổ áo không được để trống");
             return;
         }
         setLoading(true);
@@ -123,20 +141,23 @@ function CollarTable() {
                 setShowModal(false);
                 setNewCollar({ ma: "", tenCoAo: "", trangThai: 1 });
                 setQueryParams({ ...queryParams, page: 0 });
+                toast.success("Thêm cổ áo thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Edit Collar
     const handleEditClick = (collar) => {
         setEditCollar({ ...collar });
         setShowEditModal(true);
     };
 
     const handleSaveEdit = () => {
-        if (!editCollar.ma || !editCollar.tenCoAo) {
-            alert("Vui lòng nhập đầy đủ thông tin");
+        if (!editCollar.tenCoAo) {
+            toast.error("Tên cổ áo không được để trống");
             return;
         }
         setLoading(true);
@@ -156,16 +177,20 @@ function CollarTable() {
                 setShowEditModal(false);
                 setEditCollar(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Cập nhật cổ áo thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Handler for Delete Collar
     const handleDelete = (id) => {
         setDeleteId(id);
         setShowDeleteDialog(true);
     };
+
     const handleConfirmDelete = () => {
         setLoading(true);
         fetch(`http://localhost:8080/coAo/${deleteId}`, {
@@ -176,21 +201,22 @@ function CollarTable() {
                 setShowDeleteDialog(false);
                 setDeleteId(null);
                 setQueryParams({ ...queryParams });
+                toast.success("Xóa cổ áo thành công!");
             })
-            .catch((err) => setError(err.message || "Lỗi không xác định"))
+            .catch((err) => {
+                setError(err.message || "Lỗi không xác định");
+                toast.error(err.message || "Lỗi không xác định");
+            })
             .finally(() => setLoading(false));
     };
 
-    // Pagination
     const handlePageChange = (newPage) => {
         setQueryParams({ ...queryParams, page: newPage });
     };
 
-    // Menu actions
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
-    // Table columns
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         { name: "ma", label: "Mã", align: "left", width: "100px" },
@@ -205,9 +231,7 @@ function CollarTable() {
                     style={{
                         background: getTrangThaiText(value) === "Hiển thị" ? "#e6f4ea" : "#f4f6fb",
                         color: getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd",
-                        border: `1px solid ${
-                            getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd"
-                        }`,
+                        border: `1px solid ${getTrangThaiText(value) === "Hiển thị" ? "#219653" : "#bdbdbd"}`,
                         borderRadius: 6,
                         fontWeight: 500,
                         padding: "2px 12px",
@@ -217,8 +241,8 @@ function CollarTable() {
                         textAlign: "center",
                     }}
                 >
-          {getTrangThaiText(value)}
-        </span>
+                    {getTrangThaiText(value)}
+                </span>
             ),
         },
         {
@@ -257,7 +281,6 @@ function CollarTable() {
             }))
             : [];
 
-    // Modal Thêm cổ áo
     const renderAddCollarModal = () => (
         <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -277,13 +300,6 @@ function CollarTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã cổ áo"
-                        value={newCollar.ma}
-                        onChange={(e) => setNewCollar({ ...newCollar, ma: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên cổ áo"
@@ -314,7 +330,6 @@ function CollarTable() {
         </Dialog>
     );
 
-    // Modal sửa cổ áo
     const renderEditCollarModal = () => (
         <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="xs" fullWidth>
             <DialogTitle>
@@ -334,13 +349,6 @@ function CollarTable() {
                 </IconButton>
             </DialogTitle>
             <DialogContent>
-                <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-                    <Input
-                        placeholder="Mã cổ áo"
-                        value={editCollar?.ma || ""}
-                        onChange={(e) => setEditCollar({ ...editCollar, ma: e.target.value })}
-                    />
-                </FormControl>
                 <FormControl fullWidth sx={{ mb: 2 }}>
                     <Input
                         placeholder="Tên cổ áo"
@@ -368,7 +376,6 @@ function CollarTable() {
         </Dialog>
     );
 
-    // Dialog xác nhận xóa cổ áo
     const renderDeleteDialog = () => (
         <Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
             <DialogTitle
@@ -439,14 +446,12 @@ function CollarTable() {
         </Dialog>
     );
 
-    // Pagination rendering
     const paginationItems = getPaginationItems(collarsData.number, collarsData.totalPages || 1);
 
     return (
         <DashboardLayout>
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
-                {/* PHẦN 1: Card filter/search/action */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftBox
                         display="flex"
@@ -534,7 +539,6 @@ function CollarTable() {
                     </SoftBox>
                 </Card>
 
-                {/* PHẦN 2: Card Table/Pagination */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
@@ -544,7 +548,6 @@ function CollarTable() {
                     <SoftBox>
                         <Table columns={columns} rows={rows} loading={loading} />
                     </SoftBox>
-                    {/* Pagination + View */}
                     <SoftBox
                         display="flex"
                         justifyContent="space-between"
@@ -635,6 +638,17 @@ function CollarTable() {
                 {renderEditCollarModal()}
                 {renderDeleteDialog()}
             </SoftBox>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <Footer />
         </DashboardLayout>
     );

@@ -1,6 +1,4 @@
 import Dashboard from "layouts/dashboard";
-import Tables from "layouts/tables";
-import Billing from "layouts/billing";
 import SanPham from "layouts/SanPham/sanphan";
 import ThuongHieu from "layouts/SanPham/thuonghieu";
 import ChatLieu from "layouts/SanPham/chatlieu";
@@ -22,14 +20,14 @@ import KhachHang from "layouts/khachhang";
 import AddKhachHang from "layouts/khachhang/add";
 import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
+import DetailNhanVien from "layouts/nhanvien/detail";
 import UpdateNhanVien from "layouts/nhanvien/update";
 
-import RTL from "layouts/rtl";
-import Profile from "layouts/profile";
+
+
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 
-// Soft UI Dashboard React icons
 import Shop from "examples/Icons/Shop";
 import Office from "examples/Icons/Office";
 import Settings from "examples/Icons/Settings";
@@ -57,7 +55,7 @@ const routes = [
     key: "sales",
     route: "/tables",
     icon: <Office size="12px" />,
-    component: <Tables />,
+    // component: <Tables />,
     noCollapse: true,
   },
   {
@@ -70,10 +68,9 @@ const routes = [
     noCollapse: true,
   },
   {
-    route: "/order-management/:orderId", // Đây là route khớp với đường dẫn bạn tạo
+    route: "/order-management/:orderId",
     component: <OrderDetailPage />,
     key: "order-detail",
-    // Không có name/icon/type để ẩn khỏi sidebar
   },
   {
     type: "collapse",
@@ -204,7 +201,7 @@ const routes = [
     key: "profile",
     route: "/profile",
     icon: <CustomerSupport size="12px" />,
-    component: <Profile />,
+    // component: <Profile />,
     noCollapse: true,
   },
   {
@@ -213,7 +210,7 @@ const routes = [
     key: "sign-in",
     route: "/authentication/sign-in",
     icon: <Document size="12px" />,
-    component: <SignIn />,
+    // component: <SignIn />,
     noCollapse: true,
   },
   {
@@ -222,7 +219,7 @@ const routes = [
     key: "sign-up",
     route: "/authentication/sign-up",
     icon: <SpaceShip size="12px" />,
-    component: <SignUp />,
+    // component: <SignUp />,
     noCollapse: true,
   },
   {
@@ -295,13 +292,21 @@ const routes = [
     hidden: true,
   },
   {
+    key: "detail-staff",
+    name: "chi tiêt nhân viên",
+    route: "/nhanvien/detail/:id",
+    component: <DetailNhanVien />,
+    noCollapse: true,
+    hidden: true,
+  },
+  {
     key: "update-staff",
-    name: "Sửa nhân viên",
+    name: "cập nhật nhân viên",
     route: "/nhanvien/update/:id",
     component: <UpdateNhanVien />,
     noCollapse: true,
     hidden: true,
-  }
+  },
 ];
 
 export default routes;

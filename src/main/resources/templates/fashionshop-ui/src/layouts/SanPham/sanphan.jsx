@@ -29,7 +29,8 @@ import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import Divider from "@mui/material/Divider";
 import DialogContentText from "@mui/material/DialogContentText";
-import Notifications from "layouts/Notifications";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const selectMenuStyle = {
     menu: (base) => ({
@@ -93,6 +94,20 @@ function getPaginationItems(current, total) {
     return [0, 1, "...", current, "...", total - 2, total - 1];
 }
 
+function validateEditForm(form) {
+    const errors = {};
+    if (!form.maSanPham || !form.maSanPham.trim()) {
+        errors.maSanPham = "Vui lòng nhập mã sản phẩm";
+    }
+    if (!form.tenSanPham || !form.tenSanPham.trim()) {
+        errors.tenSanPham = "Vui lòng nhập tên sản phẩm";
+    }
+    if (!form.idDanhMuc || !String(form.idDanhMuc).trim()) {
+        errors.idDanhMuc = "Vui lòng chọn danh mục";
+    }
+    return errors;
+}
+
 function ProductTable() {
     const [productsData, setProductsData] = useState({
         content: [],
@@ -116,6 +131,7 @@ function ProductTable() {
         trangThai: 1,
         idDanhMuc: "",
     });
+    const [editFormErrors, setEditFormErrors] = useState({});
     const [editSaving, setEditSaving] = useState(false);
     const [xuatXuList, setXuatXuList] = useState([]);
     const [danhMucList, setDanhMucList] = useState([]);
@@ -123,11 +139,6 @@ function ProductTable() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingProduct, setDeletingProduct] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const [notification, setNotification] = useState({
-        open: false,
-        message: "",
-        severity: "info",
-    });
     const navigate = useNavigate();
 
     useEffect(function () {
@@ -270,6 +281,7 @@ function ProductTable() {
 
     async function handleEditOpen(product) {
         setEditingProduct(product);
+        setEditFormErrors({});
         try {
             const response = await axios.get("http://localhost:8080/sanPham/" + product.id);
             const detail = response.data;
@@ -302,6 +314,7 @@ function ProductTable() {
             trangThai: 1,
             idDanhMuc: "",
         });
+        setEditFormErrors({});
     }
 
     function handleEditChange(event) {
@@ -315,6 +328,13 @@ function ProductTable() {
     async function handleEditSave() {
         if (!editingProduct) return;
         setEditSaving(true);
+        const errors = validateEditForm(editForm);
+        setEditFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            toast.error(Object.values(errors)[0]);
+            setEditSaving(false);
+            return;
+        }
         try {
             await axios.put("http://localhost:8080/sanPham/" + editingProduct.id, {
                 tenSanPham: editForm.tenSanPham,
@@ -324,18 +344,10 @@ function ProductTable() {
                 idDanhMuc: editForm.idDanhMuc,
             });
             handleEditClose();
-            setNotification({
-                open: true,
-                message: "Cập nhật sản phẩm thành công!",
-                severity: "success",
-            });
+            toast.success("Cập nhật sản phẩm thành công!");
             fetchProducts();
         } catch (error) {
-            setNotification({
-                open: true,
-                message: "Sửa sản phẩm thất bại!",
-                severity: "error",
-            });
+            toast.error("Sửa sản phẩm thất bại!");
         } finally {
             setEditSaving(false);
         }
@@ -357,26 +369,13 @@ function ProductTable() {
         try {
             await axios.delete("http://localhost:8080/sanPham/" + deletingProduct.id);
             handleDeleteClose();
-            setNotification({
-                open: true,
-                message: "Xóa sản phẩm thành công!",
-                severity: "success",
-            });
+            toast.success("Xóa sản phẩm thành công!");
             fetchProducts();
         } catch (error) {
-            setNotification({
-                open: true,
-                message: "Xóa sản phẩm thất bại!",
-                severity: "error",
-            });
+            toast.error("Xóa sản phẩm thất bại!");
         } finally {
             setDeleteLoading(false);
         }
-    }
-
-    function handleNotificationClose(event, reason) {
-        if (reason === "clickaway") return;
-        setNotification({ ...notification, open: false });
     }
 
     const columns = [
@@ -479,12 +478,16 @@ function ProductTable() {
 
     return (
         <DashboardLayout>
-            <Notifications
-                open={notification.open}
-                onClose={handleNotificationClose}
-                message={notification.message}
-                severity={notification.severity}
-                autoHideDuration={2500}
+            <ToastContainer
+                position="top-right"
+                autoClose={2500}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
             />
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
@@ -671,19 +674,9 @@ function ProductTable() {
                 <DialogContent sx={{ background: "#f7fbff", paddingBottom: 2 }}>
                     <Box display="flex" flexDirection="column" gap={2}>
                         <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Mã sản phẩm <span style={{ color: "#e74c3c" }}>*</span></Typography>
-                            <TextField
-                                value={editForm.maSanPham}
-                                name="maSanPham"
-                                onChange={handleEditChange}
-                                fullWidth
-                                size="small"
-                                placeholder="Nhập mã sản phẩm"
-                                sx={{ background: "#fff", borderRadius: 2 }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Tên sản phẩm <span style={{ color: "#e74c3c" }}>*</span></Typography>
+                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">
+                                Tên sản phẩm <span style={{ color: "#e74c3c" }}>*</span>
+                            </Typography>
                             <TextField
                                 value={editForm.tenSanPham}
                                 name="tenSanPham"
@@ -692,10 +685,14 @@ function ProductTable() {
                                 size="small"
                                 placeholder="Nhập tên sản phẩm"
                                 sx={{ background: "#fff", borderRadius: 2 }}
+                                error={!!editFormErrors.tenSanPham}
+                                helperText={editFormErrors.tenSanPham}
                             />
                         </Box>
                         <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Xuất xứ</Typography>
+                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">
+                                Xuất xứ
+                            </Typography>
                             <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
                                 <Select
                                     name="xuatXu"
@@ -714,19 +711,36 @@ function ProductTable() {
                             </FormControl>
                         </Box>
                         <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Danh mục <span style={{ color: "#e74c3c" }}>*</span></Typography>
+                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">
+                                Danh mục <span style={{ color: "#e74c3c" }}>*</span>
+                            </Typography>
                             <ReactSelect
                                 options={danhMucOptions}
                                 value={getOptionByValue(danhMucOptions, editForm.idDanhMuc)}
                                 onChange={function (option) { setEditForm({ ...editForm, idDanhMuc: option ? option.value : "" }); }}
-                                styles={selectMenuStyle}
+                                styles={{
+                                    ...selectMenuStyle,
+                                    control: (base, state) => ({
+                                        ...base,
+                                        borderColor: editFormErrors.idDanhMuc ? "#e74c3c" : base.borderColor,
+                                        boxShadow: "none",
+                                        "&:hover": { borderColor: "#1769aa" }
+                                    }),
+                                }}
                                 isClearable
                                 placeholder="Chọn danh mục"
                                 noOptionsMessage={function () { return "Không có dữ liệu"; }}
                             />
+                            {editFormErrors.idDanhMuc && (
+                                <Box sx={{ color: "#e74c3c", fontSize: 13, mt: 0.5 }}>
+                                    {editFormErrors.idDanhMuc}
+                                </Box>
+                            )}
                         </Box>
                         <Box>
-                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">Trạng thái</Typography>
+                            <Typography fontWeight={700} marginBottom={0.5} color="#1769aa">
+                                Trạng thái
+                            </Typography>
                             <FormControl fullWidth size="small" sx={{ background: "#fff", borderRadius: 2 }}>
                                 <Select
                                     name="trangThai"

@@ -28,7 +28,6 @@ public class HoaDonChiTietDTO {
       String tenSanPham;
       String tenMauSac;
       String tenKichThuoc;
-
       String duongDanAnh;
 
 

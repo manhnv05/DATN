@@ -20,14 +20,12 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import Divider from "@mui/material/Divider";
 import Avatar from "@mui/material/Avatar";
-import Notifications from "layouts/Notifications";
 import dayjs from "dayjs";
 
 const genderList = ["Tất cả", "Nam", "Nữ", "Khác"];
@@ -79,18 +77,6 @@ function CustomerTable() {
     const [statusFilter, setStatusFilter] = useState("Tất cả");
     const [viewCount, setViewCount] = useState(5);
     const [page, setPage] = useState(0);
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [editingCustomer, setEditingCustomer] = useState(null);
-    const [editForm, setEditForm] = useState({
-        maKhachHang: "",
-        tenKhachHang: "",
-        email: "",
-        ngaySinh: "",
-        gioiTinh: "",
-        trangThai: 1,
-        anh: "",
-    });
-    const [editSaving, setEditSaving] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingCustomer, setDeletingCustomer] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -257,11 +243,6 @@ function CustomerTable() {
         } finally {
             setDeleteLoading(false);
         }
-    }
-
-    function handleNotificationClose(event, reason) {
-        if (reason === "clickaway") return;
-        setNotification({ ...notification, open: false });
     }
 
     const columns = [

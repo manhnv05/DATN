@@ -23,17 +23,11 @@ public class ChiTietSanPhamController {
     @Autowired
     private ChiTietSanPhamService chiTietSanPhamService;
 
-    /**
-     * Thêm mới 1 chi tiết sản phẩm
-     */
     @PostMapping
     public String save(@Valid @RequestBody ChiTietSanPhamVO vO) {
         return chiTietSanPhamService.save(vO).toString();
     }
 
-    /**
-     * Thêm nhiều chi tiết sản phẩm (dùng cho batch insert)
-     */
     @PostMapping("/batch")
     public List<Integer> saveBatch(@Valid @RequestBody List<ChiTietSanPhamVO> voList) {
         return voList.stream()
@@ -47,8 +41,10 @@ public class ChiTietSanPhamController {
     }
 
     @PutMapping("/{id}")
-    public void update(@Valid @NotNull @PathVariable("id") Integer id,
-                       @Valid @RequestBody ChiTietSanPhamUpdateVO vO) {
+    public void update(
+            @Valid @NotNull @PathVariable("id") Integer id,
+            @ModelAttribute ChiTietSanPhamUpdateVO vO
+    ) {
         chiTietSanPhamService.update(id, vO);
     }
 
@@ -62,21 +58,23 @@ public class ChiTietSanPhamController {
         return chiTietSanPhamService.query(vO);
     }
 
-    // Tìm kiếm theo mã sản phẩm chi tiết hoặc mô tả
     @GetMapping("/search")
     public List<ChiTietSanPhamDTO> search(@RequestParam("keyword") String keyword) {
         return chiTietSanPhamService.searchByMaOrMoTa(keyword);
     }
 
-    // Lấy danh sách chi tiết theo id sản phẩm cha
     @GetMapping("/by-san-pham/{idSanPham}")
     public List<ChiTietSanPhamDTO> getBySanPham(@PathVariable("idSanPham") Integer idSanPham) {
         return chiTietSanPhamService.findBySanPhamId(idSanPham);
     }
 
-    // Lấy chi tiết sản phẩm theo mã chi tiết sản phẩm (phục vụ QR code)
     @GetMapping("/find-by-ma")
     public ChiTietSanPhamDTO getByMaSanPhamChiTiet(@RequestParam("ma") String maSanPhamChiTiet) {
         return chiTietSanPhamService.findByMaSanPhamChiTiet(maSanPhamChiTiet);
+    }
+
+    @GetMapping("/all-ma")
+    public List<String> getAllMaChiTietSanPham() {
+        return chiTietSanPhamService.getAllMaChiTietSanPham();
     }
 }

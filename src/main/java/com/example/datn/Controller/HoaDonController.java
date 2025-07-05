@@ -115,6 +115,20 @@ public class HoaDonController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/chuyen-trang-thai-quay-lai/{id}") // Changed to PUT mapping
+    public ResponseEntity<CapNhatTrangThaiDTO> chuyenTrangThaiQuayLai(
+            @RequestBody LichSuVO request,
+            @PathVariable ("id") Integer id) {
+        CapNhatTrangThaiDTO response = hoaDonService.quayLaiTrangThaiTruoc(
+                id,
+                request.getGhiChu(),
+                request.getNguoiThucHien());
+        return ResponseEntity.ok(response);
+    };
+
+
+
+
     @PutMapping("/chuyen-trang-thai-huy/{id}") // Changed to PUT mapping
     public ResponseEntity<CapNhatTrangThaiDTO> chuyenTrangThaiHuy(
             @PathVariable("id") Integer idHoaDon,
