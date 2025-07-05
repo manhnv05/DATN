@@ -32,7 +32,6 @@ public class NhanVienService {
 
     private final NhanVienRepository nhanVienRepository;
 
-    // Inject EmailService ở Config package để gửi email HTML nâng cao
     @Autowired(required = false)
     @Qualifier("emailConfigService")
     private com.example.datn.Config.EmailService emailConfigService;
@@ -56,7 +55,6 @@ public class NhanVienService {
 
         bean = nhanVienRepository.save(bean);
 
-        // Gửi email tài khoản/mật khẩu cho nhân viên nếu có email và emailConfigService cấu hình
         if (emailConfigService != null && bean.getEmail() != null && !bean.getEmail().trim().isEmpty()) {
             String subject = "🎉 Tài khoản nhân viên đã được tạo thành công! 🎉";
             String body = "<div style=\"font-family:'Segoe UI',Arial,sans-serif;background:#f9fafd;padding:32px 0;\">"
@@ -70,7 +68,7 @@ public class NhanVienService {
                     + "    <div style=\"font-size:17px;\">"
                     + "        <span style=\"color:#1976d2;font-weight:600;\">Thông tin đăng nhập của bạn:</span><br>"
                     + "        <table style=\"width:100%;margin-top:12px;font-size:16px;\">"
-                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getTenTaiKhoan() + "</td></tr>"
+                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getEmail() + "</td></tr>"
                     + "            <tr><td style=\"padding:6px 0;color:#888;\">Mật khẩu:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getMatKhau() + "</td></tr>"
                     + "        </table>"
                     + "        <div style=\"margin-top:20px;color:#444;\">"
@@ -142,8 +140,10 @@ public class NhanVienService {
         BeanUtils.copyProperties(original, bean);
         if (original.getVaiTro() != null) {
             bean.setIdVaiTro(original.getVaiTro().getId());
+            bean.setTenVaiTro(original.getVaiTro().getTen());
         } else {
             bean.setIdVaiTro(null);
+            bean.setTenVaiTro(null);
         }
         return bean;
     }

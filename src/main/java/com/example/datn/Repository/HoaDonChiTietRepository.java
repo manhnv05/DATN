@@ -24,8 +24,8 @@ public interface HoaDonChiTietRepository extends JpaRepository<HoaDonChiTiet, In
             "    hdct.trang_thai AS trangThai,\n" +
             "    ctsp.ma_san_pham_chi_tiet AS maSanPhamChiTiet,\n" +
             "    sp.ten_san_pham AS tenSanPham,\n" +
-            "    ms.ten AS tenMauSac,\n" +
-            "    kt.ten_kich_thuoc AS tenKichThuoc,\n" +
+            "    ms.ten_mau_sac AS tenMauSac,\n" +
+            "    kt.ten_kich_co  AS tenKichThuoc,\n" +
             "    ctsp.id as idChiTietSanPham,\n" +
             "    ha.duong_dan_anh AS duongDanAnh \n" +
             "FROM\n" +

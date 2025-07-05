@@ -9,13 +9,21 @@ if (!process.env.REACT_APP_MAIN_URL) {
 }
 
 const instanceAPIMain = axios.create({
-    baseURL: process.env.REACT_APP_MAIN_URL || "http://localhost:8080", // fallback nếu env bị thiếu
+    baseURL: process.env.REACT_APP_MAIN_URL?.trim() || "http://localhost:8080", // fallback nếu env bị thiếu
     timeout: 30000,
     responseType: "json",
     headers: {
         "Content-Type": "application/json",
-        // "Access-Control-Allow-Origin" không cần thiết ở phía client, server phải set header này
     },
 });
+
+if (!process.env.REACT_APP_MAIN_URL) {
+    instanceAPIMain.interceptors.request.use((config) => {
+        console.warn(
+            "[AXIOS] Đang sử dụng fallback baseURL http://localhost:8080. Kiểm tra biến môi trường REACT_APP_MAIN_URL!"
+        );
+        return config;
+    });
+}
 
 export default instanceAPIMain;

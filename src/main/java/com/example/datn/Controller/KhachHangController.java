@@ -56,14 +56,12 @@ public class KhachHangController {
     public Page<KhachHangDTO> query(
             @RequestParam(required = false) Integer id,
             @RequestParam(required = false) String maKhachHang,
-            @RequestParam(required = false) String tenTaiKhoan,
             @RequestParam(required = false) String matKhau,
             @RequestParam(required = false) String tenKhachHang,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) Integer gioiTinh,
             @RequestParam(required = false) String sdt,
             @RequestParam(required = false) String ngaySinh,
-            @RequestParam(required = false) String ghiChu,
             @RequestParam(required = false) String hinhAnh,
             @RequestParam(required = false) Integer trangThai,
             @RequestParam(defaultValue = "0") Integer page,
@@ -72,7 +70,6 @@ public class KhachHangController {
         KhachHangQueryVO vO = new KhachHangQueryVO();
         vO.setId(id);
         vO.setMaKhachHang(maKhachHang);
-        vO.setTenTaiKhoan(tenTaiKhoan);
         vO.setMatKhau(matKhau);
         vO.setTenKhachHang(tenKhachHang);
         vO.setEmail(email);
@@ -90,7 +87,6 @@ public class KhachHangController {
             vO.setNgaySinh(null);
         }
 
-        vO.setGhiChu(ghiChu);
         vO.setHinhAnh(hinhAnh);
         vO.setTrangThai(trangThai);
         vO.setPage(page);

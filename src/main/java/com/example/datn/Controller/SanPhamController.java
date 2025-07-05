@@ -48,15 +48,18 @@ public class SanPhamController {
         return sanPhamService.query(vO);
     }
 
-    // API tìm kiếm theo mã hoặc tên sản phẩm (keyword)
     @GetMapping("/search")
     public List<SanPhamDTO> searchByMaOrTen(@RequestParam("keyword") String keyword) {
         return sanPhamService.searchByMaSanPhamOrTenSanPham(keyword);
     }
 
-    // API lấy tất cả tên sản phẩm (chỉ trả về List<String>)
     @GetMapping("/all-ten")
     public List<String> getAllTenSanPham() {
         return sanPhamService.getAllTenSanPham();
+    }
+
+    @GetMapping("/all-ma")
+    public List<String> getAllMaSanPham() {
+        return sanPhamService.getAllMaSanPham();
     }
 }

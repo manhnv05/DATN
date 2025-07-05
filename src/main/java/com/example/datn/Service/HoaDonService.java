@@ -21,6 +21,7 @@ import java.util.Map;
 public interface HoaDonService {
     HoaDonDTO taoHoaDon(HoaDonCreateVO request);
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
+    CapNhatTrangThaiDTO capNhatTrangThaiHoaDonKhiQuayLai(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
     List<HoaDonHistoryDTO> layLichSuThayDoiTrangThai(String  maHoaDon);
     HoaDonDTO getHoaDonById(Integer id);
     Page<HoaDonDTO> getFilteredHoaDon(

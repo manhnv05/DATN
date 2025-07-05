@@ -22,6 +22,7 @@ import { FaQrcode, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import CloseIcon from "@mui/icons-material/Close";
+import { toast } from "react-toastify";
 
 // Danh sách trạng thái và số lượng hiển thị
 const statusList = ["Tất cả", "Hiển thị", "Ẩn"];
@@ -176,7 +177,7 @@ function ImageTable() {
         !(formData.moTa || "").trim() ||
         (!editingImage && !formData.duongDanAnh)
     ) {
-      alert("Vui lòng nhập đầy đủ thông tin và chọn ảnh!");
+      toast.warning("Vui lòng nhập đầy đủ thông tin và chọn ảnh!");
       return;
     }
     // Gửi FormData với snake_case đúng BE yêu cầu
@@ -212,6 +213,7 @@ function ImageTable() {
             }
         );
         if (!res.ok) throw new Error("Có lỗi xảy ra khi lưu hình ảnh!");
+        toast.success("Cập nhật thành công !")
       } else {
         // Thêm mới: gửi FormData
         const res = await fetch("http://localhost:8080/hinhAnh", {
@@ -219,11 +221,12 @@ function ImageTable() {
           body: data,
         });
         if (!res.ok) throw new Error("Có lỗi xảy ra khi lưu hình ảnh!");
+        toast.success("Thêm thành công !")
       }
       setShowModal(false);
       fetchImages();
     } catch (error) {
-      alert("Có lỗi xảy ra khi lưu hình ảnh!");
+      toast.error("Có lỗi xảy ra khi lưu hình ảnh!");
     }
   };
 
@@ -235,9 +238,10 @@ function ImageTable() {
           method: "DELETE",
         });
         if (!res.ok) throw new Error();
+        toast.success("Xóa ảnh thành công")
         fetchImages();
       } catch (error) {
-        alert("Có lỗi xảy ra khi xóa hình ảnh!");
+        toast.error("Có lỗi xảy ra khi xóa hình ảnh!");
       }
     }
   };

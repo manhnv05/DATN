@@ -22,17 +22,12 @@ import java.util.List;
 @AllArgsConstructor
 @Table(name = "khach_hang")
 public class KhachHang{
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(name = "ma_khach_hang")
     private String maKhachHang;
-
-    @Column(name = "ten_tai_khoan")
-    private String tenTaiKhoan;
 
     @Column(name = "mat_khau")
     private String matKhau;
@@ -51,9 +46,6 @@ public class KhachHang{
 
     @Column(name = "ngay_sinh")
     private Date ngaySinh;
-
-    @Column(name = "ghi_chu")
-    private String ghiChu;
 
     @Column(name = "hinh_anh")
     private String hinhAnh;

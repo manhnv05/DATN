@@ -18,14 +18,11 @@ import Menu from "@mui/material/Menu";
 import { FaQrcode, FaPlus, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import { fetchVouchersAlternative, updateStatustVoucher } from "./service/PhieuGiamService";
 import dayjs, { Dayjs } from 'dayjs';
-import TextField from '@mui/material/TextField';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { useNavigate } from "react-router-dom";
-import Chip from '@mui/material/Chip';
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import Chip from "@mui/material/Chip";
 import ThreeDotMenu from "components/Voucher/menu";
+import { toast } from "react-toastify";
+import { useLocation } from "react-router-dom";
 
 // Pagination: đã sửa logic để hiển thị đúng các trang
 function getPaginationItems(current, total) {
@@ -50,7 +47,7 @@ function getPaginationItems(current, total) {
 
 export default function PhieuGiamPage() {
     const navigate = useNavigate();
-
+    const location = useLocation();
     // States
     const [statusFilter, setStatusFilter] = useState("Tất cả");
     const statusList = ["Tất cả", "Đang diễn ra", "Đã kết thúc", "Tạm dừng"];
@@ -74,12 +71,31 @@ export default function PhieuGiamPage() {
     const [search, setSearch] = useState("");
     const error = null;
 
+    useEffect(() => {
+        if (location.state?.message) {
+            toast.success(location.state.message);
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
     // Handlers cho view count menu
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
     const handleStatusChange = async (id, status) => {
-        await updateStatustVoucher(id, status)
+        const res = await updateStatustVoucher(id, status)
+        if (status == 1 && res.code == 200) {
+            toast.success("Đổi trạng thái thành thành công, Đang diễn ra")
+        }
+        else if (status == 3 && res.code == 200) {
+            toast.success("Đổi trạng thái thành thành công, Tạm dừng")
+        }
+        else if (status == 0 && res.code == 200) {
+            toast.success("Đổi trạng thái thành thành công, Kết thúc")
+        }
+        else {
+            toast.error("Đôi trạng thái không thành công")
+        }
         fetchData()
     };
 
@@ -257,14 +273,7 @@ export default function PhieuGiamPage() {
                         statusList={statusListVoucher}
                         onSelectStatus={(status) => handleStatusChange(row.id, status)}
                     />
-                    {/* <IconButton
-                        size="small"
-                        sx={{ color: "#4acbf2" }}
-                        title="Chi tiết"
-                        onClick={() => navigate(`/PhieuGiam/ChiTiet/${row.id}`)}
-                    >
-                        <FaEye />
-                    </IconButton> */}
+
                     <IconButton
                         size="small"
                         sx={{ color: "#4acbf2" }}
