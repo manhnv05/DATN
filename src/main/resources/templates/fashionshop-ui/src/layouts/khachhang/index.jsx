@@ -26,7 +26,6 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import Divider from "@mui/material/Divider";
-import DialogContentText from "@mui/material/DialogContentText";
 import Avatar from "@mui/material/Avatar";
 import Notifications from "layouts/Notifications";
 import dayjs from "dayjs";
@@ -157,49 +156,19 @@ function CustomerTable() {
         setSearch(event.target.value);
         setPage(0);
     }
-
     function handleGenderFilterChange(event) {
         setGenderFilter(event.target.value);
         setPage(0);
     }
-
     function handleStatusFilterChange(event) {
         setStatusFilter(event.target.value);
         setPage(0);
     }
-
     function handleViewCountChange(event) {
         setViewCount(Number(event.target.value));
         setPage(0);
     }
 
-    async function handleEditOpen(customer) {
-        setEditingCustomer(customer);
-        try {
-            const response = await axios.get(`http://localhost:8080/khachHang/${customer.id}`);
-            const detail = response.data;
-            setEditForm({
-                maKhachHang: detail.maKhachHang || "",
-                tenKhachHang: detail.tenKhachHang || "",
-                email: detail.email || "",
-                ngaySinh: detail.ngaySinh || "",
-                gioiTinh: detail.gioiTinh || "",
-                trangThai: detail.trangThai !== undefined ? detail.trangThai : 1,
-                anh: detail.anh || "",
-            });
-        } catch (error) {
-            setEditForm({
-                maKhachHang: customer.maKhachHang || "",
-                tenKhachHang: customer.tenKhachHang || "",
-                email: customer.email || "",
-                ngaySinh: customer.ngaySinh || "",
-                gioiTinh: customer.gioiTinh || "",
-                trangThai: customer.trangThai !== undefined ? customer.trangThai : 1,
-                anh: customer.anh || "",
-            });
-        }
-        setEditModalOpen(true);
-    }
 
     function handleEditClose() {
         setEditModalOpen(false);
@@ -411,27 +380,15 @@ function CustomerTable() {
 
     return (
         <DashboardLayout>
-            <Notifications
-                open={notification.open}
-                onClose={handleNotificationClose}
-                message={notification.message}
-                severity={notification.severity}
-                autoHideDuration={2500}
-            />
+            <Notifications open={notification.open} onClose={handleNotificationClose} message={notification.message} severity={notification.severity} autoHideDuration={2500} />
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
                 <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
-                    <SoftBox
-                        display="flex"
-                        flexDirection={{ xs: "column", md: "row" }}
-                        alignItems="center"
-                        justifyContent="space-between"
-                        gap={2}
-                    >
+                    <SoftBox display="flex" flexDirection={{ xs: "column", md: "row" }} alignItems="center" justifyContent="space-between" gap={2} >
                         <SoftBox flex={1} display="flex" alignItems="center" gap={2} maxWidth={600}>
                             <Input
                                 fullWidth
-                                placeholder="Tìm kiếm khách hàng"
+                                placeholder="Tìm kiếm khách hàng theo tên"
                                 value={search}
                                 onChange={handleSearchChange}
                                 startAdornment={
@@ -704,24 +661,6 @@ function CustomerTable() {
                     </Button>
                     <Button onClick={handleEditSave} disabled={editSaving} variant="contained" color="info" sx={{ borderRadius: 2, minWidth: 120, fontWeight: 700, fontSize: 17, boxShadow: 3 }} startIcon={editSaving ? <CircularProgress size={18} color="inherit" /> : null}>
                         Lưu
-                    </Button>
-                </DialogActions>
-            </Dialog>
-            <Dialog open={deleteDialogOpen} onClose={handleDeleteClose} maxWidth="xs" fullWidth>
-                <DialogTitle fontWeight={800} color="#e74c3c" sx={{ fontSize: 22 }}>
-                    Xác nhận xóa khách hàng
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Bạn có chắc chắn muốn xóa khách hàng <strong>{deletingCustomer && deletingCustomer.tenKhachHang}</strong> không? Thao tác này không thể hoàn tác.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ padding: 2 }}>
-                    <Button onClick={handleDeleteClose} disabled={deleteLoading} variant="outlined" color="inherit" sx={{ borderRadius: 2, fontWeight: 600 }}>
-                        Hủy
-                    </Button>
-                    <Button onClick={handleDeleteConfirm} disabled={deleteLoading} variant="contained" color="error" sx={{ borderRadius: 2, minWidth: 110, fontWeight: 700 }} startIcon={deleteLoading ? <CircularProgress size={18} color="inherit" /> : null}>
-                        Xóa
                     </Button>
                 </DialogActions>
             </Dialog>
