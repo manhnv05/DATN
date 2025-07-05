@@ -1,7 +1,7 @@
 package com.example.datn.specification;
 
 import jakarta.persistence.criteria.Predicate;
-import com.example.datn.Entity.HoaDon;
+import com.example.datn.entity.HoaDon;
 import com.example.datn.enums.TrangThai;
 import org.springframework.data.jpa.domain.Specification;
 

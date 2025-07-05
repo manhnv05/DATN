@@ -1,8 +1,8 @@
 package com.example.datn.mapper;
 
-import com.example.datn.DTO.HoaDonDTO;
-import com.example.datn.Entity.HoaDon;
-import com.example.datn.VO.HoaDonCreateVO;
+import com.example.datn.dto.HoaDonDTO;
+import com.example.datn.entity.HoaDon;
+import com.example.datn.vo.hoaDonVO.HoaDonCreateVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;

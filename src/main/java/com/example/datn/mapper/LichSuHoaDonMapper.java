@@ -1,7 +1,7 @@
 package com.example.datn.mapper;
 
-import com.example.datn.DTO.HoaDonHistoryDTO;
-import com.example.datn.Entity.LichSuHoaDon;
+import com.example.datn.dto.HoaDonHistoryDTO;
+import com.example.datn.entity.LichSuHoaDon;
 import com.example.datn.enums.TrangThai;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
