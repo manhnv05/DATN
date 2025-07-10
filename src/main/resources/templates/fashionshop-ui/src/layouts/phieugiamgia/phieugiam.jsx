@@ -15,14 +15,18 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Icon from "@mui/material/Icon";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
-import { FaQrcode, FaPlus, FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit } from "react-icons/fa";
 import { fetchVouchersAlternative, updateStatustVoucher } from "./service/PhieuGiamService";
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { useNavigate } from "react-router-dom";
 import Chip from "@mui/material/Chip";
 import ThreeDotMenu from "components/Voucher/menu";
 import { toast } from "react-toastify";
 import { useLocation } from "react-router-dom";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { Box, TextField } from '@mui/material';
+import { DateTimePicker } from "@mui/x-date-pickers";
 
 // Pagination: đã sửa logic để hiển thị đúng các trang
 function getPaginationItems(current, total) {
@@ -48,6 +52,8 @@ function getPaginationItems(current, total) {
 export default function PhieuGiamPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
     // States
     const [statusFilter, setStatusFilter] = useState("Tất cả");
     const statusList = ["Tất cả", "Đang diễn ra", "Đã kết thúc", "Tạm dừng"];
@@ -209,8 +215,7 @@ export default function PhieuGiamPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const data = await fetchVouchersAlternative(page - 1, viewCount, search, statusFilter);
-
+            const data = await fetchVouchersAlternative(page - 1, viewCount, search, startDate, endDate, statusFilter);
             const mapped = data.data.content.map((item, idx) => ({
                 stt: (page - 1) * viewCount + idx + 1,
                 id: item.id,
@@ -247,7 +252,7 @@ export default function PhieuGiamPage() {
     };
     useEffect(() => {
         fetchData();
-    }, [page, viewCount, search, statusFilter]);
+    }, [page, viewCount, startDate, endDate, search, statusFilter]);
 
     // Pagination rendering
     const paginationItems = getPaginationItems(page, vouchersData.totalPages);
@@ -331,6 +336,26 @@ export default function PhieuGiamPage() {
                                     ))}
                                 </Select>
                             </FormControl>
+                            <Box>
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <Box sx={{ display: 'flex', gap: 2 }}>
+                                        <DateTimePicker
+                                            label="Từ ngày"
+                                            value={startDate}
+                                            inputFormat="DD-MM-YYYY HH:mm"
+                                            onChange={(newValue) => setStartDate(newValue)}
+                                            renderInput={(params) => <TextField {...params} />}
+                                        />
+                                        <DateTimePicker
+                                            label="Đến ngày"
+                                            value={endDate}
+                                            inputFormat="DD-MM-YYYY HH:mm"
+                                            onChange={(newValue) => setEndDate(newValue)}
+                                            renderInput={(params) => <TextField {...params}  />}
+                                        />
+                                    </Box>
+                                </LocalizationProvider>
+                            </Box>
                         </SoftBox>
                         <SoftBox display="flex" alignItems="center" gap={1}>
                             <Button

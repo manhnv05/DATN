@@ -1,11 +1,16 @@
-// Lấy danh sách phiếu giảm giá với filter và phân trang (POST theo backend custom)
-export async function fetchVouchersAlternative(page, size, search, statusFilter) {
+import dayjs from 'dayjs';
+
+export async function fetchVouchersAlternative(page, size, search, startDate, endDate, statusFilter) {
     try {
         const searchObject = {};
         if (search && search.trim() !== "") {
             // Nếu backend tìm theo OR thì nên chỉ truyền 1 trường, nếu AND thì truyền cả hai
             searchObject.maPhieuGiamGia = search.trim();
             searchObject.tenPhieu = search.trim();
+        }
+        if (startDate && endDate) {
+            searchObject.ngayBatDau = dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss');
+            searchObject.ngayKetThuc = dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss');
         }
         // Bộ lọc trạng thái
         if (statusFilter && statusFilter !== "Tất cả") {
@@ -33,7 +38,7 @@ export async function fetchVouchersAlternative(page, size, search, statusFilter)
             try {
                 const err = await response.json();
                 if (err && err.message) errorMsg = err.message;
-            } catch {}
+            } catch { }
             throw new Error(errorMsg);
         }
         const data = await response.json();
@@ -61,7 +66,7 @@ export async function updateStatustVoucher(id, status) {
             try {
                 const err = await response.json();
                 if (err && err.message) errorMsg = err.message;
-            } catch {}
+            } catch { }
             throw new Error(errorMsg);
         }
         const result = await response.json();
@@ -88,7 +93,7 @@ export async function addVouchers(data) {
             try {
                 const err = await response.json();
                 if (err && err.message) errorMsg = err.message;
-            } catch {}
+            } catch { }
             throw new Error(errorMsg);
         }
         const result = await response.json();
@@ -108,7 +113,7 @@ export async function fetchOneVouchers(id) {
             try {
                 const err = await response.json();
                 if (err && err.message) errorMsg = err.message;
-            } catch {}
+            } catch { }
             throw new Error(errorMsg);
         }
         const data = await response.json();
@@ -135,7 +140,7 @@ export async function updateVouchers(data) {
             try {
                 const err = await response.json();
                 if (err && err.message) errorMsg = err.message;
-            } catch {}
+            } catch { }
             throw new Error(errorMsg);
         }
         const result = await response.json();

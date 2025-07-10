@@ -11,16 +11,10 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+public class ThongKeVoSearch {
+    private int boLocNgayTuanThangNam;
 
-public class PhieuGiamVOSearch {
-    String maPhieuGiamGia;
+    private LocalDateTime tuNgay;
 
-    String tenPhieu;
-
-    Integer trangThai;
-
-    LocalDateTime ngayBatDau;
-
-    LocalDateTime ngayKetThuc;
-
+    private LocalDateTime denNgay;
 }

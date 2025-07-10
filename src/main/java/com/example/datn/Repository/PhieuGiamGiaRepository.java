@@ -20,6 +20,13 @@ public interface PhieuGiamGiaRepository extends JpaRepository<PhieuGiamGia, Inte
     WHERE
         ((:#{#search.maPhieuGiamGia} IS NULL OR s.maPhieuGiamGia LIKE %:#{#search.maPhieuGiamGia}%)
         OR (:#{#search.tenPhieu} IS NULL OR s.tenPhieu LIKE %:#{#search.tenPhieu}%))
+        AND (
+            (:#{#search.ngayBatDau} IS NULL OR :#{#search.ngayKetThuc} IS NULL)
+             OR (
+                s.ngayBatDau >= :#{#search.ngayBatDau}
+                AND s.ngayKetThuc <= :#{#search.ngayKetThuc}
+             )
+        )
         AND (:#{#search.trangThai} IS NULL OR s.trangThai = :#{#search.trangThai})
     ORDER BY s.id DESC
     """)

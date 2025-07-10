@@ -1,4 +1,4 @@
-import Dashboard from "layouts/dashboard";
+
 import SanPham from "layouts/SanPham/sanphan";
 import ThuongHieu from "layouts/SanPham/thuonghieu";
 import ChatLieu from "layouts/SanPham/chatlieu";
@@ -36,6 +36,8 @@ import CreditCard from "examples/Icons/CreditCard";
 import Cube from "examples/Icons/Cube";
 import AddDiscountEventPage from "layouts/GiamGia/AddDiscountEventPage";
 import ViewDiscountEventPage from "layouts/GiamGia/ViewDiscountEventPage";
+// import Dashboard from "layouts/dashboard";
+import DashboardStats from "layouts/thongke/thongke";
 
 const routes = [
   {
@@ -44,7 +46,7 @@ const routes = [
     key: "dashboard",
     route: "/dashboard",
     icon: <Shop size="12px" />,
-    component: <Dashboard />,
+    component: <DashboardStats />,
     noCollapse: true,
   },
   {
