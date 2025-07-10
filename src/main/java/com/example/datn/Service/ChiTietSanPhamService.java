@@ -5,6 +5,7 @@ import com.example.datn.Entity.ChatLieu;
 import com.example.datn.Entity.ChiTietSanPham;
 import com.example.datn.Entity.ThuongHieu;
 import com.example.datn.Repository.*;
+import com.example.datn.VO.ChiTietSanPhamBanHangTaiQuayVO;
 import com.example.datn.VO.ChiTietSanPhamQueryVO;
 import com.example.datn.VO.ChiTietSanPhamUpdateVO;
 import com.example.datn.VO.ChiTietSanPhamVO;
@@ -168,4 +169,11 @@ public class ChiTietSanPhamService {
         return chiTietSanPhamRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Resource not found: " + id));
     }
-}
+    public List<ChiTietSanPhamBanHangTaiQuayVO>  getChiTietSanPhamBanHangTaiQuay() {
+        List<ChiTietSanPhamBanHangTaiQuayVO> list = chiTietSanPhamRepository.findChiTietSanPhamBanHangTaiQuay();
+        if (list.isEmpty()) {
+            throw new NoSuchElementException("Không tìm thấy chi tiết sản phẩm bán hàng tại quầy");
+        }
+        return list;
+    }
+    }

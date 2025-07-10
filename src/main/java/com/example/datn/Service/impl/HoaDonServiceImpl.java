@@ -1,14 +1,8 @@
 package com.example.datn.Service.impl;
 
-import com.example.datn.DTO.CapNhatTrangThaiDTO;
-import com.example.datn.DTO.CountTrangThaiHoaDon;
-import com.example.datn.DTO.HoaDonChiTietDTO;
-import com.example.datn.DTO.HoaDonChiTietView;
-import com.example.datn.DTO.HoaDonDTO;
-import com.example.datn.DTO.HoaDonHistoryDTO;
-import com.example.datn.VO.HoaDonChiTietVO;
-import com.example.datn.VO.HoaDonCreateVO;
-import com.example.datn.VO.HoaDonUpdateVO;
+import com.example.datn.DTO.*;
+import com.example.datn.VO.*;
+import com.example.datn.mapper.HoaDonChiTietMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -33,10 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,6 +42,7 @@ public class HoaDonServiceImpl implements HoaDonService {
     NhanVienRepository nhanVienRepository;
     HoaDonMapper hoaDonMapper;
     LichSuHoaDonService lichSuHoaDonService;
+    HoaDonChiTietMapper hoaDonChiTietMapper;
 
     @Override
     @Transactional
@@ -200,6 +192,105 @@ public class HoaDonServiceImpl implements HoaDonService {
         return hoaDonResponse;
 
     }
+
+    @Override
+    @Transactional
+    public List<HoaDonChiTietDTO> updateDanhSachSanPhamChiTiet(Integer idHoaDon, List<CapNhatSanPhamChiTietDonHangVO> danhSachCapNhatSanPham) {
+        //Lấy hóa dơn cần cập nhật
+        HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        if (hoaDon.getTrangThai() != TrangThai.TAO_DON_HANG&& hoaDon.getTrangThai() != TrangThai.CHO_XAC_NHAN) {
+            throw new AppException(ErrorCode.INVALID_STATUS);
+        }
+        Map<Integer,HoaDonChiTiet> chiTietHoaDonMap = hoaDonChiTietRepository.findByHoaDon(hoaDon)
+                .stream().collect(Collectors.toMap(HoaDonChiTiet::getId, chiTiet -> chiTiet));
+        List<HoaDonChiTiet> updatedChiTietList = new ArrayList<>();
+        Set<Integer> cacSanPhamDaXuLy= new HashSet<>();
+        for (CapNhatSanPhamChiTietDonHangVO  capNhatSanPhamChiTietDonHangVO:danhSachCapNhatSanPham){
+            Integer idSanPhamChiTiet = capNhatSanPhamChiTietDonHangVO.getId();
+            Integer soLuongYeuCau = capNhatSanPhamChiTietDonHangVO.getSoLuong();
+            if(idSanPhamChiTiet==null|| soLuongYeuCau==null || soLuongYeuCau<=0){
+                throw new AppException(ErrorCode.INSUFFICIENT_QUANTITY);
+            }
+            if(soLuongYeuCau==0){
+                continue;
+            }
+            cacSanPhamDaXuLy.add(idSanPhamChiTiet);
+            ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.findById(idSanPhamChiTiet)
+                    .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+            int soLuongTonKhoVatLy=chiTietSanPham.getSoLuong();
+            int soLuongDangCoTrongHoaDon = hoaDonChiTietRepository.getSoLuongDangCho(idSanPhamChiTiet);
+            int soLuongCoTheBan = soLuongTonKhoVatLy - soLuongDangCoTrongHoaDon;
+            int soLuongDaCoTrongGioHang= chiTietHoaDonMap.get(idSanPhamChiTiet) != null ? chiTietHoaDonMap.get(idSanPhamChiTiet).getSoLuong() : 0;
+            int soLuongChenhLech= soLuongYeuCau - soLuongDaCoTrongGioHang;
+            if (soLuongChenhLech>soLuongCoTheBan){
+                throw new AppException(ErrorCode.INSUFFICIENT_QUANTITY);
+            }
+            //Cái này kiểm tra xem sản phẩm có trong chi tiết hóa đơn chưa có rồi thì cập nhật, nếu chưa có thì tạo mới
+            HoaDonChiTiet hoaDonChiTiet = chiTietHoaDonMap.getOrDefault(idSanPhamChiTiet, new HoaDonChiTiet());
+            hoaDonChiTiet.setHoaDon(hoaDon);
+            hoaDonChiTiet.setSoLuong(soLuongYeuCau);
+            hoaDonChiTiet.setGia(chiTietSanPham.getGia());
+            hoaDonChiTiet.setSanPhamChiTiet(chiTietSanPham);
+            hoaDonChiTiet.setThanhTien(hoaDonChiTiet.getGia()* soLuongYeuCau);
+            updatedChiTietList.add(hoaDonChiTiet);
+            List<HoaDonChiTiet> danhSachCanXoa = chiTietHoaDonMap.values().stream()
+                    .filter(ct -> !cacSanPhamDaXuLy.contains(ct.getSanPhamChiTiet().getId()))
+                    .collect(Collectors.toList());
+            if (!danhSachCanXoa.isEmpty()) {
+                hoaDonChiTietRepository.deleteAllInBatch(danhSachCanXoa);
+            }
+            if (!updatedChiTietList.isEmpty()) {
+                hoaDonChiTietRepository.saveAll(updatedChiTietList);
+            }
+
+        }
+        List<HoaDonChiTiet> chiTietCuoiCung = hoaDonChiTietRepository.findAllByHoaDon_Id(idHoaDon);
+        recalculateHoaDonTotals(hoaDon, chiTietCuoiCung); // Sửa hàm recalculate để nhận list chi tiết
+        hoaDon.setTongHoaDon(hoaDon.getTongTien() + hoaDon.getPhiVanChuyen());
+        hoaDonRepository.save(hoaDon);
+        return hoaDonChiTietMapper.toDtoList(chiTietCuoiCung);
+    }
+    private void recalculateHoaDonTotals(HoaDon hoaDon, List<HoaDonChiTiet> chiTietList) {
+        int tongTien = chiTietList.stream()
+                .mapToInt(HoaDonChiTiet::getThanhTien)
+                .sum();
+        hoaDon.setTongTien(tongTien);
+    }
+    public static String generateShortRandomMaHoaDonUUID() {
+        // Lấy một phần của UUID, ví dụ 8 ký tự đầu
+        return "HD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        // Ví dụ: HD-A1B2C3D4
+    }
+    @Override
+    public HoaDonChoDTO taoHoaDonCho(HoaDonChoRequestVO request) {
+        NhanVien nhanVienDuocGanVaoHoaDon = null;
+        HoaDon hoaDon = new HoaDon();
+        hoaDon.setNhanVien(nhanVienDuocGanVaoHoaDon);
+        hoaDon.setNgayTao(LocalDateTime.now());
+       hoaDon.setTrangThai(TrangThai.valueOf("TAO_DON_HANG"));
+        hoaDon.setTongTien(0);
+        hoaDon.setTongTienBanDau(0);
+        hoaDon.setPhiVanChuyen(0);
+        hoaDon.setTongHoaDon(0); // Nếu bạn sử dụng trường này
+        hoaDon.setGhiChu(null);
+        hoaDon.setSdt(null); // Có thể thêm SĐT mặc định của khách lẻ nếu có
+        hoaDon.setDiaChi(null);
+        hoaDon.setNgayGiaoDuKien(null);
+        hoaDon.setPhieuGiamGia(null);
+        hoaDon.setLoaiHoaDon(request.getLoaiHoaDon());
+        hoaDon.setMaHoaDon(generateShortRandomMaHoaDonUUID());
+     HoaDon saveHoaDon=   hoaDonRepository.save(hoaDon);
+        lichSuHoaDonService.ghiNhanLichSuHoaDon(
+                hoaDon,
+                "Hóa đơn được tạo với trạng thái: " + hoaDon.getTrangThai().getDisplayName(),
+                "admin", // Người thực hiện được xác định ở trên
+                "Tạo hóa đơn ban đầu",
+                hoaDon.getTrangThai()
+        );
+        return new HoaDonChoDTO(saveHoaDon.getId(),saveHoaDon.getMaHoaDon());
+    }
+
     @Override
     public CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien) {
         HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
@@ -435,6 +526,8 @@ public class HoaDonServiceImpl implements HoaDonService {
         return "Cập nhật thong tin đơn hàng thành công";
     }
 
+
+
     @Override
     public List<HoaDonChiTietDTO> findChiTietHoaDon(Integer idHoaDon) {
         if (idHoaDon==null || idHoaDon<=0){
@@ -445,7 +538,7 @@ public class HoaDonServiceImpl implements HoaDonService {
         }
         List<HoaDonChiTietView> listHoaDonChiTiet = hoaDonChiTietRepository.findChiTietHoaDon(idHoaDon);
         return listHoaDonChiTiet.stream()
-                .map(this::mapViewToResponse) // Gọi một hàm chuyển đổi riêng
+                .map(this::mapViewToResponse)
                 .collect(Collectors.toList());
     }
 

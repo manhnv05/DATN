@@ -23,11 +23,6 @@ import AddKhachHang from "layouts/khachhang/add";
 import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
 
-
-
-
-
-
 import RTL from "layouts/rtl";
 import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
@@ -44,6 +39,7 @@ import CreditCard from "examples/Icons/CreditCard";
 import Cube from "examples/Icons/Cube";
 import AddDiscountEventPage from "layouts/GiamGia/AddDiscountEventPage";
 import ViewDiscountEventPage from "layouts/GiamGia/ViewDiscountEventPage";
+import SalesDashboardPage from "layouts/BanHangTaiQuay/pages/SalesDashboardPage";
 
 const routes = [
   {
@@ -61,7 +57,7 @@ const routes = [
     key: "sales",
     route: "/tables",
     icon: <Office size="12px" />,
-    component: <Tables />,
+    component: <SalesDashboardPage />,
     noCollapse: true,
   },
   {

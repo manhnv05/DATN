@@ -1,10 +1,9 @@
 package com.example.datn.Service;
 
 
-import com.example.datn.DTO.CapNhatTrangThaiDTO;
-import com.example.datn.DTO.HoaDonChiTietDTO;
-import com.example.datn.DTO.HoaDonDTO;
-import com.example.datn.DTO.HoaDonHistoryDTO;
+import com.example.datn.DTO.*;
+import com.example.datn.VO.CapNhatSanPhamChiTietDonHangVO;
+import com.example.datn.VO.HoaDonChoRequestVO;
 import com.example.datn.VO.HoaDonCreateVO;
 import com.example.datn.VO.HoaDonUpdateVO;
 import com.example.datn.enums.TrangThai;
@@ -20,6 +19,8 @@ import java.util.Map;
 @Service
 public interface HoaDonService {
     HoaDonDTO taoHoaDon(HoaDonCreateVO request);
+    HoaDonChoDTO taoHoaDonCho(HoaDonChoRequestVO request);
+
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDonKhiQuayLai(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
     List<HoaDonHistoryDTO> layLichSuThayDoiTrangThai(String  maHoaDon);
@@ -37,7 +38,8 @@ public interface HoaDonService {
     CapNhatTrangThaiDTO huyHoaDon(Integer idHoaDon, String ghiChu, String nguoiThucHien);
     public CapNhatTrangThaiDTO quayLaiTrangThaiTruoc(Integer idHoaDon, String ghiChu, String nguoiThucHien);
     String  capNhatThongTinHoaDon(Integer idHoaDon, HoaDonUpdateVO request);
-    // Sửa lại alias (AS) để tên tường minh và dễ ánh xạ
+    List<HoaDonChiTietDTO> updateDanhSachSanPhamChiTiet(Integer idHoaDon, List<CapNhatSanPhamChiTietDonHangVO> danhSachCapNhatSanPham);
+
 
     List<HoaDonChiTietDTO> findChiTietHoaDon(@Param("idHoaDon") Integer idHoaDon);
 

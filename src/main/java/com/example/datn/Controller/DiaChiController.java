@@ -45,10 +45,14 @@ public class DiaChiController {
         String url = "https://provinces.open-api.vn/api/d/" + districtId + "?depth=2";
         return restTemplate.getForObject(url, Object.class);
     }
-
     // Lấy tất cả địa chỉ từ database nội bộ
     @GetMapping("/all")
     public List<DiaChiDTO> getAllDiaChi() {
         return diaChiService.findAll();
+    }
+
+    @GetMapping("/get-all-dia-chi-by-khach-hang/{idKhachHang}")
+    public List<DiaChiDTO> getDiaChiByKhachHang(@PathVariable Integer idKhachHang) {
+        return diaChiService.getAllDiaChiByIdKhachHang(idKhachHang);
     }
 }
