@@ -2,6 +2,7 @@ package com.example.datn.Controller;
 
 import com.example.datn.DTO.ChiTietSanPhamDTO;
 import com.example.datn.Service.ChiTietSanPhamService;
+import com.example.datn.VO.ChiTietSanPhamBanHangTaiQuayVO;
 import com.example.datn.VO.ChiTietSanPhamQueryVO;
 import com.example.datn.VO.ChiTietSanPhamUpdateVO;
 import com.example.datn.VO.ChiTietSanPhamVO;
@@ -76,5 +77,10 @@ public class ChiTietSanPhamController {
     @GetMapping("/all-ma")
     public List<String> getAllMaChiTietSanPham() {
         return chiTietSanPhamService.getAllMaChiTietSanPham();
+    }
+
+    @GetMapping("/ban-hang-tai-quay")
+    public List<ChiTietSanPhamBanHangTaiQuayVO> getChiTietSanPhamBanHangTaiQuay() {
+        return chiTietSanPhamService.getChiTietSanPhamBanHangTaiQuay();
     }
 }

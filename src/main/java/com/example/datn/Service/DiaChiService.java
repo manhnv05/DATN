@@ -51,4 +51,8 @@ public class DiaChiService {
         }
         return bean;
     }
+    public List<DiaChiDTO> getAllDiaChiByIdKhachHang(Integer idKhachHang) {
+        List<DiaChi> diaChis = diaChiRepository.findByKhachHangId(idKhachHang);
+        return diaChis.stream().map(this::toDTO).collect(Collectors.toList());
+    }
 }

@@ -1,14 +1,7 @@
 package com.example.datn.Controller;
 
-import com.example.datn.DTO.ApiResponse;
-import com.example.datn.DTO.CapNhatTrangThaiDTO;
-import com.example.datn.DTO.HoaDonChiTietDTO;
-import com.example.datn.DTO.HoaDonDTO;
-import com.example.datn.DTO.HoaDonHistoryDTO;
-import com.example.datn.VO.HoaDonCreateVO;
-import com.example.datn.VO.HoaDonUpdateStatusVO;
-import com.example.datn.VO.HoaDonUpdateVO;
-import com.example.datn.VO.LichSuVO;
+import com.example.datn.DTO.*;
+import com.example.datn.VO.*;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +21,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:3000" +
-        "")
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/hoa-don")
 @RequiredArgsConstructor
@@ -49,7 +41,27 @@ public class HoaDonController {
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+    @PostMapping("/tao-hoa-don-cho")
+    public ResponseEntity<ApiResponse<HoaDonChoDTO>> taoHoaDonCho(@RequestBody HoaDonChoRequestVO request) {
+        HoaDonChoDTO hoaDonChoResponse = hoaDonService.taoHoaDonCho(request);
 
+        ApiResponse<HoaDonChoDTO> response = ApiResponse.<HoaDonChoDTO>builder()
+                .code(1000)
+                .message("Hóa đơn chờ đã được tạo thành công")
+                .data(hoaDonChoResponse)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/cap-nhat-danh-sach-san-pham/{idHoaDon}")
+    public ResponseEntity<List<HoaDonChiTietDTO>> updateDanhSachSanPhamChiTiet(
+            @PathVariable Integer idHoaDon,
+            @RequestBody List<CapNhatSanPhamChiTietDonHangVO> danhSachCapNhatSanPham) {
+
+        List<HoaDonChiTietDTO> updatedList = hoaDonService.updateDanhSachSanPhamChiTiet(idHoaDon, danhSachCapNhatSanPham);
+        return ResponseEntity.ok(updatedList);
+    }
     @GetMapping("/{id}")
     public HoaDonDTO getHoaDonDetails(@PathVariable Integer id) {
         return hoaDonService.getHoaDonById(id);
@@ -62,8 +74,8 @@ public class HoaDonController {
 
     @PutMapping("/trang-thai/{id}")
     public CapNhatTrangThaiDTO updateHoaDonStatus(@PathVariable Integer id, @RequestBody @Validated HoaDonUpdateStatusVO request) {
-        // Tham số 'nguoiThucHien' này sẽ được Service tự quyết định dựa trên HoaDon.getNhanVien()
-        String nguoiThucHienPlaceholder = "Nhân viên A"; // Giá trị giả lập
+
+        String nguoiThucHienPlaceholder = "Nhân viên A";
         return hoaDonService.capNhatTrangThaiHoaDon(id, request.getTrangThaiMoi(), request.getGhiChu(), nguoiThucHienPlaceholder);
     }
 
@@ -147,15 +159,15 @@ public class HoaDonController {
             @PathVariable Integer id,
             @RequestBody @Valid HoaDonUpdateVO request) {
 
-        // Gọi service. Nếu service ném AppException, nó sẽ được GlobalExceptionHandler xử lý
+
         String successMessage = hoaDonService.capNhatThongTinHoaDon(id, request);
 
-        // Nếu service trả về thành công, xây dựng ApiResponse thành công
+
         ApiResponse<Void> apiResponse = ApiResponse.<Void>builder()
-                .code(1000) // Code thành công của bạn
-                .message(successMessage) // Lấy thông báo từ service
+                .code(1000)
+                .message(successMessage)
                 .build();
-        return new ResponseEntity<>(apiResponse, HttpStatus.OK); // Trả về 200 OK
+        return new ResponseEntity<>(apiResponse, HttpStatus.OK);
     }
     @GetMapping("/{idHoaDon}/san-pham")
     public ResponseEntity<ApiResponse<List<HoaDonChiTietDTO>>> getHoaDonChiTietResponse(@PathVariable Integer idHoaDon) {

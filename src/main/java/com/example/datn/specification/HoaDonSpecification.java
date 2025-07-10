@@ -31,7 +31,7 @@ public static Specification<HoaDon> filterHoaDon(
             predicates.add(criteriaBuilder.equal(root.get("loaiHoaDon"), loaiHoaDon));
         }
         if (ngayTaoStart != null) {
-            LocalDateTime startOfDay = ngayTaoStart.atStartOfDay(); // Chuyển LocalDate thành LocalDateTime (00:00:00)
+            LocalDateTime startOfDay = ngayTaoStart.atStartOfDay();
             predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("ngayTao"), startOfDay));
         }
 
@@ -53,6 +53,14 @@ public static Specification<HoaDon> filterHoaDon(
             );
             predicates.add(searchPredicate);
         }
+        // 3. Kiểm tra xem có tên khách hàng không
+        Predicate hasAssociatedCustomer = criteriaBuilder.isNotNull(root.get("khachHang")); // Kiểm tra xem có đối tượng KhachHang liên kết không
+        Predicate hasDirectCustomerName = criteriaBuilder.and(
+                criteriaBuilder.isNotNull(root.get("tenKhachHang")), // Kiểm tra tenKhachHang không null
+                criteriaBuilder.notEqual(root.get("tenKhachHang"), "") // Kiểm tra tenKhachHang không rỗng
+        );
+        predicates.add(criteriaBuilder.or(hasAssociatedCustomer, hasDirectCustomerName));
+
 
         // Kết hợp tất cả các predicates với toán tử AND
         return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

@@ -299,14 +299,7 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
       label: "Hành động",
       name: "actions",
       align: "center",
-      render: (value, row) => { // <<== Đổi ( thành {
-
-        // ==========================================================
-        // >> Thêm dòng console.log của bạn vào đây <<
-        console.log("Giá trị của row.id là:", row.id);
-        // ==========================================================
-
-        // Thêm từ khóa 'return' để trả về JSX
+      render: (value, row) => { 
         return (
             <Tooltip title="Xem chi tiết" placement="top">
               <Link to={`/order-management/${row.id}`}>

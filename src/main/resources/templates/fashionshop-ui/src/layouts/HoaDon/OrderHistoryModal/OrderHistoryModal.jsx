@@ -123,11 +123,10 @@ const OrderHistoryModal = ({ maHoaDon, onClose }) => {
 
                             <TableBody>
                                 {historyData.map((item, index) => {
-                                    console.log(formatDateTime(item.thoiGian)); // THÊM DÒNG NÀY
+                                  
                                     return (
                                         <TableRow
                                             key={item.id || index}
-
                                         >
                                             <TableCell>{formatDateTime(item.thoiGian)}</TableCell>
 
