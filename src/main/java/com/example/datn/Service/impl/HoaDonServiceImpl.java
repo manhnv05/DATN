@@ -572,6 +572,12 @@ public class HoaDonServiceImpl implements HoaDonService {
         else {
             hoaDon.setPhieuGiamGia(null);
         }
+        if(!hoaDonRequestUpdateVO.getDiaChi().isEmpty()){
+            hoaDon.setTrangThai(TrangThai.HOAN_THANH);
+        }
+        else {
+            hoaDon.setTrangThai(TrangThai.CHO_XAC_NHAN);
+        }
         return HoaDonUpdateMapper.INSTANCE.toResponseDTO((hoaDonRepository.save(hoaDon)));
     }
 
