@@ -3,14 +3,12 @@ package com.example.datn.mapper;
 import com.example.datn.DTO.HoaDonDTO;
 import com.example.datn.Entity.HoaDon;
 import com.example.datn.VO.HoaDonCreateVO;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import com.example.datn.VO.HoaDonRequestUpdateVO;
+import org.mapstruct.*;
 
 @Mapper(
-        componentModel = MappingConstants.ComponentModel.SPRING,
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE // Bỏ qua các trường null từ nguồn
+        componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
 public interface HoaDonMapper {
 
@@ -53,5 +51,10 @@ public interface HoaDonMapper {
     // Map tenNhanVien: Nếu có thực thể nhân viên, lấy tên từ đó. Nếu không, trả về null.
     @Mapping(target = "tenNhanVien", expression = "java(hoaDon.getNhanVien() != null ? hoaDon.getNhanVien().getHoVaTen() : null)")
     HoaDonDTO toHoaDonResponse(HoaDon hoaDon);
+
+    @Mapping(target = "khachHang", ignore = true)
+    @Mapping(target = "nhanVien", ignore = true)
+    @Mapping(target = "phieuGiamGia", ignore = true)
+    void updateHoaDon(@MappingTarget HoaDon hoaDon, HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
 
 }

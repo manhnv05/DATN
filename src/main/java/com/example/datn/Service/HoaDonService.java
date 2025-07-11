@@ -2,10 +2,7 @@ package com.example.datn.Service;
 
 
 import com.example.datn.DTO.*;
-import com.example.datn.VO.CapNhatSanPhamChiTietDonHangVO;
-import com.example.datn.VO.HoaDonChoRequestVO;
-import com.example.datn.VO.HoaDonCreateVO;
-import com.example.datn.VO.HoaDonUpdateVO;
+import com.example.datn.VO.*;
 import com.example.datn.enums.TrangThai;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,5 +39,7 @@ public interface HoaDonService {
 
 
     List<HoaDonChiTietDTO> findChiTietHoaDon(@Param("idHoaDon") Integer idHoaDon);
+
+    HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
 
 }

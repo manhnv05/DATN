@@ -1,5 +1,6 @@
 package com.example.datn.Controller;
 
+import com.example.datn.Config.ResponseHelper;
 import com.example.datn.DTO.*;
 import com.example.datn.VO.*;
 import jakarta.validation.Valid;
@@ -180,5 +181,9 @@ public class HoaDonController {
                 .build();
         return ResponseEntity.ok(apiResponse);
 
+    }
+    @PostMapping("/update_hoadon")
+    public ResponseEntity<ApiResponse<HoaDonDTO>> updateHoadon(@RequestBody HoaDonRequestUpdateVO hoaDonRequestUpdateVO) {
+        return ResponseHelper.success("", hoaDonService.updateHoaDon(hoaDonRequestUpdateVO));
     }
 }

@@ -3,6 +3,7 @@ package com.example.datn.Service.impl;
 import com.example.datn.DTO.*;
 import com.example.datn.VO.*;
 import com.example.datn.mapper.HoaDonChiTietMapper;
+import com.example.datn.mapper.HoaDonUpdateMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class HoaDonServiceImpl implements HoaDonService {
     HoaDonMapper hoaDonMapper;
     LichSuHoaDonService lichSuHoaDonService;
     HoaDonChiTietMapper hoaDonChiTietMapper;
+    private final PhieuGiamGiaRepository phieuGiamGiaRepository;
 
     @Override
     @Transactional
@@ -540,6 +542,37 @@ public class HoaDonServiceImpl implements HoaDonService {
         return listHoaDonChiTiet.stream()
                 .map(this::mapViewToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO) {
+        HoaDon hoaDon = hoaDonRepository.findById(hoaDonRequestUpdateVO.getIdHoaDon())
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        HoaDonUpdateMapper.INSTANCE.updateHoaDon(hoaDon, hoaDonRequestUpdateVO);
+        if (!hoaDonRequestUpdateVO.getKhachHang().isEmpty()) {
+            hoaDon.setKhachHang(khachHangRepository
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getKhachHang())).orElse(null));
+        }
+        else {
+            hoaDon.setKhachHang(null);
+        }
+
+        if (!hoaDonRequestUpdateVO.getNhanVien().isEmpty()) {
+            hoaDon.setNhanVien(nhanVienRepository
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getNhanVien())).orElse(null));
+        }
+        else {
+            hoaDon.setNhanVien(null);
+        }
+
+        if (!hoaDonRequestUpdateVO.getNhanVien().isEmpty()) {
+            hoaDon.setPhieuGiamGia(phieuGiamGiaRepository
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getNhanVien())).orElse(null));
+        }
+        else {
+            hoaDon.setPhieuGiamGia(null);
+        }
+        return HoaDonUpdateMapper.INSTANCE.toResponseDTO((hoaDonRepository.save(hoaDon)));
     }
 
 
