@@ -1,5 +1,6 @@
 package com.example.datn.VO;
 
+import com.example.datn.enums.TrangThai;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,11 +14,11 @@ import java.time.LocalDateTime;
 public class HoaDonRequestUpdateVO {
     private Integer idHoaDon;
 
-    private String nhanVien;
+    private String idNhanVien;
 
-    private String khachHang;
+    private String idKhachHang;
 
-    private String phieuGiamGia;
+    private String idPhieuGiamGia;
 
     private BigDecimal tongTien;
 
@@ -34,8 +35,6 @@ public class HoaDonRequestUpdateVO {
     private String sdt;
 
     private String diaChi;
-
-    private Integer trangThai;
 
     private String ghiChu;
 }

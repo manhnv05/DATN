@@ -52,9 +52,5 @@ public interface HoaDonMapper {
     @Mapping(target = "tenNhanVien", expression = "java(hoaDon.getNhanVien() != null ? hoaDon.getNhanVien().getHoVaTen() : null)")
     HoaDonDTO toHoaDonResponse(HoaDon hoaDon);
 
-    @Mapping(target = "khachHang", ignore = true)
-    @Mapping(target = "nhanVien", ignore = true)
-    @Mapping(target = "phieuGiamGia", ignore = true)
-    void updateHoaDon(@MappingTarget HoaDon hoaDon, HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
 
 }

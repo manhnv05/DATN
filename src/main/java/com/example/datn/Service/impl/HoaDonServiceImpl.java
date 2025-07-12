@@ -549,25 +549,25 @@ public class HoaDonServiceImpl implements HoaDonService {
         HoaDon hoaDon = hoaDonRepository.findById(hoaDonRequestUpdateVO.getIdHoaDon())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
         HoaDonUpdateMapper.INSTANCE.updateHoaDon(hoaDon, hoaDonRequestUpdateVO);
-        if (!hoaDonRequestUpdateVO.getKhachHang().isEmpty()) {
+        if (!hoaDonRequestUpdateVO.getIdKhachHang().isEmpty()) {
             hoaDon.setKhachHang(khachHangRepository
-                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getKhachHang())).orElse(null));
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getIdKhachHang())).orElse(null));
         }
         else {
             hoaDon.setKhachHang(null);
         }
 
-        if (!hoaDonRequestUpdateVO.getNhanVien().isEmpty()) {
+        if (!hoaDonRequestUpdateVO.getIdNhanVien().isEmpty()) {
             hoaDon.setNhanVien(nhanVienRepository
-                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getNhanVien())).orElse(null));
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getIdNhanVien())).orElse(null));
         }
         else {
             hoaDon.setNhanVien(null);
         }
 
-        if (!hoaDonRequestUpdateVO.getNhanVien().isEmpty()) {
+        if (!hoaDonRequestUpdateVO.getIdPhieuGiamGia().isEmpty()) {
             hoaDon.setPhieuGiamGia(phieuGiamGiaRepository
-                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getNhanVien())).orElse(null));
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getIdPhieuGiamGia())).orElse(null));
         }
         else {
             hoaDon.setPhieuGiamGia(null);
