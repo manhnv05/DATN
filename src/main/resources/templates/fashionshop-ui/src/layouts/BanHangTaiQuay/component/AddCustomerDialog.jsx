@@ -20,6 +20,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
 import dayjs from "dayjs";
+import PropTypes from "prop-types";
 
 // API Endpoint để lấy dữ liệu địa chỉ
 const VIETNAM_PROVINCE_API = "https://vietnamlabs.com/api/vietnamprovince";
@@ -302,5 +303,12 @@ function AddCustomerDialog({ open, onClose, onCustomerAdded, showNotification })
     </Dialog>
   );
 }
+
+AddCustomerDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onCustomerAdded: PropTypes.func.isRequired,
+  showNotification: PropTypes.func.isRequired,
+};
 
 export default AddCustomerDialog;

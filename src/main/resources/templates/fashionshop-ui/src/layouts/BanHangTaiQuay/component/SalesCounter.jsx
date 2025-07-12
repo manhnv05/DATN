@@ -31,7 +31,7 @@ import SoftTypography from "components/SoftTypography";
 
 // Import modal (điều chỉnh đường dẫn nếu cần)
 import ProductSelectionModal from "./ProductSelectionModal";
-
+import PropTypes from "prop-types";
 
 const formatCurrency = (amount) => {
   if (typeof amount !== "number" || isNaN(amount)) {
@@ -624,5 +624,10 @@ function SalesCounter({ onTotalChange }) {
     </>
   );
 }
+
+
+SalesCounter.propTypes = {
+  onTotalChange: PropTypes.func,
+};
 
 export default SalesCounter;

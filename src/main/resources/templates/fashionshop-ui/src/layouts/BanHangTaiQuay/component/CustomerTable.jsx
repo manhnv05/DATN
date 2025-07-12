@@ -26,6 +26,7 @@ import Avatar from "@mui/material/Avatar";
 import Notifications from "layouts/Notifications";
 import dayjs from "dayjs";
 import SoftButton from "components/SoftButton";
+import PropTypes from "prop-types";
 
 // Import component AddCustomerDialog
 import AddCustomerDialog from "./AddCustomerDialog"; // Đảm bảo đường dẫn này đúng
@@ -355,5 +356,10 @@ function CustomerTable({ isSelectionMode = false, onSelectCustomer = () => {} })
     </>
   );
 }
+
+CustomerTable.propTypes = {
+  isSelectionMode: PropTypes.bool,
+  onSelectCustomer: PropTypes.func,
+};
 
 export default CustomerTable;
