@@ -40,4 +40,11 @@ public interface PhieuGiamGiaRepository extends JpaRepository<PhieuGiamGia, Inte
     """)
     List<PhieuGiamGia> findValidPromotions(@Param("now") LocalDateTime now);
 
+    @Query("""
+    SELECT p FROM PhieuGiamGia p
+    WHERE
+    (p.loaiPhieu = 0 AND p.trangThai = 1)
+    """)
+    List<PhieuGiamGia> getPhieuGiamGiaByTrangThai();
+
 }

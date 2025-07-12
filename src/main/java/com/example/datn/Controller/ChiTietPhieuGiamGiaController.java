@@ -3,6 +3,7 @@ package com.example.datn.Controller;
 import com.example.datn.Config.ResponseHelper;
 import com.example.datn.DTO.ApiResponse;
 import com.example.datn.DTO.ChiTietPhieuGiamGiaDTO;
+import com.example.datn.DTO.PhieuGiamGiaDTO;
 import com.example.datn.Service.ChiTietPhieuGiamGiaService;
 import com.example.datn.VO.ChiTietPhieuGiamGiaUpdateVO;
 import com.example.datn.VO.ChiTietPhieuGiamGiaVO;
@@ -20,7 +21,7 @@ public class ChiTietPhieuGiamGiaController {
     private ChiTietPhieuGiamGiaService phieuGiamGiaKhachHangService;
 
     @PostMapping("/query")
-    public ResponseEntity<ApiResponse<Page<ChiTietPhieuGiamGiaDTO>>> queryPhieuGiamGiaKhachHang(
+    public ResponseEntity<ApiResponse<Page<PhieuGiamGiaDTO>>> queryPhieuGiamGiaKhachHang(
             @RequestBody ChiTietPhieuGiamGiaVO request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
