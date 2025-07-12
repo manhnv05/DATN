@@ -11,12 +11,17 @@ import com.example.datn.exception.ErrorCode;
 import com.example.datn.mapper.ChiTietPhieuGiamGiaMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaService {
@@ -78,9 +83,53 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
 
     @Override
     public Page<ChiTietPhieuGiamGiaDTO> queryPhieuGiamGiaKhachHang(int page, int size, ChiTietPhieuGiamGiaVO request) {
+
         Pageable pageable = PageRequest.of(page, size);
         Page<ChiTietPhieuGiamGia> phieuGiamGiaKhachHangs = phieuGiamGiaKhachHangRepository
                 .queryPhieuGiamGiaKhachHang(request.getKhachHang(), request.getPhieuGiamGia(), pageable);
-        return phieuGiamGiaKhachHangs.map(ChiTietPhieuGiamGiaMapper.INSTANCE::toResponse);
+
+        if(request.getTongTienHoaDon()!=null) {
+            List<ChiTietPhieuGiamGia> chiTietPhieuGiamGiaList = phieuGiamGiaKhachHangs.getContent();
+            return getChiTietPhieuGiam(chiTietPhieuGiamGiaList, request);
+        }
+        else {
+            return phieuGiamGiaKhachHangs.map(ChiTietPhieuGiamGiaMapper.INSTANCE::toResponse);
+        }
+    }
+    public Page<ChiTietPhieuGiamGiaDTO> getChiTietPhieuGiam(List<ChiTietPhieuGiamGia> data, ChiTietPhieuGiamGiaVO request) {
+        List<ChiTietPhieuGiamGia> sortCTPGG = new ArrayList<>();
+        for(ChiTietPhieuGiamGia dataE : data){
+            if (request.getTongTienHoaDon().compareTo(new BigDecimal(dataE.getPhieuGiamGia().getDieuKienGiam())) >= 0) {
+                if(dataE.getPhieuGiamGia().getPhamTramGiamGia() != null){
+                    BigDecimal soTienGiam = dataE.getPhieuGiamGia().getPhamTramGiamGia()
+                            .multiply(request.getTongTienHoaDon())
+                            .divide(BigDecimal.valueOf(100));
+
+                    dataE.getPhieuGiamGia().setSoTienGiam(soTienGiam);
+                    sortCTPGG.add(dataE);
+                }
+                else {
+                    sortCTPGG.add(dataE);
+                }
+            }
+        }
+        sortCTPGG.sort(Comparator.comparing(
+                ct -> ct.getPhieuGiamGia().getSoTienGiam(), Comparator.reverseOrder()
+        ));
+        List<ChiTietPhieuGiamGia> oldList = new LinkedList<>();
+
+        for(ChiTietPhieuGiamGia sortDTO : sortCTPGG){
+            if(sortDTO.getPhieuGiamGia().getPhamTramGiamGia() != null){
+                sortDTO.getPhieuGiamGia().setSoTienGiam(new BigDecimal(0));
+                oldList.add(sortDTO);
+            }
+            else {
+                oldList.add(sortDTO);
+            }
+        }
+        List<ChiTietPhieuGiamGiaDTO> dtoList = oldList.stream()
+                .map(ChiTietPhieuGiamGiaMapper.INSTANCE::toResponse)
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, PageRequest.of(1, dtoList.size()), dtoList.size());
     }
 }
