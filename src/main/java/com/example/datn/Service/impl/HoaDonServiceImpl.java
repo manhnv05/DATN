@@ -587,38 +587,38 @@ public class HoaDonServiceImpl implements HoaDonService {
 
 
 
-        Integer idHoaDon = hoaDonRequestUpdateVO.getIdHoaDon();
-        boolean laDonGiaoHang = StringUtils.isNotEmpty(hoaDonRequestUpdateVO.getDiaChi());
+        // 1. Tính tổng số tiền đã thanh toán. Đây là nguồn thông tin duy nhất để quyết định.
+//    (Giả định hàm sumSoTienThanhToanByIdHoaDon trả về 0 nếu không có bản ghi nào)
+        Integer tongTienDaTra = chiTietThanhToanRepository.sumSoTienThanhToanByIdHoaDon(hoaDon.getId());
 
+// 2. Kiểm tra xem có bất kỳ chi tiết thanh toán nào được tạo ra không.
+        if (tongTienDaTra > 0) {
+            // KỊCH BẢN 1: CÓ THANH TOÁN -> Đây là giao dịch "Thanh toán ngay".
 
-        Integer tongTienDaTra = chiTietThanhToanRepository.sumSoTienThanhToanByIdHoaDon(idHoaDon);
-        boolean daThanhToanDu = (tongTienDaTra != null && tongTienDaTra.compareTo(hoaDon.getTongTien()) >= 0);
-
-
-        if (laDonGiaoHang) {
+            // Kiểm tra xem số tiền thanh toán đã đủ so với tổng giá trị hóa đơn chưa.
+            boolean daThanhToanDu = (tongTienDaTra.compareTo(hoaDon.getTongTien()) >= 0);
 
             if (daThanhToanDu) {
-
+                // Nếu đủ tiền, đơn hàng hoàn thành.
                 hoaDon.setTrangThai(TrangThai.HOAN_THANH);
             } else {
-
-                hoaDon.setTrangThai(TrangThai.CHO_XAC_NHAN);
+                // Nếu có thanh toán nhưng không đủ tiền -> Đây là một lỗi.
+                // Không cho phép lưu và báo lỗi cho người dùng.
+                throw new AppException(ErrorCode.NOT_YET_PAID);
             }
+        } else {
+            // KỊCH BẢN 2: KHÔNG CÓ THANH TOÁN (tổng tiền trả là 0).
+            // -> Đây được coi là giao dịch "Thanh toán sau" (ví dụ: COD).
+            hoaDon.setTrangThai(TrangThai.CHO_XAC_NHAN);
+        }
 
-
+// 3. Xử lý các thông tin phụ liên quan đến giao hàng
+        boolean laDonGiaoHang = StringUtils.isNotEmpty(hoaDonRequestUpdateVO.getDiaChi());
+        if (laDonGiaoHang && hoaDon.getTrangThai() == TrangThai.CHO_XAC_NHAN) {
+            // Chỉ đặt ngày giao dự kiến khi là đơn giao hàng và đang ở trạng thái chờ xác nhận
             LocalDateTime ngayHienTai = LocalDate.now().atStartOfDay();
             LocalDateTime ngayGiaoDuKien = ngayHienTai.plusDays(3);
             hoaDon.setNgayGiaoDuKien(ngayGiaoDuKien);
-
-        } else {
-
-            if (daThanhToanDu) {
-
-                hoaDon.setTrangThai(TrangThai.HOAN_THANH);
-            } else {
-
-                throw new AppException(ErrorCode.NOT_YET_PAID);
-            }
         }
 
         String nguoiThucHienCapNhat;

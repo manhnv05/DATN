@@ -63,7 +63,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
     setIsAddAddressModalOpen(true); // Mở modal thêm địa chỉ mới
   };
   // Tính toán tiền dựa trên `paymentDetails`
-  const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTien, 0);
+ const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTienThanhToan, 0);
   const changeToCustomer = totalPaid - finalTotal;
   const handleDeliveryToggle = (event) => {
     const isChecked = event.target.checked;
@@ -74,8 +74,23 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
     console.log("LOG 3 (Pay): Đã nhận dữ liệu từ con ->", formData);
     setShippingFormData(formData);
   }, []); // Mảng dependency rỗng, hàm chỉ được tạo 1 lần
+ const resetForm = useCallback(() => {
+    console.log("--- RESETTING FORM ---");
+    setIsDelivery(false);
+    setShippingFee(0);
+    setDiscountValue(0);
+    setPaymentDetails([]);
+    setCustomer({ id: null, tenKhachHang: "Khách lẻ" });
+    setShippingAddress(null);
+    
+  }, []);
+useEffect(() => {
 
-  // <<< Gộp báo cáo và gửi lên cho sếp (SalesDashboardPage)
+  if (hoaDonId) { 
+      resetForm();
+  }
+}, [hoaDonId, resetForm]);
+  
   useEffect(() => {
     if (onDataChange) {
       const dataToSend = {
@@ -132,8 +147,9 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
         // 5. Gửi request API cho bản ghi hiện tại
         // Sửa URL API nếu cần
         await axios.post("http://localhost:8080/chiTietThanhToan", payload);
+     
       }
-
+   setPaymentDetails((prevDetails) => [...prevDetails, ...newPayments]);
       // 6. Sau khi vòng lặp hoàn tất không có lỗi, thông báo thành công
       alert("Tất cả các khoản thanh toán đã được ghi nhận thành công!");
       setIsPaymentModalOpen(false);
@@ -149,6 +165,24 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
         }`
       );
     }
+  };
+  const handleFinalSave = () => {
+    if (isDelivery && paymentDetails.length > 0) {
+      const finalTotal = totalAmount + shippingFee - discountValue;
+
+      const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTienThanhToan, 0);
+
+      if (totalPaid < finalTotal) {
+        alert(
+          `Thanh toán chưa đủ! Còn thiếu ${formatCurrency(
+            finalTotal - totalPaid
+          )}. Vui lòng hoàn tất thanh toán.`
+        );
+        return;
+      }
+    }
+    console.log("Validation OK. Proceeding to save order.");
+    onSaveOrder();
   };
   const handleClearCustomer = () => {
     setCustomer({ id: null, tenKhachHang: "Khách lẻ" });
@@ -286,17 +320,20 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
                   <Typography variant="h6" fontWeight="medium">
                     Khách thanh toán:
                   </Typography>
-                  <IconButton
-                    color="info"
-                    onClick={() => setIsPaymentModalOpen(true)}
-                    sx={{ border: "1px solid #ddd", borderRadius: "8px" }}
-                  >
-                    <i className="fa-solid fa-calculator"></i>
-                  </IconButton>
+                  {totalPaid < finalTotal && (
+                    <IconButton
+                      color="info"
+                      onClick={() => setIsPaymentModalOpen(true)}
+                      sx={{ border: "1px solid #ddd", borderRadius: "8px" }}
+                    >
+                      <i className="fa-solid fa-calculator"></i>
+                    </IconButton>
+                  )}
                 </Box>
                 <Typography variant="h6" color="info.main" fontWeight="bold">
-                  {formatCurrency(totalPaid)}
-                </Typography>
+    {/* Dùng hàm formatCurrency để hiển thị số tiền cho đẹp */}
+    {formatCurrency(totalPaid)}
+  </Typography>
               </Box>
               <Divider sx={{ my: 3 }} />
 
@@ -318,7 +355,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
             size="large"
             fullWidth
             // <<< GẮN HÀM onSaveOrder VÀO SỰ KIỆN onClick
-            onClick={onSaveOrder}
+            onClick={handleFinalSave}
           >
             <Typography variant="h6" color="white" fontWeight="bold">
               {isDelivery ? "LƯU VÀ ĐẶT HÀNG" : "LƯU VÀ THANH TOÁN"}
