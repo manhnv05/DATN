@@ -19,6 +19,7 @@ import com.example.datn.Repository.*;
 import com.example.datn.Service.HoaDonService;
 import com.example.datn.Service.LichSuHoaDonService;
 import com.example.datn.specification.HoaDonSpecification;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +46,7 @@ public class HoaDonServiceImpl implements HoaDonService {
     LichSuHoaDonService lichSuHoaDonService;
     HoaDonChiTietMapper hoaDonChiTietMapper;
     private final PhieuGiamGiaRepository phieuGiamGiaRepository;
+    ChiTietThanhToanRepository chiTietThanhToanRepository;
 
     @Override
     @Transactional
@@ -201,9 +203,9 @@ public class HoaDonServiceImpl implements HoaDonService {
         //Lấy hóa dơn cần cập nhật
         HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        if (hoaDon.getTrangThai() != TrangThai.TAO_DON_HANG&& hoaDon.getTrangThai() != TrangThai.CHO_XAC_NHAN) {
-            throw new AppException(ErrorCode.INVALID_STATUS);
-        }
+//        if (hoaDon.getTrangThai() != TrangThai.TAO_DON_HANG&& hoaDon.getTrangThai() != TrangThai.CHO_XAC_NHAN) {
+//            throw new AppException(ErrorCode.INVALID_STATUS);
+//        }
         Map<Integer,HoaDonChiTiet> chiTietHoaDonMap = hoaDonChiTietRepository.findByHoaDon(hoaDon)
                 .stream().collect(Collectors.toMap(HoaDonChiTiet::getId, chiTiet -> chiTiet));
         List<HoaDonChiTiet> updatedChiTietList = new ArrayList<>();
@@ -248,9 +250,7 @@ public class HoaDonServiceImpl implements HoaDonService {
 
         }
         List<HoaDonChiTiet> chiTietCuoiCung = hoaDonChiTietRepository.findAllByHoaDon_Id(idHoaDon);
-        recalculateHoaDonTotals(hoaDon, chiTietCuoiCung); // Sửa hàm recalculate để nhận list chi tiết
-        hoaDon.setTongHoaDon(hoaDon.getTongTien() + hoaDon.getPhiVanChuyen());
-        hoaDonRepository.save(hoaDon);
+
         return hoaDonChiTietMapper.toDtoList(chiTietCuoiCung);
     }
     private void recalculateHoaDonTotals(HoaDon hoaDon, List<HoaDonChiTiet> chiTietList) {
@@ -276,7 +276,7 @@ public class HoaDonServiceImpl implements HoaDonService {
         hoaDon.setPhiVanChuyen(0);
         hoaDon.setTongHoaDon(0); // Nếu bạn sử dụng trường này
         hoaDon.setGhiChu(null);
-        hoaDon.setSdt(null); // Có thể thêm SĐT mặc định của khách lẻ nếu có
+        hoaDon.setSdt(null);
         hoaDon.setDiaChi(null);
         hoaDon.setNgayGiaoDuKien(null);
         hoaDon.setPhieuGiamGia(null);
@@ -546,41 +546,103 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Override
     public HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO) {
+        // 1. Tìm hóa đơn hoặc ném lỗi nếu không tìm thấy
         HoaDon hoaDon = hoaDonRepository.findById(hoaDonRequestUpdateVO.getIdHoaDon())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        HoaDonUpdateMapper.INSTANCE.updateHoaDon(hoaDon, hoaDonRequestUpdateVO);
-        if (!hoaDonRequestUpdateVO.getIdKhachHang().isEmpty()) {
-            hoaDon.setKhachHang(khachHangRepository
-                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getIdKhachHang())).orElse(null));
-        }
-        else {
-            hoaDon.setKhachHang(null);
-        }
 
-        if (!hoaDonRequestUpdateVO.getIdNhanVien().isEmpty()) {
-            hoaDon.setNhanVien(nhanVienRepository
-                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getIdNhanVien())).orElse(null));
+
+        HoaDonUpdateMapper.INSTANCE.updateHoaDon(hoaDon, hoaDonRequestUpdateVO);
+
+        // 3. Cập nhật Khách Hàng (An toàn với kiểm tra null/rỗng)
+        if (StringUtils.isNotEmpty(hoaDonRequestUpdateVO.getKhachHang())) {
+            hoaDon.setKhachHang(khachHangRepository
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getKhachHang())).orElse(null));
+        } else {
+            hoaDon.setKhachHang(null); // Đặt là null nếu không được cung cấp hoặc rỗng
         }
-        else {
+        NhanVien nhanVienThucHien = null; // Biến để lưu nhân viên cho việc ghi lịch sử
+        if (StringUtils.isNotEmpty(hoaDonRequestUpdateVO.getNhanVien())) {
+            nhanVienThucHien = nhanVienRepository
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getNhanVien())).orElse(null);
+            hoaDon.setNhanVien(nhanVienThucHien);
+        } else {
+            hoaDon.setNhanVien(null);
+        }
+        // 4. Cập nhật Nhân Viên (An toàn với kiểm tra null/rỗng)
+        if (StringUtils.isNotEmpty(hoaDonRequestUpdateVO.getNhanVien())) {
+            hoaDon.setNhanVien(nhanVienRepository
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getNhanVien())).orElse(null));
+        } else {
             hoaDon.setNhanVien(null);
         }
 
-        if (!hoaDonRequestUpdateVO.getIdPhieuGiamGia().isEmpty()) {
+        // 5. Cập nhật Phiếu Giảm Giá (Đã sửa lỗi logic: Giả sử có getPhieuGiamGia() trong VO)
+        // Nếu bạn muốn lấy ID phiếu giảm giá từ một trường khác, hãy điều chỉnh ở đây.
+        if (StringUtils.isNotEmpty(hoaDonRequestUpdateVO.getPhieuGiamGia())) {
             hoaDon.setPhieuGiamGia(phieuGiamGiaRepository
-                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getIdPhieuGiamGia())).orElse(null));
-        }
-        else {
+                    .findById(Integer.valueOf(hoaDonRequestUpdateVO.getPhieuGiamGia())).orElse(null));
+        } else {
             hoaDon.setPhieuGiamGia(null);
         }
-        if(!hoaDonRequestUpdateVO.getDiaChi().isEmpty()){
-            hoaDon.setTrangThai(TrangThai.HOAN_THANH);
-        }
-        else {
+
+
+
+        // 1. Tính tổng số tiền đã thanh toán. Đây là nguồn thông tin duy nhất để quyết định.
+//    (Giả định hàm sumSoTienThanhToanByIdHoaDon trả về 0 nếu không có bản ghi nào)
+        Integer tongTienDaTra = chiTietThanhToanRepository.sumSoTienThanhToanByIdHoaDon(hoaDon.getId());
+
+// 2. Kiểm tra xem có bất kỳ chi tiết thanh toán nào được tạo ra không.
+        if (tongTienDaTra > 0) {
+            // KỊCH BẢN 1: CÓ THANH TOÁN -> Đây là giao dịch "Thanh toán ngay".
+
+            // Kiểm tra xem số tiền thanh toán đã đủ so với tổng giá trị hóa đơn chưa.
+            boolean daThanhToanDu = (tongTienDaTra.compareTo(hoaDon.getTongTien()) >= 0);
+
+            if (daThanhToanDu) {
+                // Nếu đủ tiền, đơn hàng hoàn thành.
+                hoaDon.setTrangThai(TrangThai.HOAN_THANH);
+            } else {
+                // Nếu có thanh toán nhưng không đủ tiền -> Đây là một lỗi.
+                // Không cho phép lưu và báo lỗi cho người dùng.
+                throw new AppException(ErrorCode.NOT_YET_PAID);
+            }
+        } else {
+            // KỊCH BẢN 2: KHÔNG CÓ THANH TOÁN (tổng tiền trả là 0).
+            // -> Đây được coi là giao dịch "Thanh toán sau" (ví dụ: COD).
             hoaDon.setTrangThai(TrangThai.CHO_XAC_NHAN);
         }
+
+// 3. Xử lý các thông tin phụ liên quan đến giao hàng
+        boolean laDonGiaoHang = StringUtils.isNotEmpty(hoaDonRequestUpdateVO.getDiaChi());
+        if (laDonGiaoHang && hoaDon.getTrangThai() == TrangThai.CHO_XAC_NHAN) {
+            // Chỉ đặt ngày giao dự kiến khi là đơn giao hàng và đang ở trạng thái chờ xác nhận
+            LocalDateTime ngayHienTai = LocalDate.now().atStartOfDay();
+            LocalDateTime ngayGiaoDuKien = ngayHienTai.plusDays(3);
+            hoaDon.setNgayGiaoDuKien(ngayGiaoDuKien);
+        }
+
+        String nguoiThucHienCapNhat;
+        if (nhanVienThucHien != null) {
+            nguoiThucHienCapNhat = nhanVienThucHien.getHoVaTen();
+        } else {
+            nguoiThucHienCapNhat = "Hệ thống";
+        }
+        HoaDon hoaDonDaLuu = hoaDonRepository.save(hoaDon);
+        // b. Tạo nội dung cho lịch sử
+        String ghiChuLichSu = "Hóa đơn đã được cập nhật.";
+        // Bạn có thể làm cho nó chi tiết hơn, ví dụ: "Cập nhật trạng thái thành: " + hoaDonDaLuu.getTrangThai().getDisplayName()
+
+        // c. Gọi service để ghi nhận lịch sử
+        lichSuHoaDonService.ghiNhanLichSuHoaDon(
+                hoaDonDaLuu,
+                ghiChuLichSu,
+                nguoiThucHienCapNhat,
+                "Cập nhật thông tin hóa đơn",
+                hoaDonDaLuu.getTrangThai()
+        );
+        // 7. Lưu hóa đơn đã cập nhật vào cơ sở dữ liệu và chuyển đổi sang DTO để trả về
         return HoaDonUpdateMapper.INSTANCE.toResponseDTO((hoaDonRepository.save(hoaDon)));
     }
-
 
     // Phương thức helper để chuyển đổi và thêm chi tiết hóa đơn
     private HoaDonDTO convertToHoaDonResponseWithDetails(HoaDon hoaDon) {
