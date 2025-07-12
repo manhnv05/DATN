@@ -36,7 +36,7 @@ import CreditCard from "examples/Icons/CreditCard";
 import Cube from "examples/Icons/Cube";
 import AddDiscountEventPage from "layouts/GiamGia/AddDiscountEventPage";
 import ViewDiscountEventPage from "layouts/GiamGia/ViewDiscountEventPage";
-// import Dashboard from "layouts/dashboard";
+import SalesDashboardPage from "layouts/BanHangTaiQuay/pages/SalesDashboardPage";
 import DashboardStats from "layouts/thongke/thongke";
 
 const routes = [
@@ -49,13 +49,13 @@ const routes = [
     component: <DashboardStats />,
     noCollapse: true,
   },
-  {
+   {
     type: "collapse",
     name: "Bán Hàng Tại Quầy",
     key: "sales",
     route: "/tables",
     icon: <Office size="12px" />,
-    // component: <Tables />,
+    component: <SalesDashboardPage />,
     noCollapse: true,
   },
   {

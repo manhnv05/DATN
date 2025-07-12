@@ -9,10 +9,11 @@ import SoftButton from "components/SoftButton";
 import SoftInput from "components/SoftInput";
 import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
 import PropTypes from 'prop-types';
-// API để lấy danh sách tỉnh/thành
+import configs from "examples/Charts/BubbleChart/configs";
+
 const VIETNAM_PROVINCE_API = "https://vietnamlabs.com/api/vietnamprovince";
 
-function ShippingForm({ initialCustomer, initialAddress, onOpenAddressModal }) {
+function ShippingForm({ initialCustomer, initialAddress, onOpenAddressModal,onFormChange  }) {
   // State cho các trường trong form
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -23,8 +24,22 @@ function ShippingForm({ initialCustomer, initialAddress, onOpenAddressModal }) {
   const [wards, setWards] = useState([]);
   const [selectedProvince, setSelectedProvince] = useState(null);
   const [selectedWard, setSelectedWard] = useState(null);
+ useEffect(() => {
+    if (onFormChange) {
+      const formData = {
+        name,
+        phone,
+        detailedAddress,
+        province: selectedProvince?.province || "",
+        ward: selectedWard?.name || "",
+      };
+     
+ 
+      onFormChange(formData);
+    }
+  }, [name, phone, detailedAddress, selectedProvince, selectedWard, onFormChange]);
 
-  // 1. useEffect để gọi API lấy danh sách tỉnh/thành phố (chỉ chạy 1 lần)
+
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
@@ -39,30 +54,31 @@ function ShippingForm({ initialCustomer, initialAddress, onOpenAddressModal }) {
     fetchProvinces();
   }, []);
 
-  // 2. useEffect để điền dữ liệu vào form khi props (khách hàng, địa chỉ) thay đổi
+
   useEffect(() => {
-    // Chỉ thực hiện khi có khách hàng và danh sách tỉnh đã được tải
+  
+     console.log("LOG 2 (ShippingForm): Nhận được props mới:", { initialCustomer, initialAddress });
     if (initialCustomer && provinces.length > 0) {
       setName(initialCustomer.tenKhachHang || "");
-      setPhone(initialCustomer.sdt || ""); // Đảm bảo object customer có trường `sdt`
+      setPhone(initialCustomer.sdt || ""); 
 
-      // Nếu có địa chỉ được truyền vào, tiến hành tìm và set
+   
       if (initialAddress) {
-        setDetailedAddress(initialAddress.diaChiChiTiet || "");
+      setDetailedAddress(""); 
 
-        // Tìm object Tỉnh/Thành phố dựa trên tên
+       
         const provinceToSet = provinces.find((p) => p.province === initialAddress.tinhThanhPho);
         if (provinceToSet) {
           setSelectedProvince(provinceToSet);
 
-          // Khi đã có tỉnh, cập nhật danh sách xã/phường và tìm xã/phường tương ứng
+   
           const wardList = provinceToSet.wards || [];
           setWards(wardList);
           const wardToSet = wardList.find((w) => w.name === initialAddress.xaPhuong);
           setSelectedWard(wardToSet || null);
         }
       } else {
-        // Nếu khách hàng được chọn không có địa chỉ, xóa các trường địa chỉ
+       
         setDetailedAddress("");
         setSelectedProvince(null);
         setSelectedWard(null);
@@ -71,20 +87,10 @@ function ShippingForm({ initialCustomer, initialAddress, onOpenAddressModal }) {
     }
   }, [initialCustomer, initialAddress, provinces]);
 
-  // 3. useEffect để cập nhật danh sách xã/phường khi người dùng tự chọn Tỉnh/Thành phố
-  useEffect(() => {
-    if (selectedProvince) {
-      setWards(selectedProvince.wards || []);
-    } else {
-      setWards([]);
-    }
-    // Reset xã khi tỉnh thay đổi (để tránh giữ lại xã của tỉnh cũ)
-    setSelectedWard(null);
-  }, [selectedProvince]);
 
   return (
     <SoftBox>
-      {/* Nút này sẽ hiển thị tên khách hàng và cho phép bỏ chọn */}
+    
       <SoftButton
         variant="outlined"
         color="info"
@@ -95,7 +101,7 @@ function ShippingForm({ initialCustomer, initialAddress, onOpenAddressModal }) {
       </SoftButton>
 
       <Grid container spacing={2} mt={1}>
-        {/* Các trường input đã được kiểm soát (controlled components) */}
+    
         <Grid item xs={12} md={6}>
           <SoftInput
             placeholder="Tên người nhận"
@@ -175,12 +181,16 @@ ShippingForm.propTypes = {
     diaChiChiTiet: PropTypes.string,
     tinhThanhPho: PropTypes.string,
     xaPhuong: PropTypes.string,
+    xaPhuong: PropTypes.string,
+    diaChi: PropTypes.string,
   }),
+  onFormChange: PropTypes.func.isRequired,
 };
 
 // Khai báo giá trị mặc định để tránh lỗi khi props là null
 ShippingForm.defaultProps = {
     initialCustomer: null,
     initialAddress: null,
+    
 };
 export default ShippingForm;

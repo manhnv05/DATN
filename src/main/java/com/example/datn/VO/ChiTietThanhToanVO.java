@@ -20,8 +20,6 @@ public class ChiTietThanhToanVO {
 
     private Integer soTienThanhToan;
 
-    private Date ngayThanhToan;
-
     private Integer trangThaiThanhToan;
 
     private String ghiChu;

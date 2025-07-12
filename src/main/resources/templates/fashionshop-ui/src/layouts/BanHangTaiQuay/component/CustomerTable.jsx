@@ -26,7 +26,7 @@ import Avatar from "@mui/material/Avatar";
 import Notifications from "layouts/Notifications";
 import dayjs from "dayjs";
 import SoftButton from "components/SoftButton";
-
+import PropTypes from 'prop-types';
 // Import component AddCustomerDialog
 import AddCustomerDialog from "./AddCustomerDialog"; // Đảm bảo đường dẫn này đúng
 
@@ -355,5 +355,14 @@ function CustomerTable({ isSelectionMode = false, onSelectCustomer = () => {} })
     </>
   );
 }
+CustomerTable.propTypes = {
+  isSelectionMode: PropTypes.bool,
+  onSelectCustomer: PropTypes.func,
+};
 
+// Thêm giá trị mặc định để tránh lỗi nếu không được truyền
+CustomerTable.defaultProps = {
+  isSelectionMode: false,
+  onSelectCustomer: () => {}, // Hàm rỗng mặc định
+};
 export default CustomerTable;

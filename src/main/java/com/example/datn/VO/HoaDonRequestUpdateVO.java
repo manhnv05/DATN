@@ -26,16 +26,7 @@ public class HoaDonRequestUpdateVO {
     private BigDecimal tongHoaDon;
 
     private String tenKhachHang;
-
-    private LocalDateTime ngayDat;
-
-    private LocalDateTime ngayGiaoDuKien;
-
     private String sdt;
-
     private String diaChi;
-
-    private Integer trangThai;
-
     private String ghiChu;
 }

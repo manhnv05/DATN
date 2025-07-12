@@ -22,5 +22,4 @@ public class ChiTietSanPhamBanHangTaiQuayVO {
     private String coAo;
     private String tayAo;
     private int gia;
-
 }

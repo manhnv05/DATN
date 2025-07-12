@@ -23,15 +23,15 @@ import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import PaidIcon from "@mui/icons-material/Paid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
-
+import PropTypes from "prop-types";
 // Import các component chung
 import SoftBox from "components/SoftBox";
 import Card from "@mui/material/Card";
 import SoftTypography from "components/SoftTypography";
 
+
 // Import modal (điều chỉnh đường dẫn nếu cần)
 import ProductSelectionModal from "./ProductSelectionModal";
-
 
 const formatCurrency = (amount) => {
   if (typeof amount !== "number" || isNaN(amount)) {
@@ -61,7 +61,7 @@ const CustomTab = styled(Tab)(({ theme }) => ({
 
 const MAX_ORDERS = 5;
 
-function SalesCounter({ onTotalChange }) {
+function SalesCounter({ onProductsChange, onInvoiceIdChange}) {
   const [orders, setOrders] = useState(() => {
     try {
       const savedOrders = sessionStorage.getItem("salesOrders");
@@ -79,34 +79,45 @@ function SalesCounter({ onTotalChange }) {
     ten: "Khách lẻ",
   });
   const [notes, setNotes] = useState("Khách thanh toán tiền mặt");
-  
-
- 
 
   const currentOrder = useMemo(
     () => orders.find((o) => o.id === selectedTab),
     [orders, selectedTab]
   );
-  
+useEffect(() => {
+    if (onProductsChange) {
+      // Gửi toàn bộ danh sách sản phẩm của đơn hàng hiện tại lên component cha
+      onProductsChange(currentOrder?.products || []);
+    }
+  }, [currentOrder, onProductsChange]);
   const totalAmount = useMemo(() => {
     if (!currentOrder) return 0;
     return currentOrder.products
       .filter((product) => product.isSelected)
       .reduce((total, product) => total + product.gia * product.quantity, 0);
   }, [currentOrder]);
-   // <<< THÊM useEffect ĐỂ GỬI totalAmount LÊN COMPONENT CHA
+  // <<< THÊM useEffect ĐỂ GỬI totalAmount LÊN COMPONENT CHA
   useEffect(() => {
     // Mỗi khi totalAmount thay đổi, gọi hàm callback đã được truyền xuống
-    if (onTotalChange) {
-      onTotalChange(totalAmount);
-    }
-  }, [totalAmount, onTotalChange]);
+    if (onProductsChange) {
+            onProductsChange(currentOrder?.products || []);
+        }
+    }, [currentOrder, onProductsChange]);
 
   useEffect(() => {
     if (orders.length === 0) {
       handleCreateOrder();
     }
-  }, []); 
+  }, []);
+  useEffect(() => {
+    // Lấy ra id hóa đơn từ backend của order đang được chọn
+    const currentInvoiceId = currentOrder?.idHoaDonBackend;
+
+    // Nếu có hàm callback thì gọi nó với ID mới
+    if (onInvoiceIdChange) {
+      onInvoiceIdChange(currentInvoiceId);
+    }
+  }, [currentOrder, onInvoiceIdChange]);
   const handleCreateOrder = async () => {
     if (orders.length >= MAX_ORDERS) {
       alert(`Chỉ có thể tạo tối đa ${MAX_ORDERS} đơn hàng.`);
@@ -135,29 +146,7 @@ function SalesCounter({ onTotalChange }) {
     }
   };
 
-  const handleUpdateOrder = async () => {
-    if (!currentOrder || !currentOrder.idHoaDonBackend) {
-      alert("Vui lòng chọn một đơn hàng hợp lệ để cập nhật.");
-      return;
-    }
-    
-    const danhSachCapNhat = currentOrder.products.map((p) => ({
-      id: p.idChiTietSanPham,
-      soLuong: p.quantity,
-    }));
-
-    try {
-      await axios.post(
-        `http://localhost:8080/api/hoa-don/cap-nhat-danh-sach-san-pham/${currentOrder.idHoaDonBackend}`,
-        danhSachCapNhat
-      );
-      alert("Cập nhật đơn hàng thành công!");
-    } catch (error) {
-      console.error("Lỗi khi cập nhật đơn hàng:", error);
-      alert(`Lỗi khi cập nhật đơn hàng: ${error.response?.data?.message || "Lỗi không xác định."}`);
-    }
-  };
-
+  
   const handleCloseOrderTab = (idToClose) => {
     const newOrders = orders.filter((order) => order.id !== idToClose);
     setOrders(newOrders);
@@ -178,7 +167,7 @@ function SalesCounter({ onTotalChange }) {
       console.error("Lỗi khi lưu dữ liệu vào sessionStorage:", error);
     }
   }, [orders, selectedTab]);
-  
+
   const handleProductSelected = (productToAdd) => {
     setOrders((prevOrders) =>
       prevOrders.map((order) => {
@@ -236,7 +225,7 @@ function SalesCounter({ onTotalChange }) {
       )
     );
   };
-  
+
   const handleToggleProductSelection = (productId) => {
     setOrders((prevOrders) =>
       prevOrders.map((order) =>
@@ -337,7 +326,7 @@ function SalesCounter({ onTotalChange }) {
 
           {/* Phần Sản phẩm */}
           <SoftBox mt={2}>
-             <Box
+            <Box
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -376,7 +365,7 @@ function SalesCounter({ onTotalChange }) {
                   startIcon={<ShoppingCartIcon />}
                   onClick={() => setIsProductModalOpen(true)}
                   disabled={!selectedTab}
-                   sx={{
+                  sx={{
                     borderRadius: 2,
                     textTransform: "none",
                     fontWeight: 400,
@@ -401,41 +390,39 @@ function SalesCounter({ onTotalChange }) {
                   <>
                     {/* Header bảng sản phẩm */}
                     <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          px: 2,
-                          py: 1,
-                          borderBottom: "2px solid #ddd",
-                          backgroundColor: "#f9f9f9",
-                        }}
-                      >
-                        <Box sx={{ width: "5%" }}>
-                          <Checkbox
-                            checked={isAllSelected}
-                            indeterminate={isSomeSelected}
-                            onChange={(e) => handleToggleAllProducts(e.target.checked)}
-                          />
-                        </Box>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            Sản phẩm
-                          </Typography>
-                        </Box>
-                        <Box sx={{ width: "15%", display: "flex", justifyContent: "center" }}>
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            Số lượng
-                          </Typography>
-                        </Box>
-                        <Box sx={{ width: "15%", display: "flex", justifyContent: "flex-end" }}>
-                           <Typography variant="subtitle2" fontWeight="bold">
-                            Thành tiền
-                          </Typography>
-                        </Box>
-                        <Box
-                          sx={{ width: "10%", display: "flex", justifyContent: "flex-end" }}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        px: 2,
+                        py: 1,
+                        borderBottom: "2px solid #ddd",
+                        backgroundColor: "#f9f9f9",
+                      }}
+                    >
+                      <Box sx={{ width: "5%" }}>
+                        <Checkbox
+                          checked={isAllSelected}
+                          indeterminate={isSomeSelected}
+                          onChange={(e) => handleToggleAllProducts(e.target.checked)}
                         />
                       </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Sản phẩm
+                        </Typography>
+                      </Box>
+                      <Box sx={{ width: "15%", display: "flex", justifyContent: "center" }}>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Số lượng
+                        </Typography>
+                      </Box>
+                      <Box sx={{ width: "15%", display: "flex", justifyContent: "flex-end" }}>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          Thành tiền
+                        </Typography>
+                      </Box>
+                      <Box sx={{ width: "10%", display: "flex", justifyContent: "flex-end" }} />
+                    </Box>
 
                     {/* Danh sách sản phẩm */}
                     <Box sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
@@ -451,7 +438,7 @@ function SalesCounter({ onTotalChange }) {
                             px: 2,
                           }}
                         >
-                           {/* Cột 1: Checkbox */}
+                          {/* Cột 1: Checkbox */}
                           <Box sx={{ width: "5%" }}>
                             <Checkbox
                               checked={product.isSelected}
@@ -459,10 +446,8 @@ function SalesCounter({ onTotalChange }) {
                             />
                           </Box>
 
-                           {/* Cột 2: Thông tin sản phẩm */}
-                          <Box
-                            sx={{ flex: 1, display: "flex", alignItems: "center", gap: 2 }}
-                          >
+                          {/* Cột 2: Thông tin sản phẩm */}
+                          <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 2 }}>
                             <Avatar
                               variant="rounded"
                               src={product.duongDanAnh}
@@ -481,11 +466,7 @@ function SalesCounter({ onTotalChange }) {
                                   {formatCurrency(product.giaGoc)}
                                 </Typography>
                               )}
-                              <Typography
-                                variant="body1"
-                                color="error.main"
-                                fontWeight="bold"
-                              >
+                              <Typography variant="body1" color="error.main" fontWeight="bold">
                                 {formatCurrency(product.gia)}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
@@ -495,10 +476,8 @@ function SalesCounter({ onTotalChange }) {
                           </Box>
 
                           {/* Cột 3: Số lượng */}
-                          <Box
-                            sx={{ width: "15%", display: "flex", justifyContent: "center" }}
-                          >
-                             <Box
+                          <Box sx={{ width: "15%", display: "flex", justifyContent: "center" }}>
+                            <Box
                               sx={{
                                 display: "flex",
                                 alignItems: "center",
@@ -537,15 +516,15 @@ function SalesCounter({ onTotalChange }) {
                               </IconButton>
                             </Box>
                           </Box>
-                          
-                           {/* Cột 4: Thành tiền */}
+
+                          {/* Cột 4: Thành tiền */}
                           <Box sx={{ width: "15%", textAlign: "right" }}>
                             <Typography variant="h6" fontWeight="bold">
                               {formatCurrency(product.gia * product.quantity)}
                             </Typography>
                           </Box>
 
-                           {/* Cột 5: Nút xóa */}
+                          {/* Cột 5: Nút xóa */}
                           <Box sx={{ width: "10%", textAlign: "right" }}>
                             <IconButton
                               color="error"
@@ -578,18 +557,7 @@ function SalesCounter({ onTotalChange }) {
                       >
                         {formatCurrency(totalAmount)}
                       </Typography>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        fullWidth
-                        size="large"
-                        startIcon={<PaidIcon />}
-                        sx={{ mt: 3, color: "#fff" }}
-                        onClick={handleUpdateOrder}
-                        disabled={!currentOrder || currentOrder.products.length === 0}
-                      >
-                        Thanh toán
-                      </Button>
+                     
                     </Box>
                   </>
                 ) : (
@@ -624,5 +592,8 @@ function SalesCounter({ onTotalChange }) {
     </>
   );
 }
-
+SalesCounter.propTypes = {
+  onProductsChange: PropTypes.func.isRequired,
+  onInvoiceIdChange: PropTypes.func.isRequired, 
+};
 export default SalesCounter;
