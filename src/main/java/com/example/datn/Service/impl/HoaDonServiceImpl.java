@@ -4,6 +4,8 @@ import com.example.datn.DTO.*;
 import com.example.datn.VO.*;
 import com.example.datn.mapper.HoaDonChiTietMapper;
 import com.example.datn.mapper.HoaDonUpdateMapper;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.BaseFont;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +29,22 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.itextpdf.text.Document;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 
 @Service
 @RequiredArgsConstructor
@@ -544,6 +558,8 @@ public class HoaDonServiceImpl implements HoaDonService {
                 .collect(Collectors.toList());
     }
 
+
+
     @Override
     public HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO) {
         // 1. Tìm hóa đơn hoặc ném lỗi nếu không tìm thấy
@@ -643,6 +659,145 @@ public class HoaDonServiceImpl implements HoaDonService {
         // 7. Lưu hóa đơn đã cập nhật vào cơ sở dữ liệu và chuyển đổi sang DTO để trả về
         return HoaDonUpdateMapper.INSTANCE.toResponseDTO((hoaDonRepository.save(hoaDon)));
     }
+
+    @Override
+    public HoaDonPdfResult hoadonToPDF(String idHoaDon) {
+        HoaDon hoaDon = hoaDonRepository.findById(Integer.valueOf(idHoaDon))
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        Document document = new Document();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, byteArrayOutputStream);
+            document.open();
+
+            // Load font ARIAL.TTF từ thư mục resources/fonts
+            InputStream fontStream = getClass().getClassLoader().getResourceAsStream("fonts/ARIAL.TTF");
+            BaseFont baseFont = BaseFont.createFont(
+                    "ARIAL.TTF",
+                    BaseFont.IDENTITY_H,
+                    BaseFont.EMBEDDED,
+                    true,
+                    fontStream.readAllBytes(),
+                    null
+            );
+            Font font = new Font(baseFont, 12);
+            Font fontTitle = new Font(baseFont, 16, Font.BOLD);
+            Paragraph title2 = new Paragraph("Fashion Shop", fontTitle);
+            Paragraph titleDSSP = new Paragraph("Danh Sách sản phẩm", fontTitle);
+            Paragraph sdt = new Paragraph("Số điện thoại: 0192345544", font);
+            Paragraph email = new Paragraph("Email: shop@gmail.com", font);
+            Paragraph diaChi = new Paragraph("Địa chỉ: FPT , Phúc diên, Bắc Từ liêm, Hà Nội", font);
+            title2.setAlignment(Element.ALIGN_CENTER);
+            sdt.setAlignment(Paragraph.ALIGN_CENTER);
+            email.setAlignment(Element.ALIGN_CENTER);
+            diaChi.setAlignment(Element.ALIGN_CENTER);
+            titleDSSP.setAlignment(Element.ALIGN_CENTER);
+            document.add(title2);
+            document.add(sdt);
+            document.add(email);
+            document.add(diaChi);
+            // Tiêu đề
+            Paragraph title = new Paragraph("HÓA ĐƠN BÁN HÀNG", fontTitle);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+            document.add(new Paragraph(" ", font));
+
+            // Thông tin hóa đơn
+            document.add(new Paragraph("Mã HĐ: " + hoaDon.getMaHoaDon(), font));
+            document.add(new Paragraph("Ngày tạo: " + hoaDon.getNgayTao(), font));
+            if(hoaDon.getKhachHang() != null) {
+                document.add(new Paragraph("Khách hàng: " + hoaDon.getKhachHang().getTenKhachHang(), font));
+            }
+            else {
+                document.add(new Paragraph("Khách hàng: " , font));
+            }
+            document.add(new Paragraph("Tổng tiền: " + hoaDon.getTongTien() + " VND", font));
+            document.add(new Paragraph(" ", font));
+
+            // Bảng chi tiết
+            PdfPTable table = new PdfPTable(3);
+            table.setWidthPercentage(100);
+            table.setWidths(new int[]{4, 2, 2});
+            document.add(titleDSSP);
+            document.add(new Paragraph(" ", font));
+            // Header bảng
+            Stream.of("Sản phẩm", "Số lượng", "Thành tiền")
+                    .forEach(headerTitle -> {
+                        PdfPCell header = new PdfPCell();
+                        header.setPhrase(new Phrase(headerTitle, font));
+                        header.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        header.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                        table.addCell(header);
+                    });
+
+            // Dòng dữ liệu
+            for (HoaDonChiTiet cthd : hoaDon.getHoaDonChiTietList()) {
+                table.addCell(new Phrase(cthd.getSanPhamChiTiet().getSanPham().getTenSanPham(), font));
+                table.addCell(new Phrase(String.valueOf(cthd.getSoLuong()), font));
+                table.addCell(new Phrase(String.valueOf(cthd.getThanhTien()), font));
+            }
+
+            PdfPTable table2 = new PdfPTable(2); // 2 cột
+            table2.setWidthPercentage(100);
+
+            // Tạo cột trái
+            Font fontLeft = new Font(baseFont, 12);
+            PdfPCell leftCell = new PdfPCell(new Phrase("Tổng tiền hàng:", fontLeft));
+            leftCell.setBorder(Rectangle.NO_BORDER);
+            table2.addCell(leftCell);
+
+            Font fontRight = new Font(baseFont, 12, Font.BOLD);
+            PdfPCell rightCell = new PdfPCell(new Phrase(hoaDon.getTongTien() + " VNĐ", fontRight));
+            rightCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            rightCell.setBorder(Rectangle.NO_BORDER);
+            table2.addCell(rightCell);
+
+            table2.addCell(createLeftCell("Giảm giá:", fontLeft));
+            if(hoaDon.getPhieuGiamGia() != null) {
+                if(hoaDon.getPhieuGiamGia().getSoTienGiam().compareTo(BigDecimal.ZERO) != 0) {
+                    table2.addCell(createRightCell(hoaDon.getPhieuGiamGia().getSoTienGiam() + " VND", fontRight));
+                }
+                else {
+                    table2.addCell(createRightCell(hoaDon.getPhieuGiamGia().getPhamTramGiamGia() + " %", fontRight));
+                }
+            }
+            else {
+                table2.addCell(createRightCell("0 VNĐ", fontRight));
+            }
+            table2.addCell(createLeftCell("Phí giao hàng:", fontLeft));
+            table2.addCell(createRightCell("15000 VND", fontRight));
+            table2.addCell(createLeftCell("Tổng tiền cần thanh toán:", fontLeft));
+            table2.addCell(createRightCell(hoaDon.getTongTien() + " VND", fontRight));
+
+            document.add(table);
+            document.add(new Paragraph(" ", font));
+            document.add(table2);
+            document.close();
+
+        } catch (DocumentException | IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi tạo PDF hóa đơn: " + e.getMessage());
+        }
+
+        return new HoaDonPdfResult(hoaDon.getMaHoaDon(), new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+    }
+
+    private PdfPCell createLeftCell(String text, Font font) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+        cell.setBorder(Rectangle.NO_BORDER);
+        return cell;
+    }
+
+    private PdfPCell createRightCell(String text, Font font) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        cell.setBorder(Rectangle.NO_BORDER);
+        return cell;
+    }
+
 
     // Phương thức helper để chuyển đổi và thêm chi tiết hóa đơn
     private HoaDonDTO convertToHoaDonResponseWithDetails(HoaDon hoaDon) {
