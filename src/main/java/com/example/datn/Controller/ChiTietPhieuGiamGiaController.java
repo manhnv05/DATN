@@ -43,4 +43,12 @@ public class ChiTietPhieuGiamGiaController {
         return ResponseHelper
                 .success("", phieuGiamGiaKhachHangService.deletePhieuGiamGiaKhachHang(id));
     }
+    @GetMapping("/find-by-code")
+    public ResponseEntity<ApiResponse<ChiTietPhieuGiamGiaDTO>> findByCode(
+            @RequestParam String maPhieu,
+            @RequestParam Integer idKhachHang
+    ) {
+        return ResponseHelper.success("Tìm thấy phiếu giảm giá.",
+                phieuGiamGiaKhachHangService.findVoucherByCodeForCustomer(maPhieu, idKhachHang));
+    }
 }

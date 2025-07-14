@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 public interface ChiTietPhieuGiamGiaRepository extends JpaRepository<ChiTietPhieuGiamGia, Integer>, JpaSpecificationExecutor<ChiTietPhieuGiamGia> {
     @Query("""
@@ -22,4 +23,6 @@ public interface ChiTietPhieuGiamGiaRepository extends JpaRepository<ChiTietPhie
             @Param("phieuGiamGia") String phieuGiamGia,
             Pageable pageable
     );
+
+    Optional<ChiTietPhieuGiamGia> findByPhieuGiamGia_MaPhieuGiamGiaAndKhachHang_Id(String maPhieuGiamGia, Integer idKhachHang);
 }

@@ -2,6 +2,7 @@ package com.example.datn.Service;
 
 
 import com.example.datn.DTO.*;
+import com.example.datn.Entity.HoaDon;
 import com.example.datn.VO.*;
 import com.example.datn.enums.TrangThai;
 import org.springframework.data.domain.Page;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 @Service
 public interface HoaDonService {
-    HoaDonDTO taoHoaDon(HoaDonCreateVO request);
+//    HoaDonDTO taoHoaDon(HoaDonCreateVO request);
     HoaDonChoDTO taoHoaDonCho(HoaDonChoRequestVO request);
 
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
@@ -41,5 +42,5 @@ public interface HoaDonService {
     List<HoaDonChiTietDTO> findChiTietHoaDon(@Param("idHoaDon") Integer idHoaDon);
 
     HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
-
+   void capNhatSoLuongSanPhamTrongKho(HoaDon hoaDon, boolean isDeducting);
 }

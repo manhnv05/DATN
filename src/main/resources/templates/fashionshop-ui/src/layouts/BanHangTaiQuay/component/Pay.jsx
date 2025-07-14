@@ -31,6 +31,7 @@ import AddressSelectionModal from "./AddressSelectionModal";
 import AddAddressModal from "./AddAddressModal";
 import PaymentModal from "./PaymentModal";
 import CalculateIcon from "@mui/icons-material/Calculate";
+import { InputAdornment } from "@mui/material";
 
 // Hàm định dạng tiền tệ
 const formatCurrency = (amount) => {
@@ -45,6 +46,10 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
   const [discountValue, setDiscountValue] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [voucherCode, setVoucherCode] = useState(""); // Để hiển thị trong TextField
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [suggestedVoucher, setSuggestedVoucher] = useState(null);
+  const [bestidVoucher, setBestidVoucher] = useState(null);
 
   const [customer, setCustomer] = useState({ id: null, tenKhachHang: "Khách lẻ" });
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -63,18 +68,22 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
     setIsAddAddressModalOpen(true); // Mở modal thêm địa chỉ mới
   };
   // Tính toán tiền dựa trên `paymentDetails`
- const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTienThanhToan, 0);
+  const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTienThanhToan, 0);
   const changeToCustomer = totalPaid - finalTotal;
   const handleDeliveryToggle = (event) => {
     const isChecked = event.target.checked;
     setIsDelivery(isChecked);
     setShippingFee(isChecked ? 30000 : 0);
+    if (!isChecked) {
+      setShippingFormData(null);
+      setShippingAddress(null);
+    }
   };
   const handleFormChange = useCallback((formData) => {
     console.log("LOG 3 (Pay): Đã nhận dữ liệu từ con ->", formData);
     setShippingFormData(formData);
   }, []); // Mảng dependency rỗng, hàm chỉ được tạo 1 lần
- const resetForm = useCallback(() => {
+  const resetForm = useCallback(() => {
     console.log("--- RESETTING FORM ---");
     setIsDelivery(false);
     setShippingFee(0);
@@ -82,28 +91,29 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
     setPaymentDetails([]);
     setCustomer({ id: null, tenKhachHang: "Khách lẻ" });
     setShippingAddress(null);
-    
   }, []);
-useEffect(() => {
-
-  if (hoaDonId) { 
+  useEffect(() => {
+    if (hoaDonId) {
       resetForm();
-  }
-}, [hoaDonId, resetForm]);
-  
+    }
+  }, [hoaDonId, resetForm]);
+
   useEffect(() => {
     if (onDataChange) {
       const dataToSend = {
         customer,
         isDelivery,
         shippingFee,
-        shippingInfo: shippingFormData,
+        shippingInfo: isDelivery ? shippingFormData : null,
+         phieuGiamGia: appliedVoucher, // Gửi cả object phiếu giảm giá đã áp dụng
+       tongTienGiam: discountValue,   // Gửi số tiền đã được giảm
+        
       };
       // <<< LOG 4: Dữ liệu Pay chuẩn bị GỬI ĐI >>>
       console.log("LOG 4 (Pay): Đang gửi dữ liệu lên ->", dataToSend);
       onDataChange(dataToSend);
     }
-  }, [customer, isDelivery, shippingFee, shippingFormData, onDataChange]);
+  }, [customer, isDelivery, shippingFee, shippingFormData, onDataChange, paymentDetails,]);
   const handleSelectCustomer = async (selectedCustomer) => {
     setCustomer(selectedCustomer);
     try {
@@ -122,65 +132,50 @@ useEffect(() => {
     }
     setIsCustomerModalOpen(false);
   };
-  const handleConfirmPayment = async (paymentData) => {
-    const { hoaDonId: id, payments: newPayments } = paymentData;
 
-    // 1. Vẫn kiểm tra dữ liệu đầu vào
-    if (!id || !newPayments || newPayments.length === 0) {
-      console.log("Không có thanh toán mới hoặc không có ID hóa đơn.");
-      setIsPaymentModalOpen(false);
-      return;
+
+const handleConfirmPayment = async (newPaymentsFromModal) => {
+  // `newPaymentsFromModal` giờ đây đã là một mảng đúng
+  if (!newPaymentsFromModal || newPaymentsFromModal.length === 0) {
+    setIsPaymentModalOpen(false);
+    return;
+  }
+
+  try {
+    const savedPayments = [];
+    // Dùng trực tiếp newPaymentsFromModal
+    for (const payment of newPaymentsFromModal) {
+      const payload = { ...payment, idHoaDon: hoaDonId };
+      const response = await axios.post("http://localhost:8080/chiTietThanhToan", payload);
+      savedPayments.push(response.data.data);
     }
+    
+    // Cập nhật state với một mảng dữ liệu hợp lệ
+    setPaymentDetails((prevDetails) => [...prevDetails, ...savedPayments]);
+    alert("Các khoản thanh toán đã được ghi nhận thành công!");
+    setIsPaymentModalOpen(false);
 
-    // 2. Dùng try...catch để bao bọc toàn bộ quá trình
-    try {
-      // 3. Lặp qua từng object thanh toán trong mảng newPayments
-      for (const payment of newPayments) {
-        // 4. Chuẩn bị payload cho TỪNG request
-        const payload = {
-          ...payment, // Lấy các trường: idHinhThucThanhToan, maGiaoDich, soTienThanhToan, trangThaiThanhToan
-          idHoaDon: id, // Thêm idHoaDon vào
-        };
-
-        console.log("Đang gửi bản ghi:", payload);
-
-        // 5. Gửi request API cho bản ghi hiện tại
-        // Sửa URL API nếu cần
-        await axios.post("http://localhost:8080/chiTietThanhToan", payload);
-     
-      }
-   setPaymentDetails((prevDetails) => [...prevDetails, ...newPayments]);
-      // 6. Sau khi vòng lặp hoàn tất không có lỗi, thông báo thành công
-      alert("Tất cả các khoản thanh toán đã được ghi nhận thành công!");
-      setIsPaymentModalOpen(false);
-
-      // Có thể gọi hàm làm mới dữ liệu ở đây
-      // refetchData();
-    } catch (error) {
-      // Nếu có bất kỳ lỗi nào trong quá trình lặp, vòng lặp sẽ dừng lại và báo lỗi
-      console.error("Lỗi trong quá trình thanh toán:", error);
-      alert(
-        `Có lỗi xảy ra khi ghi nhận thanh toán: ${
-          error.response?.data?.message || "Lỗi không xác định"
-        }`
-      );
-    }
-  };
+  } catch (error) {
+    console.error("Lỗi trong quá trình thanh toán:", error);
+    alert(`Có lỗi xảy ra: ${error.response?.data?.message || "Lỗi không xác định"}`);
+  }
+};
   const handleFinalSave = () => {
-    if (isDelivery && paymentDetails.length > 0) {
-      const finalTotal = totalAmount + shippingFee - discountValue;
-
+    if (!isDelivery) {
       const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTienThanhToan, 0);
 
+      // Bắt buộc phải thanh toán đủ
       if (totalPaid < finalTotal) {
         alert(
-          `Thanh toán chưa đủ! Còn thiếu ${formatCurrency(
+          `Thanh toán chưa đủ! Khách hàng cần trả thêm ${formatCurrency(
             finalTotal - totalPaid
           )}. Vui lòng hoàn tất thanh toán.`
         );
         return;
       }
     }
+
+    // Nếu là đơn giao hàng hoặc đơn tại quầy đã thanh toán đủ, thì tiến hành lưu
     console.log("Validation OK. Proceeding to save order.");
     onSaveOrder();
   };
@@ -217,6 +212,105 @@ useEffect(() => {
   const handleAddressAdded = () => {
     setIsAddAddressModalOpen(false); // Đóng modal "Thêm địa chỉ"
     handleOpenAddressModal(); // Mở lại modal "Chọn địa chỉ" để làm mới danh sách
+  };
+  // 1. useEffect: Tự động tìm và gợi ý phiếu tốt nhất khi tổng tiền hoặc khách hàng thay đổi
+  useEffect(() => {
+    // Chỉ chạy khi có khách hàng (khác khách lẻ) và có tiền hàng
+    if (customer && customer.id && totalAmount > 0) {
+      const fetchBestVoucher = async () => {
+        try {
+          const requestBody = {
+            khachHang: customer.id,
+            tongTienHoaDon: totalAmount,
+          };
+          const response = await axios.post(
+            "http://localhost:8080/PhieuGiamGiaKhachHang/query",
+            requestBody,
+            { params: { page: 0, size: 1 } }
+          );
+
+          const vouchers = response.data.data.content;
+          if (vouchers && vouchers.length > 0) {
+            const bestVoucher = vouchers[0];
+            setSuggestedVoucher(bestVoucher); // Lưu lại phiếu gợi ý
+            setAppliedVoucher(bestVoucher); // Mặc định áp dụng phiếu tốt nhất
+            setVoucherCode(bestVoucher.phieuGiamGia.maPhieuGiamGia); // Hiển thị mã ra ô input
+          } else {
+            // Nếu không có phiếu nào phù hợp
+            setSuggestedVoucher(null);
+            setAppliedVoucher(null);
+            setVoucherCode("");
+          }
+        } catch (error) {
+          console.error("Lỗi khi tìm phiếu giảm giá gợi ý:", error);
+          setSuggestedVoucher(null);
+          setAppliedVoucher(null);
+          setVoucherCode("");
+        }
+      };
+      fetchBestVoucher();
+    } else {
+      // Reset khi không đủ điều kiện (khách lẻ hoặc chưa có hàng)
+      setSuggestedVoucher(null);
+      setAppliedVoucher(null);
+      setVoucherCode("");
+    }
+  }, [totalAmount, customer?.id]); // Phụ thuộc vào thay đổi của tổng tiền và ID khách hàng
+  useEffect(() => {
+    if (appliedVoucher && totalAmount > 0) {
+      const voucherDetails = appliedVoucher.phieuGiamGia;
+      let calculatedDiscount = 0;
+
+      if (voucherDetails.phamTramGiamGia) {
+        calculatedDiscount = (totalAmount * voucherDetails.phamTramGiamGia) / 100;
+        if (voucherDetails.giamToiDa && calculatedDiscount > voucherDetails.giamToiDa) {
+          calculatedDiscount = voucherDetails.giamToiDa;
+        }
+      } else if (voucherDetails.soTienGiam) {
+        calculatedDiscount = voucherDetails.soTienGiam;
+      }
+      setDiscountValue(calculatedDiscount);
+    } else {
+      setDiscountValue(0);
+    }
+  }, [appliedVoucher, totalAmount]);
+
+  // 3. Handler: Xử lý khi người dùng nhấn nút "ÁP DỤNG"
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) {
+      setAppliedVoucher(suggestedVoucher);
+      setVoucherCode(suggestedVoucher ? suggestedVoucher.phieuGiamGia.maPhieuGiamGia : "");
+      alert(suggestedVoucher ? "Đã quay về mã giảm giá tốt nhất!" : "Đã bỏ áp dụng mã giảm giá.");
+      return;
+    }
+
+    if (!customer || !customer.id) {
+      alert("Vui lòng chọn khách hàng trước khi áp dụng mã!");
+      return;
+    }
+
+    try {
+      // Giả sử bạn đã có API: GET /PhieuGiamGiaKhachHang/find-by-code
+      const response = await axios.get("http://localhost:8080/PhieuGiamGiaKhachHang/find-by-code", {
+        params: { maPhieu: voucherCode, idKhachHang: customer.id },
+      });
+      const foundVoucher = response.data.data;
+
+      if (totalAmount < foundVoucher.phieuGiamGia.dieuKienGiam) {
+        alert(
+          `Mã này yêu cầu hóa đơn tối thiểu ${formatCurrency(
+            foundVoucher.phieuGiamGia.dieuKienGiam
+          )}!`
+        );
+        return;
+      }
+      setAppliedVoucher(foundVoucher);
+      alert(`Đã áp dụng thành công mã: ${foundVoucher.phieuGiamGia.ma}`);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Mã giảm giá không hợp lệ.";
+      alert(errorMessage);
+      setAppliedVoucher(null);
+    }
   };
 
   return (
@@ -284,7 +378,31 @@ useEffect(() => {
                 label={<Typography variant="h6">Giao hàng</Typography>}
                 sx={{ mb: 2 }}
               />
-              <TextField fullWidth label="Phiếu giảm giá" sx={{ mb: 3 }} />
+              <TextField
+                fullWidth
+                label="Phiếu giảm giá"
+                sx={{ mb: 3 }}
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value)} // Cho phép người dùng nhập
+                helperText={
+                  appliedVoucher
+                    ? `Đang áp dụng mã: ${appliedVoucher.phieuGiamGia.maPhieuGiamGia}`
+                    : "Nhập mã giảm giá (nếu có)"
+                }
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SoftButton
+                        variant="text"
+                        color="info"
+                        onClick={handleApplyVoucher} // Thêm hàm xử lý áp dụng
+                      >
+                        ÁP DỤNG
+                      </SoftButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
               <SoftBox display="flex" flexDirection="column" gap={2}>
                 <Box display="flex" justifyContent="space-between">
@@ -331,9 +449,9 @@ useEffect(() => {
                   )}
                 </Box>
                 <Typography variant="h6" color="info.main" fontWeight="bold">
-    {/* Dùng hàm formatCurrency để hiển thị số tiền cho đẹp */}
-    {formatCurrency(totalPaid)}
-  </Typography>
+                  {/* Dùng hàm formatCurrency để hiển thị số tiền cho đẹp */}
+                  {formatCurrency(totalPaid)}
+                </Typography>
               </Box>
               <Divider sx={{ my: 3 }} />
 

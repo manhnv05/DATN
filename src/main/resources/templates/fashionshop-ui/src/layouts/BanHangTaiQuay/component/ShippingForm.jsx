@@ -163,7 +163,7 @@ function ShippingForm({ initialCustomer, initialAddress, onOpenAddressModal,onFo
             Đơn vị vận chuyển: Giao hàng nhanh
           </SoftTypography>
           <SoftTypography variant="body2" color="text">
-            Thời gian dự kiến: 12/07/2025
+         
           </SoftTypography>
         </Box>
       </Box>

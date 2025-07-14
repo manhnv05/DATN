@@ -55,7 +55,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
         setPreviousPayments(response.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy lịch sử thanh toán:", error);
-        setPreviousPayments([]); // Đảm bảo state là một mảng nếu có lỗi
+        setPreviousPayments([]); 
       }
     };
 
@@ -115,7 +115,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
       return;
     }
     // Chỉ gửi về cho component cha những thanh toán MỚI
-    onConfirm({ hoaDonId, payments: newPayments });
+    onConfirm(newPayments); 
     handleClose();
   };
 

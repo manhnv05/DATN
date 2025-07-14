@@ -249,7 +249,7 @@ function ProductForm() {
                     } else {
                         opts = data.sort((a, b) => b.id - a.id).map((item) => ({
                             value: item.id,
-                            label: item.tenChatLieu ? item.tenChatLieu : item,
+                        label: item.tenChatLieu || "", // Đảm bảo label là chuỗi
                         }));
                     }
                 }
@@ -291,7 +291,7 @@ function ProductForm() {
                                 ? { value: item, label: item }
                                 : {
                                     value: item.id,
-                                    label: item.tenCoAo ? item.tenCoAo : item.label ? item.label : item,
+                                   label: item.tenCoAo || item.label || "",
                                 }
                         )
                     : [];
@@ -317,7 +317,7 @@ function ProductForm() {
                                 ? { value: item, label: item }
                                 : {
                                     value: item.id,
-                                    label: item.tenTayAo ? item.tenTayAo : item.label ? item.label : item,
+                                  label: item.tenTayAo || item.label || "",
                                 }
                         )
                     : [];
@@ -360,7 +360,7 @@ function ProductForm() {
                                     ? { value: item, label: item }
                                     : {
                                         value: item.id,
-                                        label: item.tenKichCo ? item.tenKichCo : item.label ? item.label : item,
+                                        label: item.tenKichCo || item.label || "",
                                     }
                             )
                         : []
