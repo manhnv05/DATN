@@ -61,3 +61,28 @@ export async function fetchThongKeAlternative(page, size, search, startDate, end
         throw error;
     }
 }
+
+export async function loadBieuDo(check) {
+    try {
+        const response = await fetch(`http://localhost:8080/thong_ke/bieudo/${check}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            let errorMsg = "Failed to add voucher";
+            try {
+                const err = await response.json();
+                if (err && err.message) errorMsg = err.message;
+            } catch { }
+            throw new Error(errorMsg);
+        }
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error("Error adding voucher:", error);
+        return null;
+    }
+}
