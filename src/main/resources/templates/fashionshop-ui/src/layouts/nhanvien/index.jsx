@@ -17,11 +17,11 @@ import { FaPlus, FaEye, FaEdit, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import axios from "axios";
 import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
-// import Notifications from "layouts/Notifications";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import NhanVienDetail from "./detail"; // <-- import detail component
+import NhanVienDetail from "./detail";
+import UpdateNhanVien from "./update"; // import update component
 
 const genderOptions = ["Tất cả", "Nam", "Nữ", "Khác"];
 const rowsPerPageOptions = [5, 10, 20];
@@ -61,7 +61,6 @@ function getPaginationArray(currentPage, totalPages) {
     return [0, 1, "...", currentPage, "...", totalPages - 2, totalPages - 1];
 }
 
-// Tạo roleMap từ roleOptions (id -> ten)
 function getRoleMap(roleOptions) {
     const map = {};
     roleOptions.forEach(r => {
@@ -70,7 +69,6 @@ function getRoleMap(roleOptions) {
     return map;
 }
 
-// Lấy tên vai trò: ưu tiên tenVaiTro, sau đó map từ idVaiTro
 function getRoleName(row, roleMap) {
     if (row && row.tenVaiTro) return row.tenVaiTro;
     if (row && row.idVaiTro && roleMap && roleMap[row.idVaiTro]) return roleMap[row.idVaiTro];
@@ -94,15 +92,13 @@ function NhanVienTable() {
     const [roleOptions, setRoleOptions] = useState([]);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [currentPage, setCurrentPage] = useState(0);
-    const [notification, setNotification] = useState({
-        open: false,
-        message: "",
-        severity: "info",
-    });
 
-    // State để show detail form
+    // State show detail and update form
     const [showDetail, setShowDetail] = useState(false);
     const [detailId, setDetailId] = useState(null);
+
+    const [showUpdate, setShowUpdate] = useState(false);
+    const [updateId, setUpdateId] = useState(null);
 
     useEffect(() => {
         fetchEmployees();
@@ -178,14 +174,23 @@ function NhanVienTable() {
         setCurrentPage(0);
     }
 
-    function handleNotificationClose(event, reason) {
-        if (reason === "clickaway") return;
-        setNotification({ ...notification, open: false });
-    }
-
     const roleMap = getRoleMap(roleOptions);
 
-    // CHUYỂN FORM: Nếu đang xem chi tiết thì show component detail
+    // Show update form when click edit
+    if (showUpdate && updateId) {
+        return (
+            <UpdateNhanVien
+                id={updateId}
+                onClose={() => {
+                    setShowUpdate(false);
+                    setUpdateId(null);
+                    fetchEmployees();
+                }}
+            />
+        );
+    }
+
+    // Show detail form when click detail
     if (showDetail && detailId) {
         return (
             <NhanVienDetail
@@ -295,7 +300,10 @@ function NhanVienTable() {
                         size="small"
                         sx={{ color: "#f7b731" }}
                         title="Sửa"
-                        onClick={() => {/* handleEditOpen(row) */}}
+                        onClick={() => {
+                            setShowUpdate(true);
+                            setUpdateId(row.id);
+                        }}
                     >
                         <FaEdit />
                     </IconButton>
@@ -326,13 +334,6 @@ function NhanVienTable() {
 
     return (
         <DashboardLayout>
-            {/*<Notifications*/}
-            {/*    open={notification.open}*/}
-            {/*    onClose={handleNotificationClose}*/}
-            {/*    message={notification.message}*/}
-            {/*    severity={notification.severity}*/}
-            {/*    autoHideDuration={2500}*/}
-            {/*/>*/}
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
                 <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
