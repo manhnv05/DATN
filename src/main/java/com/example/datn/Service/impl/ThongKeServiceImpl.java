@@ -1,14 +1,10 @@
 package com.example.datn.Service.impl;
 
-import com.example.datn.DTO.ThongKeDTO;
-import com.example.datn.DTO.ThongKeSPBanChayDTO;
+import com.example.datn.DTO.*;
 import com.example.datn.Entity.ChiTietSanPham;
 import com.example.datn.Entity.HoaDon;
 import com.example.datn.Entity.HoaDonChiTiet;
-import com.example.datn.Repository.HoaDonChiTietRepository;
-import com.example.datn.Repository.SanPhamRepository;
-import com.example.datn.Repository.ThongKeRepository;
-import com.example.datn.Repository.ThongKeSanPhamRepository;
+import com.example.datn.Repository.*;
 import com.example.datn.Service.ThongKeService;
 import com.example.datn.VO.ThongKeVoSearch;
 import com.example.datn.enums.TrangThai;
@@ -36,6 +32,8 @@ public class ThongKeServiceImpl implements ThongKeService {
 
     @Autowired
     private ThongKeSanPhamRepository thongKeSanPhamRepository;
+    @Autowired
+    private ChiTietSanPhamRepository chiTietSanPhamRepository;
 
     @Override
     public Map<String, ThongKeDTO> getThongKe() {
@@ -74,6 +72,78 @@ public class ThongKeServiceImpl implements ThongKeService {
             Page<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getAllByQuery(thongKeVoSearch, pageable);
             return getSanPhamCt(hoaDons);
         }
+    }
+
+    @Override
+    public Page<ChiTietSanPhamSapHetDTO> getAllChiTietSanPhamSapHetHan(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ChiTietSanPham> chiTietSanPhamPage = chiTietSanPhamRepository.getChiTietSanPhamSapHetHan(pageable);
+        return chiTietSanPhamPage.map(chiTietSanPham -> {
+            ChiTietSanPhamSapHetDTO chiTietSanPhamDTO = new ChiTietSanPhamSapHetDTO();
+            chiTietSanPhamDTO.setTenSanPham(chiTietSanPham.getSanPham().getTenSanPham());
+            chiTietSanPhamDTO.setSoLuong(chiTietSanPham.getSoLuong());
+            chiTietSanPhamDTO.setGiaTien(chiTietSanPham.getGia());
+            return chiTietSanPhamDTO;
+        });
+    }
+
+    @Override
+    public ThongKeBieuDoDTO getBieuDo(int check) {
+        if(check == 1){
+            List<HoaDon> hoaDon = thongKeRepository.getThongKeHomNay();
+            return getBieuDoAll(hoaDon);
+        }
+        else if(check == 2){
+            List<HoaDon> hoaDon = thongKeRepository.getThongKeTuanNay();
+            return getBieuDoAll(hoaDon);
+        }
+        else if(check == 3){
+            List<HoaDon> hoaDons = thongKeRepository.getThongKeThangNay();
+            return getBieuDoAll(hoaDons);
+        }
+        else{
+            List<HoaDon> hoaDon = thongKeRepository.getThongKeNamNay();
+            return getBieuDoAll(hoaDon);
+        }
+    }
+
+    @Override
+    public ThongKeBieuDoDTO getBieuDoByQuery(ThongKeVoSearch thongKeVoSearch) {
+        List<HoaDon> hoaDons = thongKeRepository.getAllByQuery(thongKeVoSearch);
+        return getBieuDoAll(hoaDons);
+    }
+
+    public ThongKeBieuDoDTO getBieuDoAll(List<HoaDon> hoaDon) {
+        int slDaHuy = 0;
+        int slChoXacNhan = 0;
+        int slChoGiaoHang = 0;
+        int slDangVanChuyen = 0;
+        int slHoanThanh = 0;
+
+        ThongKeBieuDoDTO thongKeBieuDoDTO = new ThongKeBieuDoDTO();
+        for (HoaDon hd : hoaDon) {
+            if(hd.getTrangThai() == TrangThai.HOAN_THANH){
+                slHoanThanh++;
+            }
+            else if(hd.getTrangThai() == TrangThai.CHO_XAC_NHAN){
+                slChoXacNhan++;
+            }
+            else if(hd.getTrangThai() == TrangThai.CHO_GIAO_HANG){
+                slChoGiaoHang++;
+            }
+            else if(hd.getTrangThai() == TrangThai.DANG_VAN_CHUYEN){
+                slDangVanChuyen++;
+            }
+            else if(hd.getTrangThai() == TrangThai.HUY){
+                slDaHuy++;
+            }
+        }
+        thongKeBieuDoDTO.setHoanThanh(slHoanThanh);
+        thongKeBieuDoDTO.setChoXacNhan(slChoXacNhan);
+        thongKeBieuDoDTO.setChoGiaoHang(slChoGiaoHang);
+        thongKeBieuDoDTO.setDangVanChuyen(slDangVanChuyen);
+        thongKeBieuDoDTO.setDaHuy(slDaHuy);
+        return thongKeBieuDoDTO;
     }
 
     public Page<ThongKeSPBanChayDTO> getSanPhamCt(Page<HoaDonChiTiet> hoaDonChiTietPage) {
