@@ -27,7 +27,9 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import SoftBox from "components/SoftBox";
 import { useState, useEffect } from 'react';
-import { fetchThongKeAlternative, loadThongKe } from './thongkeService';
+import { fetchThongKeAlternative, loadThongKe, loadBieuDo } from './thongkeService';
+import TrangThaiPieChart from './bieudo';
+import { da } from 'date-fns/locale';
 
 function getPaginationItems(current, total) {
     if (total <= 7) {
@@ -126,12 +128,14 @@ StatCard.propTypes = {
 export default function DashboardStats() {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
+    const [check, setCheck] = useState(1)
     const error = null;
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [viewCount, setViewCount] = useState(5);
     const [page, setPage] = useState(1);
     const [statsData, setStatsData] = useState([]);
+    const [dataResponse, setDataResponse] = useState();
     const [search, setSearch] = useState("");
     const [vouchersData, setvouchersData] = useState({
         content: [],
@@ -203,6 +207,7 @@ export default function DashboardStats() {
 
     const handleClickStatus = (event) => {
         setSearch(event.target.value)
+        setCheck(Number(event.target.value) + Number(1))
         setStartDate(null)
         setEndDate(null)
     }
@@ -257,6 +262,15 @@ export default function DashboardStats() {
             }
         ]);
     }
+
+    const fetchBieuDo = async () => {
+        const data = await loadBieuDo(check)
+        setDataResponse(data.data)
+    }
+
+    useEffect(() => {
+        fetchBieuDo()
+    }, [check])
 
     useEffect(() => {
         loadTK()
@@ -495,7 +509,7 @@ export default function DashboardStats() {
                             </Button>
                         </SoftBox>
                     </SoftBox>
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{ mb: 3, paddingTop: 3 }}>
                         <Typography variant="h5" sx={{ fontWeight: 600, color: '#495057', mb: 1 }}>
                             Danh sách sản phẩm bán chạy
                         </Typography>
@@ -627,8 +641,18 @@ export default function DashboardStats() {
 
                                 </Box>
                             </Box>
+                            <Box sx={{ width: "30%" }}>
+                                <Box display="flex" flexDirection="column">
+                                    <TrangThaiPieChart dataResponse={dataResponse} />
+                                </Box>
+                            </Box>
                         </Box>
                     </Card>
+                    <Box sx={{ mb: 3, paddingTop: 3 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 600, color: '#495057', mb: 1 }}>
+                            Danh sách sản phẩm sắp hết hàng
+                        </Typography>
+                    </Box>
 
                 </Card>
             </SoftBox>
