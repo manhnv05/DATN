@@ -1,14 +1,13 @@
 package com.example.datn.Controller;
 
 import com.example.datn.Config.ResponseHelper;
-import com.example.datn.DTO.ApiResponse;
-import com.example.datn.DTO.ThongKeDTO;
-import com.example.datn.DTO.ThongKeSPBanChayDTO;
+import com.example.datn.DTO.*;
 import com.example.datn.Entity.ChiTietSanPham;
 import com.example.datn.Service.ThongKeService;
 import com.example.datn.VO.ThongKeVoSearch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +25,13 @@ public class ThongKeController {
        return ResponseHelper.success("", thongKeService.getThongKe());
     }
 
+    @GetMapping("/sanPhamSapHet")
+    public ResponseEntity<ApiResponse<Page<ChiTietSanPhamSapHetDTO>>> getSanPhamSapHet(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseHelper.success("", thongKeService.getAllChiTietSanPhamSapHetHan(page, size));
+    }
+
     @PostMapping("")
     public ResponseEntity<ApiResponse<Page<ThongKeSPBanChayDTO>>> addThongKe(
             @RequestBody ThongKeVoSearch thongKeVoSearch,
@@ -33,5 +39,14 @@ public class ThongKeController {
             @RequestParam(defaultValue = "10") int size
     ) {
         return ResponseHelper.success("", thongKeService.getThongKeSpBanChayByQuery(thongKeVoSearch, page, size));
+    }
+
+    @GetMapping("/bieudo/{id}")
+    public ResponseEntity<ApiResponse<ThongKeBieuDoDTO>> getBieudo(@PathVariable int id) {
+        return ResponseHelper.success("", thongKeService.getBieuDo(id));
+    }
+    @PostMapping("/bieudo")
+    public ResponseEntity<ApiResponse<ThongKeBieuDoDTO>> getBieuDoQuery(@RequestBody ThongKeVoSearch thongKeVoSearch) {
+        return ResponseHelper.success("", thongKeService.getBieuDoByQuery(thongKeVoSearch));
     }
 }

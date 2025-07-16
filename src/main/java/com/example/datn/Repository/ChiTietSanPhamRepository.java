@@ -2,6 +2,8 @@ package com.example.datn.Repository;
 
 import com.example.datn.Entity.ChiTietSanPham;
 import com.example.datn.VO.ChiTietSanPhamBanHangTaiQuayVO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -52,4 +54,10 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
 
 """,nativeQuery = true)
     List<ChiTietSanPhamBanHangTaiQuayVO> findChiTietSanPhamBanHangTaiQuay();
+
+    @Query("""
+    SELECT ctsp FROM ChiTietSanPham ctsp
+        WHERE (ctsp.soLuong < 10)
+    """)
+    Page<ChiTietSanPham> getChiTietSanPhamSapHetHan(Pageable pageable);
 }

@@ -1,3 +1,4 @@
+
 import SanPham from "layouts/SanPham/sanphan";
 import ThuongHieu from "layouts/SanPham/thuonghieu";
 import ChatLieu from "layouts/SanPham/chatlieu";
@@ -22,6 +23,8 @@ import AddNhanVien from "layouts/nhanvien/add";
 import DetailNhanVien from "layouts/nhanvien/detail";
 import UpdateNhanVien from "layouts/nhanvien/update";
 
+
+
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 
@@ -35,8 +38,9 @@ import CreditCard from "examples/Icons/CreditCard";
 import Cube from "examples/Icons/Cube";
 import AddDiscountEventPage from "layouts/GiamGia/AddDiscountEventPage";
 import ViewDiscountEventPage from "layouts/GiamGia/ViewDiscountEventPage";
-import SalesDashboardPage from "layouts/BanHangTaiQuay/pages/SalesDashboardPage";
+// import Dashboard from "layouts/dashboard";
 import DashboardStats from "layouts/thongke/thongke";
+import SalesDashboardPage from "layouts/BanHangTaiQuay/pages/SalesDashboardPage";
 
 const routes = [
   {
@@ -57,21 +61,14 @@ const routes = [
     component: <SalesDashboardPage />,
     noCollapse: true,
   },
- {
-  type: "collapse",
-  name: "Quản Lý Hóa Đơn",
-  key: "order-management",
-  route: "/QuanLyHoaDon",
-  icon: <CreditCard size="12px" />,
-  component: <OrderManagementPage />,
-  noCollapse: true,
-}
-,
+
   {
-    name: "Hóa đơn chi tiết",
-    route: "/QuanLyHoaDon/:orderId",
-    component: <OrderDetailPage />,
-    key: "order-detail",
+    type: "collapse",
+    name: "Bán Hàng Tại Quầy",
+    key: "sales",
+    route: "/tables",
+    icon: <Office size="12px" />,
+    // component: <Tables />,
     noCollapse: true,
   },
   {

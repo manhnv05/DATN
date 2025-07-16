@@ -1,14 +1,18 @@
 package com.example.datn.Service.impl;
 
 import com.example.datn.DTO.ChiTietPhieuGiamGiaDTO;
+import com.example.datn.DTO.PhieuGiamGiaDTO;
 import com.example.datn.Entity.ChiTietPhieuGiamGia;
+import com.example.datn.Entity.PhieuGiamGia;
 import com.example.datn.Repository.ChiTietPhieuGiamGiaRepository;
+import com.example.datn.Repository.PhieuGiamGiaRepository;
 import com.example.datn.Service.ChiTietPhieuGiamGiaService;
 import com.example.datn.VO.ChiTietPhieuGiamGiaUpdateVO;
 import com.example.datn.VO.ChiTietPhieuGiamGiaVO;
 import com.example.datn.exception.AppException;
 import com.example.datn.exception.ErrorCode;
 import com.example.datn.mapper.ChiTietPhieuGiamGiaMapper;
+import com.example.datn.mapper.PhieuGiamGiaMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,6 +32,8 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
 
     @Autowired
     private ChiTietPhieuGiamGiaRepository phieuGiamGiaKhachHangRepository;
+    @Autowired
+    private PhieuGiamGiaRepository phieuGiamGiaRepository;
 
     @Override
     public List<ChiTietPhieuGiamGiaDTO> getAllPhieuGiamGiaKhachHang() {
@@ -82,53 +88,64 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
     }
 
     @Override
-    public Page<ChiTietPhieuGiamGiaDTO> queryPhieuGiamGiaKhachHang(int page, int size, ChiTietPhieuGiamGiaVO request) {
+    public Page<PhieuGiamGiaDTO> queryPhieuGiamGiaKhachHang(int page, int size, ChiTietPhieuGiamGiaVO request) {
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<ChiTietPhieuGiamGia> phieuGiamGiaKhachHangs = phieuGiamGiaKhachHangRepository
+        Page<PhieuGiamGia> phieuGiamGias = phieuGiamGiaKhachHangRepository
                 .queryPhieuGiamGiaKhachHang(request.getKhachHang(), request.getPhieuGiamGia(), pageable);
 
         if(request.getTongTienHoaDon()!=null) {
-            List<ChiTietPhieuGiamGia> chiTietPhieuGiamGiaList = phieuGiamGiaKhachHangs.getContent();
-            return getChiTietPhieuGiam(chiTietPhieuGiamGiaList, request);
+            List<PhieuGiamGia> combinedList = new ArrayList<>();
+            combinedList.addAll(phieuGiamGias.getContent());
+            combinedList.addAll(phieuGiamGiaRepository.getPhieuGiamGiaByTrangThai());
+            return getChiTietPhieuGiam(combinedList, request);
         }
         else {
-            return phieuGiamGiaKhachHangs.map(ChiTietPhieuGiamGiaMapper.INSTANCE::toResponse);
+            return phieuGiamGias.map(PhieuGiamGiaMapper.INSTANCE::toResponse);
         }
     }
-    public Page<ChiTietPhieuGiamGiaDTO> getChiTietPhieuGiam(List<ChiTietPhieuGiamGia> data, ChiTietPhieuGiamGiaVO request) {
-        List<ChiTietPhieuGiamGia> sortCTPGG = new ArrayList<>();
-        for(ChiTietPhieuGiamGia dataE : data){
-            if (request.getTongTienHoaDon().compareTo(new BigDecimal(dataE.getPhieuGiamGia().getDieuKienGiam())) >= 0) {
-                if(dataE.getPhieuGiamGia().getPhamTramGiamGia() != null){
-                    BigDecimal soTienGiam = dataE.getPhieuGiamGia().getPhamTramGiamGia()
+
+    @Override
+    public Page<ChiTietPhieuGiamGiaDTO> getpggkh(int page, int size, ChiTietPhieuGiamGiaVO request) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ChiTietPhieuGiamGia> chiTietPhieuGiamGias = phieuGiamGiaKhachHangRepository
+                .getChiTietPhieuGiamGias(request.getKhachHang(), request.getPhieuGiamGia(), pageable);
+        return chiTietPhieuGiamGias.map(ChiTietPhieuGiamGiaMapper.INSTANCE::toResponse);
+    }
+
+    public Page<PhieuGiamGiaDTO> getChiTietPhieuGiam(List<PhieuGiamGia> data, ChiTietPhieuGiamGiaVO request) {
+        List<PhieuGiamGia> sortPGG = new ArrayList<>();
+        for(PhieuGiamGia dataE : data){
+            if (request.getTongTienHoaDon().compareTo(new BigDecimal(dataE.getDieuKienGiam())) >= 0) {
+                if(dataE.getPhamTramGiamGia() != null){
+                    BigDecimal soTienGiam = dataE.getPhamTramGiamGia()
                             .multiply(request.getTongTienHoaDon())
                             .divide(BigDecimal.valueOf(100));
 
-                    dataE.getPhieuGiamGia().setSoTienGiam(soTienGiam);
-                    sortCTPGG.add(dataE);
+                    dataE.setSoTienGiam(soTienGiam);
+                    sortPGG.add(dataE);
                 }
                 else {
-                    sortCTPGG.add(dataE);
+                    sortPGG.add(dataE);
                 }
             }
         }
-        sortCTPGG.sort(Comparator.comparing(
-                ct -> ct.getPhieuGiamGia().getSoTienGiam(), Comparator.reverseOrder()
+        sortPGG.sort(Comparator.comparing(
+                PhieuGiamGia::getSoTienGiam, Comparator.reverseOrder()
         ));
-        List<ChiTietPhieuGiamGia> oldList = new LinkedList<>();
+        List<PhieuGiamGia> oldList = new LinkedList<>();
 
-        for(ChiTietPhieuGiamGia sortDTO : sortCTPGG){
-            if(sortDTO.getPhieuGiamGia().getPhamTramGiamGia() != null){
-                sortDTO.getPhieuGiamGia().setSoTienGiam(new BigDecimal(0));
+        for(PhieuGiamGia sortDTO : sortPGG){
+            if(sortDTO.getPhamTramGiamGia() != null){
+                sortDTO.setSoTienGiam(new BigDecimal(0));
                 oldList.add(sortDTO);
             }
             else {
                 oldList.add(sortDTO);
             }
         }
-        List<ChiTietPhieuGiamGiaDTO> dtoList = oldList.stream()
-                .map(ChiTietPhieuGiamGiaMapper.INSTANCE::toResponse)
+        List<PhieuGiamGiaDTO> dtoList = oldList.stream()
+                .map(PhieuGiamGiaMapper.INSTANCE::toResponse)
                 .collect(Collectors.toList());
         return new PageImpl<>(dtoList, PageRequest.of(1, dtoList.size()), dtoList.size());
     }

@@ -63,6 +63,7 @@ export default function UpdatePhieuGiam() {
     const [searchKH, setSearchKH] = useState("");
     const [selectedCustomerOld, setselectedCustomerOld] = useState([]);
     const [oldSelected, setoldSelected] = useState([]);
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
     const navigate = useNavigate();
     const { id } = useParams();
@@ -121,6 +122,7 @@ export default function UpdatePhieuGiam() {
         const data = await findAllPDDKH(0, 999, PDDKH)
         setSelectedRows((prev) => [...prev, ...data.data.content.map((pdd) => pdd.khachHang.id)]);
         setselectedCustomerOld(data.data.content)
+        console.log(data.data.content)
         setoldSelected((prev) => [...prev, ...data.data.content.map((pdd) => pdd.khachHang.id)])
     }
 
@@ -173,7 +175,7 @@ export default function UpdatePhieuGiam() {
         const result = await updateVouchers(data);
         if (result) {
             sendMail(datasendMail)
-            navigate("/discount", {
+            navigate("/PhieuGiam", {
                 state: {
                     message: "Cập nhật voucher thành công!",
                 },
@@ -203,6 +205,12 @@ export default function UpdatePhieuGiam() {
     async function fetchOneVoucher(id) {
         const data = await fetchOneVouchers(id)
         setStatusLoaiPhieu(data.loaiPhieu)
+        if (data.loaiPhieu == 0) {
+            setIsReadOnly(false)
+        }
+        else {
+            setIsReadOnly(true)
+        }
         if (data.phamTramGiamGia) {
             setStatusPhieu(1)
             setvalueInput(data.phamTramGiamGia)
@@ -222,6 +230,10 @@ export default function UpdatePhieuGiam() {
         fetchOneVoucher(id)
         loadKhachHangByidPhieu()
     }, [id])
+
+    useEffect(() => {
+        setValue("soLuong", selectedRows.length)
+    }, [selectedRows])
 
     useEffect(() => {
         if (statusLoaiPhieu === 1) {
@@ -386,6 +398,7 @@ export default function UpdatePhieuGiam() {
                                                             setStatusLoaiPhieu(value);
                                                             setSelectedRows([]);
                                                             setPage(1);
+                                                            setIsReadOnly((prev) => !prev)
                                                         }}
                                                     >
                                                         <FormControlLabel value={0} control={<Radio />} label="Công khai" />
@@ -461,6 +474,7 @@ export default function UpdatePhieuGiam() {
                                         <Input
                                             fullWidth
                                             type="number"
+                                            inputProps={{ readOnly: isReadOnly }}
                                             {...register("soLuong")}
                                             sx={{
                                                 fontWeight: 700,
@@ -561,7 +575,22 @@ export default function UpdatePhieuGiam() {
                                 </Box>
 
                                 <Box mt={2}>
-                                    <Button type="submit" variant="outlined">Cập nhật</Button>
+                                    <Button
+                                        type="submit"
+                                        variant="outlined"
+                                        sx={{
+                                            borderRadius: 2,
+                                            textTransform: "none",
+                                            fontWeight: 400,
+                                            color: "#49a3f1",
+                                            borderColor: "#49a3f1",
+                                            boxShadow: "none",
+                                            "&:hover": {
+                                                borderColor: "#1769aa",
+                                                background: "#f0f6fd",
+                                                color: "#1769aa",
+                                            },
+                                        }}>Cập nhật</Button>
                                 </Box>
                             </Box>
                         </Box>

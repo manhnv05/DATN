@@ -18,7 +18,7 @@ import Table from "examples/Tables/Table";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { addVouchers, sendMail } from "./service/PhieuGiamService";
-import { toast} from "react-toastify";
+import { toast } from "react-toastify";
 import { fetchKhachHang } from "./service/KhachHangService";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -57,6 +57,7 @@ export default function AddPhieuGiam() {
     const [anchorEl, setAnchorEl] = useState(null);
     const [dangTaiDuLieu, setDangTaiDuLieu] = useState(false);
     const [timKiemKhachHang, setTimKiemKhachHang] = useState("");
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
     const navigate = useNavigate();
 
@@ -178,7 +179,7 @@ export default function AddPhieuGiam() {
             if (danhSachPhieuGiamGiaKhachHang.length !== 0) {
                 await addPDDKH(danhSachPhieuGiamGiaKhachHang);
             }
-            navigate("/discount", {
+            navigate("/PhieuGiam", {
                 state: {
                     message: "Thêm voucher thành công!",
                 },
@@ -240,6 +241,10 @@ export default function AddPhieuGiam() {
             />
         );
     }
+
+    useEffect(() => {
+        setValue("soLuong", danhSachDaChon.length)
+    }, [danhSachDaChon])
 
     const danhSachDong = danhSachKhachHang.map(function (khachHang, chiSo) {
         return {
@@ -358,6 +363,7 @@ export default function AddPhieuGiam() {
                                                                 setLoaiPhieu(giaTri);
                                                                 setDanhSachDaChon([]);
                                                                 setSoTrangHienTai(1);
+                                                                setIsReadOnly((prev) => !prev)
                                                             }}
                                                             sx={{ paddingLeft: 1 }}
                                                         >
@@ -432,6 +438,7 @@ export default function AddPhieuGiam() {
                                         </Box>
                                         <Input
                                             fullWidth
+                                            inputProps={{ readOnly: isReadOnly }}
                                             type="number"
                                             {...register("soLuong")}
                                             sx={{
@@ -532,7 +539,22 @@ export default function AddPhieuGiam() {
                                     </Box>
                                 </Box>
                                 <Box marginTop={2}>
-                                    <Button type="submit" variant="outlined">
+                                    <Button
+                                        type="submit"
+                                        variant="outlined"
+                                        sx={{
+                                            borderRadius: 2,
+                                            textTransform: "none",
+                                            fontWeight: 400,
+                                            color: "#49a3f1",
+                                            borderColor: "#49a3f1",
+                                            boxShadow: "none",
+                                            "&:hover": {
+                                                borderColor: "#1769aa",
+                                                background: "#f0f6fd",
+                                                color: "#1769aa",
+                                            },
+                                        }}>
                                         Thêm
                                     </Button>
                                 </Box>
