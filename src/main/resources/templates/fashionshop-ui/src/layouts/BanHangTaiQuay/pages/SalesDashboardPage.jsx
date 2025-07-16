@@ -14,7 +14,7 @@ import SalesCounter from "../component/SalesCounter";
 
 function SalesDashboardPage() {
   const [currentProducts, setCurrentProducts] = useState([]);
-    const [paymentData, setPaymentData] = useState(null)
+  const [paymentData, setPaymentData] = useState(null);
   const cartTotal = useMemo(() => {
     if (!currentProducts || currentProducts.length === 0) {
       return 0;
@@ -26,7 +26,7 @@ function SalesDashboardPage() {
   }, [currentProducts]);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
 
- const handleInvoiceIdChange = useCallback((invoiceId) => {
+  const handleInvoiceIdChange = useCallback((invoiceId) => {
     setSelectedInvoiceId((prevId) => (prevId !== invoiceId ? invoiceId : prevId));
   }, []);
 
@@ -37,73 +37,77 @@ function SalesDashboardPage() {
   const handlePaymentDataChange = useCallback((data) => {
     setPaymentData(data);
   }, []);
-   const handleSaveOrder = useCallback(async () => {
-    // ---- KIỂM TRA ĐIỀU KIỆN ----
-    if (!selectedInvoiceId) {
-      alert("Chưa có hóa đơn nào được chọn.");
-      return;
-    }
-    if (!paymentData) {
-      alert("Chưa có dữ liệu khách hàng và thanh toán.");
+  // src/layouts/sales/SalesDashboardPage.jsx
+
+const handleSaveOrder = useCallback(
+  async (latestPaymentData) => {
+ console.log("Dữ liệu nhận được từ Pay:", latestPaymentData);
+    
+    // Thêm log mới chỉ để xem ID khách hàng
+    console.log("ID Khách hàng nhận được:", latestPaymentData?.customer?.id);
+
+    if (!selectedInvoiceId || !latestPaymentData) {
+      alert("Vui lòng kiểm tra lại thông tin hóa đơn và thanh toán.");
       return;
     }
 
     try {
-      // ---- CÔNG VIỆC 1: LƯU DANH SÁCH SẢN PHẨM ----
-      if (currentProducts && currentProducts.length > 0) {
-        const danhSachCapNhat = currentProducts.map((p) => ({
-          id: p.idChiTietSanPham,
-          soLuong: p.quantity,
-        }));
-        await axios.post(
-          `http://localhost:8080/api/hoa-don/cap-nhat-danh-sach-san-pham/${selectedInvoiceId}`,
-          danhSachCapNhat
-        );
-        console.log("Lưu danh sách sản phẩm thành công!");
-      }
+      // Chuẩn bị các phần chung của payload
+      const danhSachSanPham = currentProducts.map((p) => ({
+        id: p.idChiTietSanPham,
+        soLuong: p.quantity,
+      }));
+      const phieuGiamGiaId = latestPaymentData.phieuGiamGia ? String(latestPaymentData.phieuGiamGia.id) : null;
 
-      // ---- CÔNG VIỆC 2: CẬP NHẬT THÔNG TIN HÓA ĐƠN ----
-      let payload = {
-        idHoaDon: selectedInvoiceId,
-        tongTien: cartTotal,
-      };
+      // Khai báo biến payload mà không khởi tạo
+      let finalPayload;
 
-      if (paymentData.customer && paymentData.customer.id) {
-        const { shippingInfo, customer } = paymentData;
-       // 1. Ghép chuỗi địa chỉ một cách an toàn, chỉ lấy các phần có dữ liệu
+      // Xây dựng payload hoàn chỉnh trong từng trường hợp
+      if (latestPaymentData.customer && latestPaymentData.customer.id) {
+        const { shippingInfo, customer } = latestPaymentData;
         const addressParts = [
           shippingInfo?.detailedAddress,
           shippingInfo?.ward,
           shippingInfo?.province,
-        ].filter(Boolean); // filter(Boolean) sẽ loại bỏ các chuỗi rỗng, null, undefined
+        ].filter(Boolean);
 
-        const fullAddress = addressParts.join(", ");
-
-        payload = {
-          ...payload,
-          khachHang: String(customer.id),
-          // 2. Ưu tiên lấy tên và SĐT từ form, nếu không có thì lấy từ thông tin khách hàng đã chọn
+        // Tạo payload cho trường hợp CÓ khách hàng
+        finalPayload = {
+          idHoaDon: selectedInvoiceId,
+          phieuGiamGia: phieuGiamGiaId,
+          danhSachSanPham: danhSachSanPham,
+          phiVanChuyen: latestPaymentData.shippingFee || 0,
+          khachHang: customer.id||115,
           tenKhachHang: shippingInfo?.name || customer.tenKhachHang,
-          sdt: shippingInfo?.phone || customer.sdt || null, // Lấy SĐT từ form, nếu không có thì lấy SĐT mặc định của khách
-          diaChi: fullAddress, // Địa chỉ đã được ghép nối an toàn
+          sdt: shippingInfo?.phone || customer.sdt || null,
+          diaChi: addressParts.join(", "),
         };
+
       } else {
-        payload = {
-          ...payload,
+        // Tạo payload cho trường hợp KHÁCH LẺ
+        finalPayload = {
+          idHoaDon: selectedInvoiceId,
+          phieuGiamGia: phieuGiamGiaId,
+          danhSachSanPham: danhSachSanPham,
+          phiVanChuyen: latestPaymentData.shippingFee || 0,
           tenKhachHang: "Khách lẻ",
         };
       }
- console.log("Chuẩn bị gửi lên API cập nhật hóa đơn:", payload);
-      await axios.put("http://localhost:8080/api/hoa-don/update_hoadon", payload);
+    
+      // In ra "ảnh chụp" chính xác của payload bằng JSON.stringify
+      console.log("Gửi payload cuối cùng lên backend:", JSON.stringify(finalPayload, null, 2));
+      
+      await axios.put("http://localhost:8080/api/hoa-don/update_hoadon", finalPayload);
 
       alert("Lưu và cập nhật hóa đơn thành công!");
-      // Có thể reset state hoặc chuyển trang ở đây
-
+    
     } catch (error) {
       console.error("Đã có lỗi xảy ra:", error);
       alert(`Lỗi: ${error.response?.data?.message || "Lỗi không xác định."}`);
     }
-  }, [selectedInvoiceId, currentProducts, paymentData, cartTotal]);
+  }, 
+  [selectedInvoiceId, currentProducts]
+);
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -121,8 +125,8 @@ function SalesDashboardPage() {
             <Pay
               totalAmount={cartTotal}
               hoaDonId={selectedInvoiceId}
-            onSaveOrder={handleSaveOrder} 
-              onDataChange={handlePaymentDataChange} 
+              onSaveOrder={handleSaveOrder}
+              onDataChange={handlePaymentDataChange}
             />
           </Grid>
         </Grid>

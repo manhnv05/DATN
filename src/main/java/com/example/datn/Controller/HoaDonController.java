@@ -13,14 +13,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.ByteArrayInputStream;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -33,33 +32,32 @@ import java.util.Map;
 public class HoaDonController {
     HoaDonService hoaDonService;
 
-    @GetMapping("/{id}/pdf")
-    public ResponseEntity<byte[]> exportPdf(@PathVariable String id) {
+//    @PostMapping("/create")
+//    public ResponseEntity<ApiResponse<HoaDonDTO>> createHoaDon(@RequestBody @Valid HoaDonCreateVO request) {
+//        HoaDonDTO hoaDonResponse = hoaDonService.taoHoaDon(request);
+//
+//        ApiResponse<HoaDonDTO> response = ApiResponse.<HoaDonDTO>builder()
+//                .code(1000)
+//                .message("Hóa đơn đã được tạo thành công")
+//                .data(hoaDonResponse)
+//                .build();
+//
+//        return new ResponseEntity<>(response, HttpStatus.CREATED);
+//    }
+@GetMapping("/{id}/pdf")
+public ResponseEntity<byte[]> exportPdf(@PathVariable String id) {
 
-        HoaDonPdfResult hoaDonPdfResult = hoaDonService.hoadonToPDF(id);
+    HoaDonPdfResult hoaDonPdfResult = hoaDonService.hoadonToPDF(id);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=hoa_don_" + hoaDonPdfResult.getMaHoaDon() + ".pdf");
+    HttpHeaders headers = new HttpHeaders();
+    headers.add("Content-Disposition", "attachment; filename=hoa_don_" + hoaDonPdfResult.getMaHoaDon() + ".pdf");
 
-        return ResponseEntity
-                .ok()
-                .headers(headers)
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(hoaDonPdfResult.getPdfStream().readAllBytes());
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<ApiResponse<HoaDonDTO>> createHoaDon(@RequestBody @Valid HoaDonCreateVO request) {
-        HoaDonDTO hoaDonResponse = hoaDonService.taoHoaDon(request);
-
-        ApiResponse<HoaDonDTO> response = ApiResponse.<HoaDonDTO>builder()
-                .code(1000)
-                .message("Hóa đơn đã được tạo thành công")
-                .data(hoaDonResponse)
-                .build();
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+    return ResponseEntity
+            .ok()
+            .headers(headers)
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(hoaDonPdfResult.getPdfStream().readAllBytes());
+}
     @PostMapping("/tao-hoa-don-cho")
     public ResponseEntity<ApiResponse<HoaDonChoDTO>> taoHoaDonCho(@RequestBody HoaDonChoRequestVO request) {
         HoaDonChoDTO hoaDonChoResponse = hoaDonService.taoHoaDonCho(request);
@@ -106,7 +104,7 @@ public class HoaDonController {
             @RequestParam(required = false) String loaiHoaDon,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ngayTaoStart,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ngayTaoEnd,
-            @RequestParam(required = false) String searchTerm) { // Thêm searchTerm vào đây
+            @RequestParam(required = false) String searchTerm) {
 
         Pageable pageable = PageRequest.of(page, size);
         Page<HoaDonDTO> hoaDonPage = hoaDonService.getFilteredHoaDon(

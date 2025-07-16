@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString(exclude = "hoaDon")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class HoaDonChiTiet {

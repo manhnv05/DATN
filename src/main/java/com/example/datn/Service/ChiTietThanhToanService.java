@@ -32,23 +32,43 @@ public class ChiTietThanhToanService {
     @Autowired
     private HinhThucThanhToanRepository hinhThucThanhToanRepository;
 
+
     @Transactional
-    public Integer save(ChiTietThanhToanVO vO) {
-        ChiTietThanhToan bean = new ChiTietThanhToan();
-        BeanUtils.copyProperties(vO, bean);
+    public ChiTietThanhToanDTO save(ChiTietThanhToanVO vO) {
+        // 1. Tạo một đối tượng Entity mới
+        ChiTietThanhToan entity = new ChiTietThanhToan();
+
+        // 2. Sao chép các thuộc tính chung từ VO sang Entity
+        BeanUtils.copyProperties(vO, entity);
+
+        // 3. Tìm và gán các đối tượng liên quan (HoaDon, HinhThucThanhToan)
         if (vO.getIdHoaDon() != null) {
             HoaDon hoaDon = hoaDonRepository.findById(vO.getIdHoaDon())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy HoaDon với ID: " + vO.getIdHoaDon()));
-            bean.setHoaDon(hoaDon);
+            entity.setHoaDon(hoaDon);
         }
+
         if (vO.getIdHinhThucThanhToan() != null) {
             HinhThucThanhToan hinhThucThanhToan = hinhThucThanhToanRepository.findById(vO.getIdHinhThucThanhToan())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy HinhThucThanhToan với ID: " + vO.getIdHinhThucThanhToan()));
-            bean.setHinhThucThanhToan(hinhThucThanhToan);
+            entity.setHinhThucThanhToan(hinhThucThanhToan);
         }
-        bean.setNgayThanhToan(new Date(System.currentTimeMillis()));
-        bean = chiTietThanhToanRepository.save(bean);
-        return bean.getId();
+
+        // 4. Set ngày thanh toán là ngày hiện tại
+        entity.setNgayThanhToan(new Date(System.currentTimeMillis()));
+
+        // 5. Dùng saveAndFlush để ghi ngay lập tức xuống DB
+        ChiTietThanhToan savedEntity = chiTietThanhToanRepository.saveAndFlush(entity);
+
+        // 6. Chuyển đổi entity đã lưu sang DTO để trả về cho frontend
+        ChiTietThanhToanDTO dto = new ChiTietThanhToanDTO();
+        BeanUtils.copyProperties(savedEntity, dto);
+
+        // Gán lại các ID cho DTO
+        dto.setIdHoaDon(savedEntity.getHoaDon().getId());
+        dto.setIdHinhThucThanhToan(savedEntity.getHinhThucThanhToan().getId());
+
+        return dto;
     }
 
     public void delete(Integer id) {

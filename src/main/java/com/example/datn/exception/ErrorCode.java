@@ -25,6 +25,7 @@ public enum ErrorCode {
     ORDER_HAS_BEEN_CANCELLED(1008, "Đơn hàng đã hủy", HttpStatus.BAD_REQUEST),
     INVALID_STATUS(1009, "Trạng thái hóa đơn không đúng", HttpStatus.BAD_REQUEST),
     NOT_YET_PAID(1012, "Chưa thanh toán", HttpStatus.BAD_REQUEST),
+    PAYMENT_METHOD_NOT_FOUND(1013, "Khong nó hình thưc thanh toán này", HttpStatus.BAD_REQUEST),
 
     // Voucher/Discount (from sd_17)
     PHIEU_GIAM_GIA_NULL(2001, "Phiếu Giảm Giá Không Tồn tại", HttpStatus.NOT_FOUND),

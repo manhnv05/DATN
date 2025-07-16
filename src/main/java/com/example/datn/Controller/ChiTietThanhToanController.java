@@ -1,5 +1,7 @@
 package com.example.datn.Controller;
 
+import com.example.datn.Config.ResponseHelper;
+import com.example.datn.DTO.ApiResponse;
 import com.example.datn.DTO.ChiTietThanhToanDTO;
 import com.example.datn.Service.ChiTietThanhToanService;
 import com.example.datn.VO.ChiTietThanhToanQueryVO;
@@ -31,11 +33,10 @@ public class ChiTietThanhToanController {
     @Autowired
     private ChiTietThanhToanService chiTietThanhToanService;
 
-    @PostMapping
-    public String save(@Valid @RequestBody ChiTietThanhToanVO vO) {
-        System.out.println("ID Hinh Thuc Thanh Toan trong VO: " + vO.getIdHinhThucThanhToan());
-        System.out.printf("");
-        return chiTietThanhToanService.save(vO).toString();
+    @PostMapping("")
+    public ResponseEntity<ApiResponse<ChiTietThanhToanDTO>> save(@Valid @RequestBody ChiTietThanhToanVO vO) {
+        ChiTietThanhToanDTO savedDto = chiTietThanhToanService.save(vO);
+        return ResponseHelper.success("Lưu thanh toán thành công", savedDto);
     }
 
     @DeleteMapping("/{id}")

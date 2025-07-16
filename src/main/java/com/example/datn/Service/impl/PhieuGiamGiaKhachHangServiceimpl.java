@@ -149,4 +149,18 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
                 .collect(Collectors.toList());
         return new PageImpl<>(dtoList, PageRequest.of(1, dtoList.size()), dtoList.size());
     }
+    @Override
+    public ChiTietPhieuGiamGiaDTO findVoucherByCodeForCustomer(String maPhieu, Integer idKhachHang) {
+        ChiTietPhieuGiamGia chiTiet = phieuGiamGiaKhachHangRepository
+                .findByPhieuGiamGia_MaPhieuGiamGiaAndKhachHang_Id(maPhieu, idKhachHang)
+                .orElseThrow(() -> new AppException(ErrorCode.PHIEU_GIAM_GIA_NULL
+                ) );
+
+        // (Tùy chọn) Bạn có thể thêm các kiểm tra khác ở đây, ví dụ:
+        // if (chiTiet.getPhieuGiamGia().getNgayKetThuc().isBefore(LocalDate.now())) {
+        //     throw new AppException(ErrorCode.VOUCHER_EXPIRED, "Mã giảm giá đã hết hạn.");
+        // }
+
+        return ChiTietPhieuGiamGiaMapper.INSTANCE.toResponse(chiTiet);
+    }
 }

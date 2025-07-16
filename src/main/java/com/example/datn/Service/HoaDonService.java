@@ -2,6 +2,7 @@ package com.example.datn.Service;
 
 
 import com.example.datn.DTO.*;
+import com.example.datn.Entity.HoaDon;
 import com.example.datn.VO.*;
 import com.example.datn.enums.TrangThai;
 import org.springframework.data.domain.Page;
@@ -9,16 +10,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public interface HoaDonService {
-    HoaDonDTO taoHoaDon(HoaDonCreateVO request);
+//    HoaDonDTO taoHoaDon(HoaDonCreateVO request);
     HoaDonChoDTO taoHoaDonCho(HoaDonChoRequestVO request);
-
+    public HoaDonPdfResult hoadonToPDF(String idHoaDon);
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDonKhiQuayLai(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
     List<HoaDonHistoryDTO> layLichSuThayDoiTrangThai(String  maHoaDon);
@@ -42,7 +42,5 @@ public interface HoaDonService {
     List<HoaDonChiTietDTO> findChiTietHoaDon(@Param("idHoaDon") Integer idHoaDon);
 
     HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
-
-    HoaDonPdfResult hoadonToPDF(String idHoaDon);
-
+   void capNhatSoLuongSanPhamTrongKho(HoaDon hoaDon, boolean isDeducting);
 }
