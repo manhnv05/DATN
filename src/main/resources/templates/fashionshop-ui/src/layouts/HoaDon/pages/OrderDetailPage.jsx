@@ -16,7 +16,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import SoftButton from "components/SoftButton";
 
-// === IMPORT CÁC COMPONENT CON ===
+
 import OrderHistory from "../OrderDetail/OrderHistory";
 import OrderInfo from "../OrderDetail/OrderInfo";
 import PaymentHistory from "../OrderDetail/PaymentHistory";
@@ -28,11 +28,10 @@ import UpdateOrderInfo from "../UpdateOrderInfo/UpdateOrderInfo";
 import { useReactToPrint } from "react-to-print";
 
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import InHoaDon from "../InHoaDon/InHoaDon.jsx";
 import PropTypes from "prop-types";
 
-// === Hằng số và hàm Map (đặt bên ngoài component) ===
+
 const statusMap = {
   HOAN_THANH: "Hoàn thành",
   CHO_XAC_NHAN: "Chờ xác nhận",

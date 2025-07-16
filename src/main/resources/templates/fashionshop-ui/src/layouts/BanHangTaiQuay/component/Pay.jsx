@@ -113,6 +113,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
       onDataChange(dataToSend);
     }
   }, [customer, isDelivery, shippingFee, shippingFormData, onDataChange, paymentDetails]);
+  
   const handleSelectCustomer = async (selectedCustomer) => {
     setCustomer(selectedCustomer);
     try {

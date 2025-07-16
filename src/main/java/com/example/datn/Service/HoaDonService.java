@@ -2,6 +2,7 @@ package com.example.datn.Service;
 
 
 import com.example.datn.DTO.*;
+import com.example.datn.DTO.HoaDonPdfResult;
 import com.example.datn.Entity.HoaDon;
 import com.example.datn.VO.*;
 import com.example.datn.enums.TrangThai;
@@ -18,7 +19,7 @@ import java.util.Map;
 public interface HoaDonService {
 //    HoaDonDTO taoHoaDon(HoaDonCreateVO request);
     HoaDonChoDTO taoHoaDonCho(HoaDonChoRequestVO request);
-    public HoaDonPdfResult hoadonToPDF(String idHoaDon);
+     HoaDonPdfResult hoadonToPDF(String idHoaDon);
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
     CapNhatTrangThaiDTO capNhatTrangThaiHoaDonKhiQuayLai(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien);
     List<HoaDonHistoryDTO> layLichSuThayDoiTrangThai(String  maHoaDon);

@@ -9,7 +9,7 @@ import TayAo from "layouts/SanPham/tayao";
 import CoAo from "layouts/SanPham/coao";
 import HinhAnh from "layouts/SanPham/hinhanh";
 import ProductForm from "layouts/SanPham/themsp";
-import ProductDetailForm from "layouts/SanPham/chitiet"; // <-- Thêm import này
+import ProductDetailForm from "layouts/SanPham/chitiet"; 
 import GiamGia from "layouts/GiamGia";
 import OrderManagementPage from "layouts/HoaDon/pages/OrderManagementPage";
 import OrderDetailPage from "layouts/HoaDon/pages/OrderDetailPage";
@@ -22,8 +22,6 @@ import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
 import DetailNhanVien from "layouts/nhanvien/detail";
 import UpdateNhanVien from "layouts/nhanvien/update";
-
-
 
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
@@ -38,7 +36,6 @@ import CreditCard from "examples/Icons/CreditCard";
 import Cube from "examples/Icons/Cube";
 import AddDiscountEventPage from "layouts/GiamGia/AddDiscountEventPage";
 import ViewDiscountEventPage from "layouts/GiamGia/ViewDiscountEventPage";
-// import Dashboard from "layouts/dashboard";
 import DashboardStats from "layouts/thongke/thongke";
 import SalesDashboardPage from "layouts/BanHangTaiQuay/pages/SalesDashboardPage";
 
@@ -71,6 +68,24 @@ const routes = [
     // component: <Tables />,
     noCollapse: true,
   },
+  {
+  type: "collapse",
+  name: "Quản Lý Hóa Đơn",
+  key: "order-management",
+  route: "/QuanLyHoaDon",
+  icon: <CreditCard size="12px" />,
+  component: <OrderManagementPage />,
+  noCollapse: true,
+}
+,
+  {
+    name: "Hóa đơn chi tiết",
+    route: "/QuanLyHoaDon/:orderId",
+    component: <OrderDetailPage />,
+    key: "order-detail",
+    noCollapse: true,
+  },
+
   {
     type: "collapse",
     name: "Quản Lý Sản Phẩm",

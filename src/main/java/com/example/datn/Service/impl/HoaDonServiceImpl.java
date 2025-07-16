@@ -45,6 +45,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.stream.Stream;
+import com.example.datn.DTO.HoaDonPdfResult;
 
 @Service
 @RequiredArgsConstructor
