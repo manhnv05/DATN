@@ -232,7 +232,9 @@ export default function UpdatePhieuGiam() {
     }, [id])
 
     useEffect(() => {
-        setValue("soLuong", selectedRows.length)
+        if (statusLoaiPhieu == 1){
+            setValue("soLuong", selectedRows.length)
+        }
     }, [selectedRows])
 
     useEffect(() => {
