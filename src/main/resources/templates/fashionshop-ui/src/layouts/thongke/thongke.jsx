@@ -66,8 +66,6 @@ const StatCard = ({
             color: 'white',
             position: 'relative',
             overflow: 'hidden',
-
-            minWidth: '500px',
             '&::before': {
                 content: '""',
                 position: 'absolute',
@@ -293,7 +291,7 @@ export default function DashboardStats() {
 
                         <Grid container spacing={3}>
                             {statsData.map((stat, index) => (
-                                <Grid item xs={12} sm={6} md={6} lg={3} key={index}>
+                                <Grid item xs={12} sm={6} md={6} lg={6} key={index}>
                                     <StatCard {...stat} />
                                 </Grid>
                             ))}

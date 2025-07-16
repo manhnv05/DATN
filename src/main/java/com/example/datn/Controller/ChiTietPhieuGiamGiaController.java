@@ -29,6 +29,15 @@ public class ChiTietPhieuGiamGiaController {
         return ResponseHelper.success("", phieuGiamGiaKhachHangService.queryPhieuGiamGiaKhachHang(page, size,request));
     }
 
+    @PostMapping("/pddkh")
+    public ResponseEntity<ApiResponse<Page<ChiTietPhieuGiamGiaDTO>>> pddkh(
+            @RequestBody ChiTietPhieuGiamGiaVO request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseHelper.success("", phieuGiamGiaKhachHangService.getpggkh(page, size,request));
+    }
+
     @PostMapping("")
     public ResponseEntity<ApiResponse<List<ChiTietPhieuGiamGiaDTO>>> create(@RequestBody List<ChiTietPhieuGiamGiaVO> listRequest) {
         return ResponseHelper

@@ -104,6 +104,15 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
             return phieuGiamGias.map(PhieuGiamGiaMapper.INSTANCE::toResponse);
         }
     }
+
+    @Override
+    public Page<ChiTietPhieuGiamGiaDTO> getpggkh(int page, int size, ChiTietPhieuGiamGiaVO request) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ChiTietPhieuGiamGia> chiTietPhieuGiamGias = phieuGiamGiaKhachHangRepository
+                .getChiTietPhieuGiamGias(request.getKhachHang(), request.getPhieuGiamGia(), pageable);
+        return chiTietPhieuGiamGias.map(ChiTietPhieuGiamGiaMapper.INSTANCE::toResponse);
+    }
+
     public Page<PhieuGiamGiaDTO> getChiTietPhieuGiam(List<PhieuGiamGia> data, ChiTietPhieuGiamGiaVO request) {
         List<PhieuGiamGia> sortPGG = new ArrayList<>();
         for(PhieuGiamGia dataE : data){

@@ -1,6 +1,6 @@
 export async function findAllPDDKH(page, size, data) {
      try {
-        const response = await fetch(`http://localhost:8080/PhieuGiamGiaKhachHang/query?page=${page}&size=${size}`, {
+        const response = await fetch(`http://localhost:8080/PhieuGiamGiaKhachHang/pddkh?page=${page}&size=${size}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

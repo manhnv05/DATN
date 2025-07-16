@@ -625,7 +625,6 @@ function SalesCounter({ onTotalChange }) {
   );
 }
 
-
 SalesCounter.propTypes = {
   onTotalChange: PropTypes.func,
 };

@@ -24,4 +24,16 @@ public interface ChiTietPhieuGiamGiaRepository extends JpaRepository<ChiTietPhie
             @Param("phieuGiamGia") String phieuGiamGia,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT pddkh FROM ChiTietPhieuGiamGia pddkh
+    WHERE
+        (:khachHang IS NULL OR :khachHang = pddkh.khachHang.id)
+        AND (:phieuGiamGia IS NULL OR :phieuGiamGia = pddkh.phieuGiamGia.id)
+    """)
+    Page<ChiTietPhieuGiamGia> getChiTietPhieuGiamGias(
+            @Param("khachHang") String khachHang,
+            @Param("phieuGiamGia") String phieuGiamGia,
+            Pageable pageable
+    );
 }

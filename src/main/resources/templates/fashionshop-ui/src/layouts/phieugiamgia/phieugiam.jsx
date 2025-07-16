@@ -79,6 +79,7 @@ export default function PhieuGiamPage() {
 
     useEffect(() => {
         if (location.state?.message) {
+            console.log(location.state.message)
             toast.success(location.state.message);
             window.history.replaceState({}, document.title);
         }
