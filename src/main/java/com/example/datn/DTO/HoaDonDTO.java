@@ -20,14 +20,13 @@ public class HoaDonDTO {
     private TrangThai trangThai;
     private String ghiChu;
     private String maHoaDon;
-
     private String tenKhachHang;
     private String sdt;
     private String diaChi;
     private String tenSanPham;
-
+    private String maNhanVien;
     private String tenNhanVien;
-//    private String maPhieuGiamGia;
+
     private String loaiHoaDon;
     private List<HoaDonChiTietDTO> danhSachChiTiet;
 

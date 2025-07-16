@@ -33,7 +33,7 @@ const initialCustomerState = {
   ngaySinh: "",
   gioiTinh: "",
   address: {
-    diaChiChiTiet: "", // Chỉ giữ lại địa chỉ chi tiết
+    diaChiChiTiet: "", 
   },
 };
 

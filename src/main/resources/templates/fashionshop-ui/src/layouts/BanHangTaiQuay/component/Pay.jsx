@@ -105,15 +105,14 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
         isDelivery,
         shippingFee,
         shippingInfo: isDelivery ? shippingFormData : null,
-         phieuGiamGia: appliedVoucher, // Gửi cả object phiếu giảm giá đã áp dụng
-       tongTienGiam: discountValue,   // Gửi số tiền đã được giảm
-        
+        phieuGiamGia: appliedVoucher, // Gửi cả object phiếu giảm giá đã áp dụng
+        tongTienGiam: discountValue, // Gửi số tiền đã được giảm
       };
       // <<< LOG 4: Dữ liệu Pay chuẩn bị GỬI ĐI >>>
       console.log("LOG 4 (Pay): Đang gửi dữ liệu lên ->", dataToSend);
       onDataChange(dataToSend);
     }
-  }, [customer, isDelivery, shippingFee, shippingFormData, onDataChange, paymentDetails,]);
+  }, [customer, isDelivery, shippingFee, shippingFormData, onDataChange, paymentDetails]);
   const handleSelectCustomer = async (selectedCustomer) => {
     setCustomer(selectedCustomer);
     try {
@@ -133,33 +132,31 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange }) {
     setIsCustomerModalOpen(false);
   };
 
-
-const handleConfirmPayment = async (newPaymentsFromModal) => {
-  // `newPaymentsFromModal` giờ đây đã là một mảng đúng
-  if (!newPaymentsFromModal || newPaymentsFromModal.length === 0) {
-    setIsPaymentModalOpen(false);
-    return;
-  }
-
-  try {
-    const savedPayments = [];
-    // Dùng trực tiếp newPaymentsFromModal
-    for (const payment of newPaymentsFromModal) {
-      const payload = { ...payment, idHoaDon: hoaDonId };
-      const response = await axios.post("http://localhost:8080/chiTietThanhToan", payload);
-      savedPayments.push(response.data.data);
+  const handleConfirmPayment = async (newPaymentsFromModal) => {
+    // `newPaymentsFromModal` giờ đây đã là một mảng đúng
+    if (!newPaymentsFromModal || newPaymentsFromModal.length === 0) {
+      setIsPaymentModalOpen(false);
+      return;
     }
-    
-    // Cập nhật state với một mảng dữ liệu hợp lệ
-    setPaymentDetails((prevDetails) => [...prevDetails, ...savedPayments]);
-    alert("Các khoản thanh toán đã được ghi nhận thành công!");
-    setIsPaymentModalOpen(false);
 
-  } catch (error) {
-    console.error("Lỗi trong quá trình thanh toán:", error);
-    alert(`Có lỗi xảy ra: ${error.response?.data?.message || "Lỗi không xác định"}`);
-  }
-};
+    try {
+      const savedPayments = [];
+      // Dùng trực tiếp newPaymentsFromModal
+      for (const payment of newPaymentsFromModal) {
+        const payload = { ...payment, idHoaDon: hoaDonId };
+        const response = await axios.post("http://localhost:8080/chiTietThanhToan", payload);
+        savedPayments.push(response.data.data);
+      }
+
+      // Cập nhật state với một mảng dữ liệu hợp lệ
+      setPaymentDetails((prevDetails) => [...prevDetails, ...savedPayments]);
+      alert("Các khoản thanh toán đã được ghi nhận thành công!");
+      setIsPaymentModalOpen(false);
+    } catch (error) {
+      console.error("Lỗi trong quá trình thanh toán:", error);
+      alert(`Có lỗi xảy ra: ${error.response?.data?.message || "Lỗi không xác định"}`);
+    }
+  };
   const handleFinalSave = () => {
     if (!isDelivery) {
       const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTienThanhToan, 0);
@@ -174,10 +171,17 @@ const handleConfirmPayment = async (newPaymentsFromModal) => {
         return;
       }
     }
-
-    // Nếu là đơn giao hàng hoặc đơn tại quầy đã thanh toán đủ, thì tiến hành lưu
     console.log("Validation OK. Proceeding to save order.");
-    onSaveOrder();
+    const latestPaymentData = {
+      customer: customer,
+      isDelivery: isDelivery,
+      shippingFee: shippingFee,
+      shippingInfo: isDelivery ? shippingFormData : null,
+      phieuGiamGia: appliedVoucher,
+      tongTienGiam: discountValue,
+    };
+    console.log("DỮ LIỆU CHUẨN BỊ GỬI TỪ PAY:", latestPaymentData);
+    onSaveOrder(latestPaymentData);
   };
   const handleClearCustomer = () => {
     setCustomer({ id: null, tenKhachHang: "Khách lẻ" });

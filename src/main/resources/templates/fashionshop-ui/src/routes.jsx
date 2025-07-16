@@ -1,4 +1,3 @@
-
 import SanPham from "layouts/SanPham/sanphan";
 import ThuongHieu from "layouts/SanPham/thuonghieu";
 import ChatLieu from "layouts/SanPham/chatlieu";
@@ -20,8 +19,8 @@ import KhachHang from "layouts/khachhang";
 import AddKhachHang from "layouts/khachhang/add";
 import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
-import detailnhanvien from "layouts/nhanvien/detail";
-
+import DetailNhanVien from "layouts/nhanvien/detail";
+import UpdateNhanVien from "layouts/nhanvien/update";
 
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
@@ -49,7 +48,7 @@ const routes = [
     component: <DashboardStats />,
     noCollapse: true,
   },
-   {
+  {
     type: "collapse",
     name: "Bán Hàng Tại Quầy",
     key: "sales",
@@ -58,19 +57,22 @@ const routes = [
     component: <SalesDashboardPage />,
     noCollapse: true,
   },
+ {
+  type: "collapse",
+  name: "Quản Lý Hóa Đơn",
+  key: "order-management",
+  route: "/QuanLyHoaDon",
+  icon: <CreditCard size="12px" />,
+  component: <OrderManagementPage />,
+  noCollapse: true,
+}
+,
   {
-    type: "collapse",
-    name: "Quản Lý Hóa Đơn",
-    key: "billing",
-    route: "/OrderManagementPage",
-    icon: <CreditCard size="12px" />,
-    component: <OrderManagementPage />,
-    noCollapse: true,
-  },
-  {
-    route: "/order-management/:orderId",
+    name: "Hóa đơn chi tiết",
+    route: "/QuanLyHoaDon/:orderId",
     component: <OrderDetailPage />,
     key: "order-detail",
+    noCollapse: true,
   },
   {
     type: "collapse",
@@ -162,7 +164,7 @@ const routes = [
         type: "item",
         name: "Phiếu Giảm Giá",
         key: "discount-list",
-        route: "/discount",
+        route: "/PhieuGiam",
         component: <PhieuGiamPage />,
         noCollapse: true,
       },
@@ -294,7 +296,15 @@ const routes = [
     key: "detail-staff",
     name: "chi tiêt nhân viên",
     route: "/nhanvien/detail/:id",
-    component: <detailnhanvien />,
+    component: <DetailNhanVien />,
+    noCollapse: true,
+    hidden: true,
+  },
+  {
+    key: "update-staff",
+    name: "cập nhật nhân viên",
+    route: "/nhanvien/update/:id",
+    component: <UpdateNhanVien />,
     noCollapse: true,
     hidden: true,
   },

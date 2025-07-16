@@ -12,7 +12,7 @@ const getStatusBadgeClassName = (status) => {
     case 'Chờ xác nhận': return 'bg-warning';
     case 'Tạo đơn hàng': return 'bg-success';
     case 'Hủy': return 'bg-danger';
-    default: return 'bg-secondary';
+    default: return 'bg-danger';
   }
 };
 
@@ -75,7 +75,7 @@ const OrderInfo = ({ order }) => {
                     </div>
                 </div>
 
-                <hr className="my-3" /> {/* Đường phân cách */}
+                <hr className="my-3" /> 
 
                
 

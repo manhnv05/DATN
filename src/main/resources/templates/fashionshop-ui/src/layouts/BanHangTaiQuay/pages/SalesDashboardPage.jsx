@@ -39,59 +39,75 @@ function SalesDashboardPage() {
   }, []);
   // src/layouts/sales/SalesDashboardPage.jsx
 
-const handleSaveOrder = useCallback(async () => {
-    if (!selectedInvoiceId || !paymentData) {
-        alert("Vui lòng kiểm tra lại thông tin hóa đơn và thanh toán.");
-        return;
+const handleSaveOrder = useCallback(
+  async (latestPaymentData) => {
+ console.log("Dữ liệu nhận được từ Pay:", latestPaymentData);
+    
+    // Thêm log mới chỉ để xem ID khách hàng
+    console.log("ID Khách hàng nhận được:", latestPaymentData?.customer?.id);
+
+    if (!selectedInvoiceId || !latestPaymentData) {
+      alert("Vui lòng kiểm tra lại thông tin hóa đơn và thanh toán.");
+      return;
     }
 
     try {
-        // Gom tất cả dữ liệu vào một payload duy nhất
-        const danhSachSanPham = currentProducts.map((p) => ({
-            id: p.idChiTietSanPham,
-            soLuong: p.quantity,
-        }));
-        const phieuGiamGiaId = paymentData.phieuGiamGia ? String(paymentData.phieuGiamGia.id) : null;
-        
-        let payload = {
-            idHoaDon: selectedInvoiceId,
-            phieuGiamGia: phieuGiamGiaId,
-            danhSachSanPham: danhSachSanPham,
-            
-            phiVanChuyen: paymentData.shippingFee || 0, // Gửi cả phí vận chuyển
+      // Chuẩn bị các phần chung của payload
+      const danhSachSanPham = currentProducts.map((p) => ({
+        id: p.idChiTietSanPham,
+        soLuong: p.quantity,
+      }));
+      const phieuGiamGiaId = latestPaymentData.phieuGiamGia ? String(latestPaymentData.phieuGiamGia.id) : null;
+
+      // Khai báo biến payload mà không khởi tạo
+      let finalPayload;
+
+      // Xây dựng payload hoàn chỉnh trong từng trường hợp
+      if (latestPaymentData.customer && latestPaymentData.customer.id) {
+        const { shippingInfo, customer } = latestPaymentData;
+        const addressParts = [
+          shippingInfo?.detailedAddress,
+          shippingInfo?.ward,
+          shippingInfo?.province,
+        ].filter(Boolean);
+
+        // Tạo payload cho trường hợp CÓ khách hàng
+        finalPayload = {
+          idHoaDon: selectedInvoiceId,
+          phieuGiamGia: phieuGiamGiaId,
+          danhSachSanPham: danhSachSanPham,
+          phiVanChuyen: latestPaymentData.shippingFee || 0,
+          khachHang: customer.id||115,
+          tenKhachHang: shippingInfo?.name || customer.tenKhachHang,
+          sdt: shippingInfo?.phone || customer.sdt || null,
+          diaChi: addressParts.join(", "),
         };
 
-        if (paymentData.customer && paymentData.customer.id) {
-            const { shippingInfo, customer } = paymentData;
-            const addressParts = [
-                shippingInfo?.detailedAddress,
-                shippingInfo?.ward,
-                shippingInfo?.province,
-            ].filter(Boolean);
-            
-            payload = {
-                ...payload,
-                khachHang: String(customer.id),
-                tenKhachHang: shippingInfo?.name || customer.tenKhachHang,
-                sdt: shippingInfo?.phone || customer.sdt || null,
-                diaChi: addressParts.join(", "),
-            };
-        } else {
-            payload = { ...payload, tenKhachHang: "Khách lẻ" };
-        }
+      } else {
+        // Tạo payload cho trường hợp KHÁCH LẺ
+        finalPayload = {
+          idHoaDon: selectedInvoiceId,
+          phieuGiamGia: phieuGiamGiaId,
+          danhSachSanPham: danhSachSanPham,
+          phiVanChuyen: latestPaymentData.shippingFee || 0,
+          tenKhachHang: "Khách lẻ",
+        };
+      }
+    
+      // In ra "ảnh chụp" chính xác của payload bằng JSON.stringify
+      console.log("Gửi payload cuối cùng lên backend:", JSON.stringify(finalPayload, null, 2));
       
-        // BỎ HOÀN TOÀN LỆNH GỌI API CẬP NHẬT SẢN PHẨM RIÊNG LẺ
-        
-        console.log("Gửi payload cuối cùng lên backend:", payload);
-        await axios.put("http://localhost:8080/api/hoa-don/update_hoadon", payload);
+      await axios.put("http://localhost:8080/api/hoa-don/update_hoadon", finalPayload);
 
-        alert("Lưu và cập nhật hóa đơn thành công!");
-      
+      alert("Lưu và cập nhật hóa đơn thành công!");
+    
     } catch (error) {
-        console.error("Đã có lỗi xảy ra:", error);
-        alert(`Lỗi: ${error.response?.data?.message || "Lỗi không xác định."}`);
+      console.error("Đã có lỗi xảy ra:", error);
+      alert(`Lỗi: ${error.response?.data?.message || "Lỗi không xác định."}`);
     }
-}, [selectedInvoiceId, currentProducts, paymentData]);
+  }, 
+  [selectedInvoiceId, currentProducts]
+);
   return (
     <DashboardLayout>
       <DashboardNavbar />
