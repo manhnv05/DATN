@@ -367,10 +367,11 @@ const OrderDetailPage = () => {
                 )}
                 {!isCancelButtonDisabled && (
                   <SoftButton
-                    variant="outlined"
-                    color="error"
+                   
                     onClick={handleOpenCancelModal}
                     disabled={isCancelButtonDisabled || actionLoading}
+                     variant="outlined"
+                    color="error"
                     sx={{
                       textTransform: "none",
                       // Giữ lại logic style cho trạng thái disabled

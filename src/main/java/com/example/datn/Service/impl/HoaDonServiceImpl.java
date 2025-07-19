@@ -850,16 +850,22 @@ public class HoaDonServiceImpl implements HoaDonService {
                 throw new AppException(ErrorCode.NOT_YET_PAID);
             }
         } else { // Đơn giao hàng
-            hoaDon.setTrangThai(TrangThai.CHO_XAC_NHAN);
+            if (tongTienDaTra >= hoaDon.getTongTien()) {
+                hoaDon.setTrangThai(TrangThai.HOAN_THANH);
+                capNhatSoLuongSanPhamTrongKho(hoaDon, true);
+            }
+            else {
+                hoaDon.setTrangThai(TrangThai.CHO_XAC_NHAN);
+            }
             hoaDon.setNgayGiaoDuKien(LocalDate.now().atStartOfDay().plusDays(3));
         }
 
-        // 7. Lưu hóa đơn vào CSDL (chỉ 1 lần)
+
         HoaDon hoaDonDaLuu = hoaDonRepository.save(hoaDon);
 
         String nguoiThucHienCapNhat =  "Hệ thống";
 
-        // Tạo nội dung lịch sử dựa trên trạng thái cuối cùng của hóa đơn
+
         String noiDungLichSu;
         switch (hoaDonDaLuu.getTrangThai()) {
             case HOAN_THANH:

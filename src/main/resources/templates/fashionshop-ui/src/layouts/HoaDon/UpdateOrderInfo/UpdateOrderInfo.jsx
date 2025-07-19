@@ -289,12 +289,24 @@ const UpdateOrderInfo = ({ show, onClose, orderId, initialData, onUpdateSuccess 
         </Grid>
       </DialogContent>
       <DialogActions sx={{ p: "16px 24px" }}>
-        <Button onClick={onClose} variant="outlined">
-          Hủy
-        </Button>
+        
         <Button
           type="submit"
-          variant="contained"
+          variant="outlined"
+                    size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 400,
+                      color: "#49a3f1",
+                      borderColor: "#49a3f1",
+                      boxShadow: "none",
+                      "&:hover": {
+                        borderColor: "#1769aa",
+                        background: "#f0f6fd",
+                        color: "#1769aa",
+                      },
+                    }}
           disabled={isSubmitting || isPreloading}
           startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
         >
