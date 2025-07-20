@@ -14,8 +14,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import { QRCodeCanvas } from "qrcode.react";
 import Button from "@mui/material/Button";
 import PropTypes from "prop-types";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 function ProductDetailInfoModal(props) {
     const didShowToast = useRef(false);
@@ -97,17 +96,6 @@ function ProductDetailInfoModal(props) {
 
     return (
         <>
-            <ToastContainer
-                position="top-right"
-                autoClose={1800}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
             <Dialog open={props.open} onClose={props.onClose} maxWidth="md" fullWidth
                     PaperProps={{
                         sx: {

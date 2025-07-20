@@ -17,7 +17,6 @@ import { STATUS_LIST } from "./Filter";
 import Table from "examples/Tables/Table";
 import SoftBox from "components/SoftBox";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -409,8 +408,30 @@ function AddDiscountEventPage() {
                         );
                     },
                 },
-                { name: "tenSanPham", label: "Tên", align: "center" },
-                { name: "tenDanhMuc", label: "Danh mục", align: "center" },
+                { 
+                    name: "tenSanPham", 
+                    label: "Tên sản phẩm", 
+                    align: "center",
+                    render: function (value) {
+                        return (
+                            <span style={{ textTransform: "none" }}>
+                                {value}
+                            </span>
+                        );
+                    }
+                },
+                { 
+                    name: "tenDanhMuc", 
+                    label: "Danh mục", 
+                    align: "center",
+                    render: function (value) {
+                        return (
+                            <span style={{ textTransform: "none" }}>
+                                {value}
+                            </span>
+                        );
+                    }
+                },
             ];
         },
         [selectedProducts, details, preDetailMap, products]

@@ -14,15 +14,15 @@ import PropTypes from "prop-types";
 import { STATUS_LIST } from "./Filter";
 
 const TableList = ({
-                       data,
-                       loading,
-                       pagination,
-                       setPagination,
-                       onView,
-                       onEdit,
-                       onDelete,
-                       onStatusChange,
-                   }) => {
+    data,
+    loading,
+    pagination,
+    setPagination,
+    onView,
+    onEdit,
+    onDelete,
+    onStatusChange,
+}) => {
     const rows = useMemo(() => data.map((item, index) => ({ stt: index + 1, ...item })), [data]);
     const handlePageChange = (newPage) => {
         setPagination((pre) => ({ ...pre, page: newPage }));
@@ -40,19 +40,37 @@ const TableList = ({
             label: "Trạng thái",
             align: "center",
             width: "120px",
-            render: (value, row) => (
-                <Select
-                    value={value}
-                    size="small"
-                    onChange={(e) => onStatusChange(row, Number(e.target.value))}
-                >
-                    {STATUS_LIST.map((item) => (
-                        <MenuItem key={item.id} value={item.id}>
-                            {item.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            ),
+            render: (value, row) => {
+                const selectedItem = STATUS_LIST.find((item) => item.id === value);
+                const color = value === 1 ? "green" : "red";
+
+                return (
+                    <Select
+                        value={value}
+                        size="small"
+                        onChange={(e) => onStatusChange(row, Number(e.target.value))}
+                        sx={{
+                            color: color,
+                            fontWeight: "bold",
+                        }}
+                    >
+                        {STATUS_LIST.map((item) => (
+                            <MenuItem
+                                key={item.id}
+                                value={item.id}
+                                sx={{
+                                    color: item.id === 1 ? "green" : "red", // id=1 là "Đang diễn ra", id=2 là "Chưa diễn ra"
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                {item.label}
+                            </MenuItem>
+
+                        ))}
+                    </Select>
+                );
+            }
+
         },
         {
             name: "actions",

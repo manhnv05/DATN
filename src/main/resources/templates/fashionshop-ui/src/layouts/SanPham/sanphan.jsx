@@ -29,8 +29,7 @@ import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import Divider from "@mui/material/Divider";
 import DialogContentText from "@mui/material/DialogContentText";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 const selectMenuStyle = {
     menu: (base) => ({
@@ -478,17 +477,6 @@ function ProductTable() {
 
     return (
         <DashboardLayout>
-            <ToastContainer
-                position="top-right"
-                autoClose={2500}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
             <DashboardNavbar />
             <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
                 <Card sx={{ padding: { xs: 2, md: 3 }, marginBottom: 2 }}>
