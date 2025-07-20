@@ -17,4 +17,5 @@ public interface ChiTietPhieuGiamGiaService {
     boolean deletePhieuGiamGiaKhachHang(int id);
     Page<PhieuGiamGiaDTO> queryPhieuGiamGiaKhachHang(int page, int size, ChiTietPhieuGiamGiaVO request);
     Page<ChiTietPhieuGiamGiaDTO> getpggkh(int page, int size, ChiTietPhieuGiamGiaVO request);
+    ChiTietPhieuGiamGiaDTO findVoucherByCodeForCustomer(String maPhieu, Integer idKhachHang);
 }

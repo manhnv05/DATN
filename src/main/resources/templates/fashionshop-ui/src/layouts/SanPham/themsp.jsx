@@ -18,8 +18,7 @@ import { CircularProgress, Grid, Tooltip, Typography, Box } from "@mui/material"
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { FaPlus, FaTrash } from "react-icons/fa";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 const apiUrl = (path) => `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -1581,17 +1580,6 @@ function ProductForm() {
                     </DialogActions>
                 </Dialog>
             </SoftBox>
-            <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
             <Footer />
         </DashboardLayout>
     );

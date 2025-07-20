@@ -8,8 +8,7 @@ import { useNavigate } from "react-router-dom";
 import useNotify from "./hooks/useNotify";
 import ConfirmDialog from "./ConfirmDialog";
 import instanceAPIMain from "../../configapi";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 export const updateDotGiamGia = (id, payload) =>
     instanceAPIMain.put(`/dotGiamGia/${id}`, payload);
@@ -79,7 +78,6 @@ const DisCountEvent = () => {
   return (
       <DashboardLayout>
         <DashboardNavbar />
-        <ToastContainer position="top-right" autoClose={3000} />
         <Filter filter={filter} setFilter={setFilter} />
         <TableList
             data={data}

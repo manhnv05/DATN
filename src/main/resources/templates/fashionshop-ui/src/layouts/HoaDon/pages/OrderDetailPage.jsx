@@ -28,7 +28,6 @@ import UpdateOrderInfo from "../UpdateOrderInfo/UpdateOrderInfo";
 import { useReactToPrint } from "react-to-print";
 
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import InHoaDon from "../InHoaDon/InHoaDon.jsx";
 import PropTypes from "prop-types";
 

@@ -23,6 +23,7 @@ import com.example.datn.Service.LichSuHoaDonService;
 import com.example.datn.specification.HoaDonSpecification;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import com.example.datn.DTO.HoaDonPdfResult;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

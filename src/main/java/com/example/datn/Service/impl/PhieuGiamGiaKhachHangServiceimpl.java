@@ -91,12 +91,15 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
     public Page<PhieuGiamGiaDTO> queryPhieuGiamGiaKhachHang(int page, int size, ChiTietPhieuGiamGiaVO request) {
 
         Pageable pageable = PageRequest.of(page, size);
+
         Page<PhieuGiamGia> phieuGiamGias = phieuGiamGiaKhachHangRepository
                 .queryPhieuGiamGiaKhachHang(request.getKhachHang(), request.getPhieuGiamGia(), pageable);
 
         if(request.getTongTienHoaDon()!=null) {
             List<PhieuGiamGia> combinedList = new ArrayList<>();
-            combinedList.addAll(phieuGiamGias.getContent());
+            if (request.getKhachHang() != null) {
+                combinedList.addAll(phieuGiamGias.getContent());
+            }
             combinedList.addAll(phieuGiamGiaRepository.getPhieuGiamGiaByTrangThai());
             return getChiTietPhieuGiam(combinedList, request);
         }
