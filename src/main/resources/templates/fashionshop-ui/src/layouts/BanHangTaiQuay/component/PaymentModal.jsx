@@ -29,7 +29,7 @@ const formatCurrency = (amount) => {
 };
 
 function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
-  console.log("PaymentModal rendered with hoaDonId:", hoaDonId);
+
   // State cho dữ liệu thanh toán cũ từ API
   const [previousPayments, setPreviousPayments] = useState([]);
   // State cho dữ liệu thanh toán mới được thêm trong UI

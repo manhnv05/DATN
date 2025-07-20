@@ -38,9 +38,7 @@ function SalesDashboardPage() {
 
   const handleSaveOrder = useCallback(
     async (latestPaymentData) => {
-      console.log("Dữ liệu nhận được từ Pay:", latestPaymentData);
-
-      console.log("ID Khách hàng nhận được:", latestPaymentData?.customer?.id);
+   
 
       if (!selectedInvoiceId || !latestPaymentData) {
         alert("Vui lòng kiểm tra lại thông tin hóa đơn và thanh toán.");

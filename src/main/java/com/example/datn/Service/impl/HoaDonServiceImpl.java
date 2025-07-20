@@ -793,10 +793,28 @@ public class HoaDonServiceImpl implements HoaDonService {
             hoaDon.setNhanVien(nhanVien);
         }
 
+        Integer idKhachHang = null;
+        String idKhachHangStr = request.getKhachHang(); // Lấy ID dạng chuỗi từ request
 
-        Integer idKhachHang = Integer.parseInt(request.getKhachHang());
-        KhachHang khachHang = khachHangRepository.findById(idKhachHang).orElse(null);
-        hoaDon.setKhachHang(khachHang);
+// Thêm bước kiểm tra quan trọng này
+        if (idKhachHangStr != null && !idKhachHangStr.trim().isEmpty()) {
+            try {
+                idKhachHang = Integer.parseInt(idKhachHangStr);
+            } catch (NumberFormatException e) {
+                // Có thể ghi log ở đây để biết nếu ai đó gửi ID không phải là số
+                System.err.println("ID khách hàng không hợp lệ: " + idKhachHangStr);
+            }
+        }
+
+// Bây giờ, bạn có thể sử dụng biến 'idKhachHang' một cách an toàn.
+// Nếu không có ID hoặc ID không hợp lệ, nó sẽ là null.
+        if (idKhachHang != null) {
+            KhachHang khachHang = khachHangRepository.findById(idKhachHang).orElse(null);
+            hoaDon.setKhachHang(khachHang);
+        } else {
+            // Xử lý cho trường hợp không có khách hàng (khách vãng lai)
+            hoaDon.setKhachHang(null);
+        }
 
         // 5. Tính toán lại toàn bộ giá trị hóa đơn
         // Tính tổng tiền gốc từ danh sách sản phẩm đã được cập nhật
