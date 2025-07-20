@@ -329,7 +329,8 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
       ...order,
       stt: currentPage * pageSize + index + 1,
       tongSP,
-      tongTien: tongTien.toLocaleString("vi-VN") + "đ",
+         tongTien: (order.tongHoaDon || 0).toLocaleString("vi-VN") + "đ",
+
     };
   });
 
