@@ -156,9 +156,16 @@ public ResponseEntity<byte[]> exportPdf(@PathVariable String id) {
         return ResponseEntity.ok(response);
     };
 
-
-
-
+    @GetMapping("/get-thong-tin-hoa-don/{id}")
+    public ResponseEntity<ApiResponse<TongTienHoaDonDto>> getThongTinGiamGiaByHoaDonId(@PathVariable("id") Integer id) {
+        TongTienHoaDonDto tongTienHoaDonDto = hoaDonService.getThongTinGiamGiaByHoaDonId(id);
+        ApiResponse<TongTienHoaDonDto> apiResponse = ApiResponse.<TongTienHoaDonDto>builder()
+                .code(1000)
+                .message("Lấy thông tin hóa đơn thành công")
+                .data(tongTienHoaDonDto)
+                .build();
+       return ResponseEntity.ok(apiResponse);
+    }
     @PutMapping("/chuyen-trang-thai-huy/{id}") // Changed to PUT mapping
     public ResponseEntity<CapNhatTrangThaiDTO> chuyenTrangThaiHuy(
             @PathVariable("id") Integer idHoaDon,

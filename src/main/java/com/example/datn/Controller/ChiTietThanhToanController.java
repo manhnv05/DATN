@@ -3,6 +3,7 @@ package com.example.datn.Controller;
 import com.example.datn.Config.ResponseHelper;
 import com.example.datn.DTO.ApiResponse;
 import com.example.datn.DTO.ChiTietThanhToanDTO;
+import com.example.datn.DTO.LichSuThanhToanDTO;
 import com.example.datn.Service.ChiTietThanhToanService;
 import com.example.datn.VO.ChiTietThanhToanQueryVO;
 import com.example.datn.VO.ChiTietThanhToanResponseVO;
@@ -57,9 +58,19 @@ public class ChiTietThanhToanController {
 
     @GetMapping("/{idHoaDon}/chi-tiet-thanh-toan")
     public ResponseEntity<?> getChiTietThanhToan(@PathVariable("idHoaDon") Integer idHoaDon) {
-        // Giả sử service sẽ thực hiện query và trả về đúng List<ChiTietThanhToanResponse>
+
         List<ChiTietThanhToanResponseVO> responseList = chiTietThanhToanService.getChiTietThanhToanByHoaDonId(idHoaDon);
         return ResponseEntity.ok(responseList);
+    }
+    @GetMapping("/lich-su-thanh-toan/{idHoaDon}")
+    public ResponseEntity<ApiResponse<List<LichSuThanhToanDTO>>> getLichSuThanhToanByHoaDonId(@PathVariable("idHoaDon") Integer idHoaDon) {
+   List<LichSuThanhToanDTO>  lichSuThanhToanDTO =   chiTietThanhToanService.findChiTietThanhToanByIdHoaDon(idHoaDon);
+   ApiResponse<List<LichSuThanhToanDTO>> response  = ApiResponse.<List<LichSuThanhToanDTO>>builder()
+                .code(1000)
+                .message("Lịch sử thanh toán đã được lấy thành công")
+                .data(lichSuThanhToanDTO)
+                .build();
+   return ResponseEntity.ok(response);
     }
 
 }

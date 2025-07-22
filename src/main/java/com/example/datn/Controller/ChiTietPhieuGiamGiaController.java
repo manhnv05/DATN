@@ -26,6 +26,9 @@ public class ChiTietPhieuGiamGiaController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
+        if (size <= 0) {
+            size = 10;
+        }
         return ResponseHelper.success("", phieuGiamGiaKhachHangService.queryPhieuGiamGiaKhachHang(page, size,request));
     }
 

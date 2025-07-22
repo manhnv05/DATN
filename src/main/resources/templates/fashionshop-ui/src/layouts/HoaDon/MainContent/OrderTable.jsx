@@ -153,7 +153,7 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
     { label: "Mã nhân viên", name: "maNhanVien",align: "center" },
     { label: "Tên khách hàng", name: "tenKhachHang" },
     { label: "SĐT", name: "sdt" },
-    { label: "Tổng tiền", name: "tongTien" },
+    { label: "Tổng tiền", name: "tongHoaDon" },
     
 
     {
@@ -329,7 +329,8 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
       ...order,
       stt: currentPage * pageSize + index + 1,
       tongSP,
-      tongTien: tongTien.toLocaleString("vi-VN") + "đ",
+         tongTien: (order.tongHoaDon || 0).toLocaleString("vi-VN") + "đ",
+
     };
   });
 

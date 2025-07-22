@@ -29,7 +29,7 @@ const formatCurrency = (amount) => {
 };
 
 function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
-  console.log("PaymentModal rendered with hoaDonId:", hoaDonId);
+
   // State cho dữ liệu thanh toán cũ từ API
   const [previousPayments, setPreviousPayments] = useState([]);
   // State cho dữ liệu thanh toán mới được thêm trong UI
@@ -70,7 +70,6 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
     [previousPayments, newPayments]
   );
 
-  // Tính tổng số tiền đã thanh toán
   const totalPaid = useMemo(() => {
     return allPayments.reduce((sum, p) => sum + (p.soTienThanhToan || 0), 0);
   }, [allPayments]);
@@ -98,7 +97,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
     // Tạo object thanh toán mới với key nhất quán với API
     const newPayment = {
       idHinhThucThanhToan: paymentMethod === "cash" ? 1 : 2,
-
+      idHoaDon: hoaDonId,
       maGiaoDich: paymentMethod === "transfer" ? transactionCode : null,
       soTienThanhToan: paymentAmount,
       trangThaiThanhToan: 1,

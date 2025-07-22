@@ -16,7 +16,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import SoftButton from "components/SoftButton";
 
-// === IMPORT CÁC COMPONENT CON ===
+
 import OrderHistory from "../OrderDetail/OrderHistory";
 import OrderInfo from "../OrderDetail/OrderInfo";
 import PaymentHistory from "../OrderDetail/PaymentHistory";
@@ -31,7 +31,7 @@ import { toast } from "react-toastify";
 import InHoaDon from "../InHoaDon/InHoaDon.jsx";
 import PropTypes from "prop-types";
 
-// === Hằng số và hàm Map (đặt bên ngoài component) ===
+
 const statusMap = {
   HOAN_THANH: "Hoàn thành",
   CHO_XAC_NHAN: "Chờ xác nhận",
@@ -367,10 +367,11 @@ const OrderDetailPage = () => {
                 )}
                 {!isCancelButtonDisabled && (
                   <SoftButton
-                    variant="outlined"
-                    color="error"
+                   
                     onClick={handleOpenCancelModal}
                     disabled={isCancelButtonDisabled || actionLoading}
+                     variant="outlined"
+                    color="error"
                     sx={{
                       textTransform: "none",
                       // Giữ lại logic style cho trạng thái disabled
@@ -477,7 +478,7 @@ const OrderDetailPage = () => {
               <SoftTypography variant="h5" fontWeight="medium" mb={3} sx={{ color: "#6ea8fe" }}>
                 Lịch sử thanh toán
               </SoftTypography>
-              <PaymentHistory payments={orderData.payments} />
+              <PaymentHistory orderId={orderData.id} />
             </SoftBox>
           </Card>
         </SoftBox>
@@ -501,7 +502,7 @@ const OrderDetailPage = () => {
               <SoftTypography variant="h5" fontWeight="medium" mb={3}>
                 Tổng tiền
               </SoftTypography>
-              <OrderSummary order={orderData} />
+              <OrderSummary orderId={orderData.id} />
             </SoftBox>
           </Card>
         </SoftBox>
