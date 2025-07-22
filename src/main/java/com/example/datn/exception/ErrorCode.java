@@ -30,7 +30,8 @@ public enum ErrorCode {
     // Voucher/Discount (from sd_17)
     PHIEU_GIAM_GIA_NULL(2001, "Phiếu Giảm Giá Không Tồn tại", HttpStatus.NOT_FOUND),
     PHIEU_GIAM_GIA_KHACH_HANG_NOT_FOUND(2002, "Phiếu giảm giá khách hàng không tồn tại", HttpStatus.BAD_REQUEST),
-    MAIL_ERROR(2003, "ERROR MAIL", HttpStatus.BAD_REQUEST);
+    MAIL_ERROR(2003, "ERROR MAIL", HttpStatus.BAD_REQUEST),
+    PHIEU_GIAM_GIA_KH_NULL(2002, "Không có phiếu gia giá nào", HttpStatus.NOT_FOUND);
 
     private final int errorCode;
     private final String errorMessage;

@@ -133,6 +133,7 @@ export default function AddPhieuGiam() {
             { field: "ngayKetThuc", message: "Ngày kết thúc không để trống" }
         ];
         for (let i = 0; i < cacTruongBatBuoc.length; i++) {
+            
             const truong = cacTruongBatBuoc[i].field;
             if (!duLieuNhapVao[truong] && duLieuNhapVao[truong] !== 0) {
                 toast.error(cacTruongBatBuoc[i].message);

@@ -198,6 +198,13 @@ function AddDiscountEventPage() {
     const [productPage, setProductPage] = useState(0);
     const [productTotalPages, setProductTotalPages] = useState(1);
     const [productPageSize, setProductPageSize] = useState(10);
+    
+    const statusColorMap = {
+        1: "green",       // Đang diễn ra
+        2: "#1d4ed8",     // Chưa diễn ra
+        3: "gray",        // Tạm dừng
+        4: "red",         // Kết thúc
+    };
 
     const [filterModalOpen, setFilterModalOpen] = useState(false);
     const [productFilter, setProductFilter] = useState({ tenSanPham: "", tenDanhMuc: "" });
@@ -408,9 +415,9 @@ function AddDiscountEventPage() {
                         );
                     },
                 },
-                { 
-                    name: "tenSanPham", 
-                    label: "Tên sản phẩm", 
+                {
+                    name: "tenSanPham",
+                    label: "Tên sản phẩm",
                     align: "center",
                     render: function (value) {
                         return (
@@ -420,9 +427,9 @@ function AddDiscountEventPage() {
                         );
                     }
                 },
-                { 
-                    name: "tenDanhMuc", 
-                    label: "Danh mục", 
+                {
+                    name: "tenDanhMuc",
+                    label: "Danh mục",
                     align: "center",
                     render: function (value) {
                         return (
@@ -773,19 +780,36 @@ function AddDiscountEventPage() {
                                 render={function ({ field: { onChange, ...otherFieldProps } }) {
                                     return (
                                         <Select
-                                            onChange={function (event, child) {
+                                            value={otherFieldProps.value}
+                                            onChange={(event, child) => {
                                                 onChange(event, child);
+                                            }}
+                                            renderValue={(selected) => {
+                                                const selectedItem = STATUS_LIST.find(item => item.id === selected);
+                                                const color = statusColorMap[selectedItem?.id] || "black";
+
+                                                return (
+                                                    <span style={{ color, fontWeight: "bold" }}>
+                                                        {selectedItem?.label || "Chọn trạng thái"}
+                                                    </span>
+                                                );
                                             }}
                                             {...otherFieldProps}
                                         >
-                                            {STATUS_LIST.map(function (item) {
-                                                return (
-                                                    <MenuItem key={item.id} value={item.id}>
-                                                        {item.label}
-                                                    </MenuItem>
-                                                );
-                                            })}
+                                            {STATUS_LIST.map((item) => (
+                                                <MenuItem
+                                                    key={item.id}
+                                                    value={item.id}
+                                                    sx={{
+                                                        color: statusColorMap[item.id] || "black",
+                                                        fontWeight: "bold",
+                                                    }}
+                                                >
+                                                    {item.label}
+                                                </MenuItem>
+                                            ))}
                                         </Select>
+
                                     );
                                 }}
                             />

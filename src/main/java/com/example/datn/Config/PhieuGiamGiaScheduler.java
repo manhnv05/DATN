@@ -1,7 +1,9 @@
 package com.example.datn.Config;
 
 
+import com.example.datn.Entity.DotGiamGia;
 import com.example.datn.Entity.PhieuGiamGia;
+import com.example.datn.Repository.DotGiamGiaRepository;
 import com.example.datn.Repository.PhieuGiamGiaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,6 +18,8 @@ import java.util.List;
 public class PhieuGiamGiaScheduler {
     @Autowired
     private PhieuGiamGiaRepository phieuGiamGiaRepository;
+    @Autowired
+    private DotGiamGiaRepository dotGiamGiaRepository;
 
     @Scheduled(cron = "0 * * * * ?")
     public void updateExpiredPromotions() {
@@ -39,5 +43,27 @@ public class PhieuGiamGiaScheduler {
         allToSave.addAll(activePromotions);
         allToSave.addAll(expiredPromotions);
         phieuGiamGiaRepository.saveAll(allToSave);
+    }
+    @Scheduled(cron = "0 * * * * ?")
+    public void updateActivePromotions() {
+        LocalDateTime now = LocalDateTime.now();
+        List<DotGiamGia> expiredPromotions = dotGiamGiaRepository.findByNgayKetThucBeforeAndTrangThaiNot(now, 4);
+        List<Integer> excludedTrangThai = Arrays.asList(2, 1, 4);
+        List<DotGiamGia> expiredPhieuGiamBD = dotGiamGiaRepository.findByNgayBatDauAfterAndTrangThaiNotIn(now, excludedTrangThai);
+        List<DotGiamGia> activePromotions = dotGiamGiaRepository.findDotGiamGiaByNow(now);
+        for (DotGiamGia p : expiredPhieuGiamBD) {
+            p.setTrangThai(2);
+        }
+        for (DotGiamGia phieuGiamGia : expiredPromotions) {
+            phieuGiamGia.setTrangThai(4);
+        }
+        for (DotGiamGia p : activePromotions) {
+            p.setTrangThai(1);
+        }
+        List<DotGiamGia> allToSave = new ArrayList<>();
+        allToSave.addAll(expiredPhieuGiamBD);
+        allToSave.addAll(activePromotions);
+        allToSave.addAll(expiredPromotions);
+        dotGiamGiaRepository.saveAll(allToSave);
     }
 }

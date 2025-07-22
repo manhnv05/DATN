@@ -12,6 +12,12 @@ import React, { memo, useMemo } from "react";
 import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
 import PropTypes from "prop-types";
 import { STATUS_LIST } from "./Filter";
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
+import { useState } from 'react';
 
 const TableList = ({
     data,
@@ -27,47 +33,110 @@ const TableList = ({
     const handlePageChange = (newPage) => {
         setPagination((pre) => ({ ...pre, page: newPage }));
     };
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState(null); // trạng thái được chọn tạm
+    const [pendingRow, setPendingRow] = useState(null);         // row cần cập nhật sau xác nhận
 
+    const handleConfirm = () => {
+        if (pendingRow && selectedStatus !== null) {
+            onStatusChange(pendingRow, selectedStatus); // Gọi callback thực sự
+        }
+        setConfirmOpen(false);
+        setSelectedStatus(null);
+        setPendingRow(null);
+    };
+
+    const handleConfirmClose = () => {
+        setConfirmOpen(false);
+        setSelectedStatus(null);
+        setPendingRow(null);
+    };
+
+    const getStatusText = (id) => {
+        const item = STATUS_LIST.find((status) => status.id === id);
+        return item?.label || "";
+    };
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
-        { name: "maDotGiamGia", label: "Mã", align: "center", width: "100px" },
-        { name: "tenDotGiamGia", label: "Tên", align: "center", width: "180px" },
+        {
+            name: "maDotGiamGia", label: "Mã", align: "center", width: "100px",
+            render: (value, row) => (value)
+        },
+        {
+            name: "tenDotGiamGia", label: "Tên", align: "center", width: "180px",
+            render: (value, row) => (value)
+        },
         { name: "phanTramGiamGia", label: "% giảm", align: "center", width: "80px" },
-        { name: "ngayBatDau", label: "Bắt đầu", align: "center", width: "100px" },
-        { name: "ngayKetThuc", label: "Kết thúc", align: "center", width: "100px" },
+        { 
+            name: "ngayBatDau", label: "Bắt đầu", align: "center", width: "100px",
+            render: (value, row) => (value.replace("T", " "))
+         },
+        {
+            name: "ngayKetThuc", label: "Kết thúc", align: "center", width: "100px",
+            render: (value, row) => (value.replace("T", " "))
+        },
         {
             name: "trangThai",
             label: "Trạng thái",
             align: "center",
             width: "120px",
             render: (value, row) => {
-                const selectedItem = STATUS_LIST.find((item) => item.id === value);
-                const color = value === 1 ? "green" : "red";
-
                 return (
                     <Select
                         value={value}
                         size="small"
-                        onChange={(e) => onStatusChange(row, Number(e.target.value))}
+                        onChange={(e) => {
+                            setSelectedStatus(Number(e.target.value));
+                            setPendingRow(row);
+                            setConfirmOpen(true);
+                        }}
+
+                        displayEmpty
+                        renderValue={(selected) => {
+                            const selectedItem = STATUS_LIST.find(item => item.id === selected);
+
+                            const colorMap = {
+                                1: "green",         // Đang diễn ra
+                                2: "#1d4ed8",       // Chưa diễn ra
+                                3: "gray",          // Tạm dừng
+                                4: "red",           // Kết thúc
+                            };
+
+                            const color = colorMap[selectedItem?.id] || "black";
+
+                            return (
+                                <span style={{ color, fontWeight: 'bold' }}>
+                                    {selectedItem?.label || "Chưa chọn"}
+                                </span>
+                            );
+                        }}
                         sx={{
-                            color: color,
                             fontWeight: "bold",
                         }}
                     >
-                        {STATUS_LIST.map((item) => (
-                            <MenuItem
-                                key={item.id}
-                                value={item.id}
-                                sx={{
-                                    color: item.id === 1 ? "green" : "red", // id=1 là "Đang diễn ra", id=2 là "Chưa diễn ra"
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                {item.label}
-                            </MenuItem>
+                        {STATUS_LIST.map((item) => {
+                            const colorMap = {
+                                1: "green",
+                                2: "#1d4ed8",
+                                3: "gray",
+                                4: "red",
+                            };
 
-                        ))}
+                            return (
+                                <MenuItem
+                                    key={item.id}
+                                    value={item.id}
+                                    sx={{
+                                        color: colorMap[item.id],
+                                        fontWeight: "bold",
+                                    }}
+                                >
+                                    {item.label}
+                                </MenuItem>
+                            );
+                        })}
                     </Select>
+
                 );
             }
 
@@ -177,6 +246,20 @@ const TableList = ({
                     </Button>
                 </SoftBox>
             </Stack>
+            <Dialog open={confirmOpen} onClose={handleConfirmClose}>
+                <DialogTitle>Xác nhận thay đổi trạng thái</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Bạn có chắc chắn muốn chuyển sang trạng thái <strong>{getStatusText(selectedStatus)}</strong> không?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleConfirmClose}>Hủy</Button>
+                    <Button onClick={handleConfirm} variant="contained" color="primary">
+                        Xác nhận
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Card>
     );
 };

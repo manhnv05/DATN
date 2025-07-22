@@ -150,6 +150,9 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
         List<PhieuGiamGiaDTO> dtoList = oldList.stream()
                 .map(PhieuGiamGiaMapper.INSTANCE::toResponse)
                 .collect(Collectors.toList());
+        if (dtoList.isEmpty()) {
+            throw new AppException(ErrorCode.PHIEU_GIAM_GIA_KH_NULL);
+        }
         return new PageImpl<>(dtoList, PageRequest.of(1, dtoList.size()), dtoList.size());
     }
     @Override
