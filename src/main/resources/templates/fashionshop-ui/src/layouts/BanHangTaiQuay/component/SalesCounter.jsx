@@ -61,7 +61,21 @@ const CustomTab = styled(Tab)(({ theme }) => ({
 
 const MAX_ORDERS = 5;
 
-function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange }) {
+function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,completedOrderId }) {
+  useEffect(() => {
+    // Nếu có tín hiệu (completedOrderId có giá trị và khác null)
+    if (completedOrderId) {
+      // Tìm order trong state `orders` tương ứng với ID hóa đơn đã hoàn thành
+      const orderToClose = orders.find(o => o.idHoaDonBackend === completedOrderId);
+
+      if (orderToClose) {
+        // Gọi hàm đóng tab đã có sẵn
+        handleCloseOrderTab(orderToClose.id);
+      }
+    }
+    // useEffect này sẽ chạy mỗi khi `completedOrderId` thay đổi
+  }, [completedOrderId]); 
+  
   const [orders, setOrders] = useState(() => {
     try {
       const savedOrders = sessionStorage.getItem("salesOrders");
@@ -166,13 +180,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange }) {
     }
   };
 
-  const handleCloseOrderTab = (idToClose) => {
-    const newOrders = orders.filter((order) => order.id !== idToClose);
-    setOrders(newOrders);
-    if (selectedTab === idToClose) {
-      setSelectedTab(newOrders.length > 0 ? newOrders[0].id : null);
-    }
-  };
+  
 
   useEffect(() => {
     try {
@@ -285,6 +293,28 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange }) {
   const isSomeSelected = currentOrder
     ? currentOrder.products.some((p) => p.isSelected) && !isAllSelected
     : false;
+
+ const handleCloseOrderTab = (idToClose) => {
+    const orderToCloseIndex = orders.findIndex((order) => order.id === idToClose);
+    if (orderToCloseIndex === -1) return;
+
+    // Lọc bỏ tab cần đóng
+    const newOrders = orders.filter((order) => order.id !== idToClose);
+    setOrders(newOrders);
+
+    // Xử lý việc chuyển tab sau khi đóng
+    if (selectedTab === idToClose) {
+      if (newOrders.length === 0) {
+        // Nếu không còn tab nào, không chọn tab nào cả
+        setSelectedTab(null);
+        // Có thể gọi handleCreateOrder() ở đây nếu bạn muốn luôn có ít nhất 1 tab
+        handleCreateOrder(); 
+      } else {
+        // Chọn tab đầu tiên làm tab mặc định sau khi đóng
+        setSelectedTab(newOrders[0].id);
+      }
+    }
+  };
 
   return (
     <>
@@ -621,6 +651,7 @@ SalesCounter.propTypes = {
   onTotalChange: PropTypes.func,
    onInvoiceIdChange: PropTypes.func.isRequired, 
      onProductsChange: PropTypes.func.isRequired,
+     completedOrderId: PropTypes.number,
 };
 
 export default SalesCounter;

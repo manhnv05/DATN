@@ -9,10 +9,11 @@ import SoftBox from "components/SoftBox";
 import Grid from "@mui/material/Grid";
 import Pay from "../component/Pay"; // Giả sử bạn đã tạo component Pay
 import axios from "axios";
-
+import { toast } from "react-toastify";
 import SalesCounter from "../component/SalesCounter";
 
 function SalesDashboardPage() {
+  const [completedOrderId, setCompletedOrderId] = useState(null);
   const [currentProducts, setCurrentProducts] = useState([]);
   const [paymentData, setPaymentData] = useState(null);
   const [cartTotal, setCartTotal] = useState(0);
@@ -94,10 +95,11 @@ function SalesDashboardPage() {
 
         await axios.put("http://localhost:8080/api/hoa-don/update_hoadon", finalPayload);
 
-        alert("Lưu và cập nhật hóa đơn thành công!");
+        toast.success("Xác nhận thành công");
+         setCompletedOrderId(selectedInvoiceId);
       } catch (error) {
         console.error("Đã có lỗi xảy ra:", error);
-        alert(`Lỗi: ${error.response?.data?.message || "Lỗi không xác định."}`);
+      toast.error("Xác nhận thất bại");
       }
     },
     [selectedInvoiceId, currentProducts]
@@ -112,6 +114,7 @@ function SalesDashboardPage() {
               onProductsChange={handleProductsChange}
               onInvoiceIdChange={handleInvoiceIdChange}
               onTotalChange={handleTotalChange}
+               completedOrderId={completedOrderId} 
             />
           </Grid>
 

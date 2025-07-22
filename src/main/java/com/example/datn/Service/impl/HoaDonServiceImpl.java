@@ -327,13 +327,25 @@ public class HoaDonServiceImpl implements HoaDonService {
     public TongTienHoaDonDto getThongTinGiamGiaByHoaDonId(Integer idHoaDon) {
         HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
         PhieuGiamGia phieuGiamGia = hoaDon.getPhieuGiamGia();
         TongTienHoaDonDto tongTienHoaDonDto = new TongTienHoaDonDto();
-        tongTienHoaDonDto.setPhieuGiamGia(phieuGiamGia.getMaPhieuGiamGia());
+
+
+        if (phieuGiamGia != null) {
+
+            tongTienHoaDonDto.setPhieuGiamGia(phieuGiamGia.getMaPhieuGiamGia());
+            tongTienHoaDonDto.setGiamGia(hoaDon.getTongTienBanDau() - hoaDon.getTongTien());
+        } else {
+
+            tongTienHoaDonDto.setPhieuGiamGia(null);
+            tongTienHoaDonDto.setGiamGia(0);
+        }
+
         tongTienHoaDonDto.setTongTien(hoaDon.getTongTien());
-        tongTienHoaDonDto.setGiamGia(hoaDon.getTongTienBanDau()-hoaDon.getTongTien());
         tongTienHoaDonDto.setPhiVanChuyen(hoaDon.getPhiVanChuyen());
         tongTienHoaDonDto.setTongTienHang(hoaDon.getTongTienBanDau());
+
         return tongTienHoaDonDto;
     }
 

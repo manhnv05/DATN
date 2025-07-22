@@ -23,6 +23,7 @@ const OrderSummary = ({ orderId }) => {
                 const response = await fetch(`http://localhost:8080/api/hoa-don/get-thong-tin-hoa-don/${orderId}`);
                 if (!response.ok) {
                     throw new Error("Lỗi khi tải dữ liệu hóa đơn.");
+                    console.log("Lỗi khi tải dữ liệu hóa đơn:", response.statusText);
                 }
                 const responseData = await response.json();
                 
