@@ -44,4 +44,6 @@ public interface HoaDonService {
 
     HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
    void capNhatSoLuongSanPhamTrongKho(HoaDon hoaDon, boolean isDeducting);
+   TongTienHoaDonDto getThongTinGiamGiaByHoaDonId(Integer idHoaDon);
+
 }

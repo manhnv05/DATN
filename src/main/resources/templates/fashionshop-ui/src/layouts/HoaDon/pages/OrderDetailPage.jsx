@@ -478,7 +478,7 @@ const OrderDetailPage = () => {
               <SoftTypography variant="h5" fontWeight="medium" mb={3} sx={{ color: "#6ea8fe" }}>
                 Lịch sử thanh toán
               </SoftTypography>
-              <PaymentHistory payments={orderData.payments} />
+              <PaymentHistory orderId={orderData.id} />
             </SoftBox>
           </Card>
         </SoftBox>
@@ -502,7 +502,7 @@ const OrderDetailPage = () => {
               <SoftTypography variant="h5" fontWeight="medium" mb={3}>
                 Tổng tiền
               </SoftTypography>
-              <OrderSummary order={orderData} />
+              <OrderSummary orderId={orderData.id} />
             </SoftBox>
           </Card>
         </SoftBox>

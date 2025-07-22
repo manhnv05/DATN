@@ -27,6 +27,8 @@ public enum ErrorCode {
     NOT_YET_PAID(1012, "Chưa thanh toán", HttpStatus.BAD_REQUEST),
     PAYMENT_METHOD_NOT_FOUND(1013, "Khong nó hình thưc thanh toán này", HttpStatus.BAD_REQUEST),
 
+    NO_PAYMENT_HISTORY (1014, "Chưa có lịch sử thanh toán", HttpStatus.BAD_REQUEST),
+
     // Voucher/Discount (from sd_17)
     PHIEU_GIAM_GIA_NULL(2001, "Phiếu Giảm Giá Không Tồn tại", HttpStatus.NOT_FOUND),
     PHIEU_GIAM_GIA_KHACH_HANG_NOT_FOUND(2002, "Phiếu giảm giá khách hàng không tồn tại", HttpStatus.BAD_REQUEST),

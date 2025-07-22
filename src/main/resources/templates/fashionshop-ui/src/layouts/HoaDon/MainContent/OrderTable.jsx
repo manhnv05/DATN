@@ -153,7 +153,7 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
     { label: "Mã nhân viên", name: "maNhanVien",align: "center" },
     { label: "Tên khách hàng", name: "tenKhachHang" },
     { label: "SĐT", name: "sdt" },
-    { label: "Tổng tiền", name: "tongTien" },
+    { label: "Tổng tiền", name: "tongHoaDon" },
     
 
     {

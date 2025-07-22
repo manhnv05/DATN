@@ -2,10 +2,8 @@ package com.example.datn.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
-import java.io.Serializable;
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -40,7 +38,7 @@ public class ChiTietThanhToan{
     private Integer soTienThanhToan;
 
     @Column(name = "ngay_thanh_toan")
-    private Date ngayThanhToan;
+    private LocalDateTime ngayThanhToan;
 
     @Column(name = "trang_thai_thanh_toan")
     private Integer trangThaiThanhToan;

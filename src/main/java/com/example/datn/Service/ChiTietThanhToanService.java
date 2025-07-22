@@ -1,6 +1,8 @@
 package com.example.datn.Service;
 
 import com.example.datn.DTO.ChiTietThanhToanDTO;
+import com.example.datn.DTO.LichSuThanhToanDTO;
+import com.example.datn.DTO.LichSuThanhToanProjection;
 import com.example.datn.Entity.ChiTietThanhToan;
 import com.example.datn.Entity.HinhThucThanhToan;
 import com.example.datn.Entity.HoaDon;
@@ -11,6 +13,8 @@ import com.example.datn.VO.ChiTietThanhToanQueryVO;
 import com.example.datn.VO.ChiTietThanhToanResponseVO;
 import com.example.datn.VO.ChiTietThanhToanUpdateVO;
 import com.example.datn.VO.ChiTietThanhToanVO;
+import com.example.datn.exception.AppException;
+import com.example.datn.exception.ErrorCode;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -55,7 +60,7 @@ public class ChiTietThanhToanService {
         }
 
         // 4. Set ngày thanh toán là ngày hiện tại
-        entity.setNgayThanhToan(new Date(System.currentTimeMillis()));
+        entity.setNgayThanhToan(LocalDateTime.now());
 
         // 5. Dùng saveAndFlush để ghi ngay lập tức xuống DB
         ChiTietThanhToan savedEntity = chiTietThanhToanRepository.saveAndFlush(entity);
@@ -100,4 +105,23 @@ public class ChiTietThanhToanService {
         return chiTietThanhToanRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Resource not found: " + id));
     }
-}
+    public List<LichSuThanhToanDTO> findChiTietThanhToanByIdHoaDon(Integer idHoaDon) {
+        List<LichSuThanhToanProjection> lichSuThanhToanList = chiTietThanhToanRepository.findLichSuThanhToanByIdHoaDon(idHoaDon);
+        if (lichSuThanhToanList.isEmpty()) {
+            throw new AppException(ErrorCode.NO_PAYMENT_HISTORY);
+        }
+        // 2. Chuyển đổi từ Projection sang DTO (nếu cần)
+        List<LichSuThanhToanDTO> dtoList = lichSuThanhToanList.stream()
+                .map(p -> new LichSuThanhToanDTO(
+                        p.getSoTienThanhToan(),
+                        p.getMaGiaoDich(),
+                        p.getThoiGianThanhToan(),
+                        p.getGhiChu(),
+                        p.getNhanVienXacNhan(),
+                        p.getTenHinhThucThanhToan()
+                ))
+                .toList();
+        return dtoList;
+    }
+    }
+
