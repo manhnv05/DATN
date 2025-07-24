@@ -308,7 +308,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
         // Nếu không còn tab nào, không chọn tab nào cả
         setSelectedTab(null);
         // Có thể gọi handleCreateOrder() ở đây nếu bạn muốn luôn có ít nhất 1 tab
-        handleCreateOrder(); 
+      //  handleCreateOrder(); 
       } else {
         // Chọn tab đầu tiên làm tab mặc định sau khi đóng
         setSelectedTab(newOrders[0].id);
@@ -361,7 +361,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
                   label={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <Typography variant="body2">{order.name}</Typography>
-                      {orders.length > 1 && (
+                       
                         <IconButton
                           size="small"
                           onClick={(e) => {
@@ -371,7 +371,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
                         >
                           <CloseIcon fontSize="small" />
                         </IconButton>
-                      )}
+                      
                     </Box>
                   }
                 />
@@ -521,11 +521,15 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
                                   {formatCurrency(product.giaGoc)}
                                 </Typography>
                               )}
-                              <Typography variant="body1" color="error.main" fontWeight="bold">
-                                {formatCurrency(product.gia)}
+                            
+                                <Typography variant="body2" color="text.secondary">
+                                Màu: {product.mauSac}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 size: {product.kichThuoc}
+                              </Typography>
+                                <Typography variant="body1" color="error.main" fontWeight="bold">
+                                {formatCurrency(product.gia)}
                               </Typography>
                             </Box>
                           </Box>

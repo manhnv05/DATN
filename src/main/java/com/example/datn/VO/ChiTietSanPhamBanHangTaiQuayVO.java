@@ -15,6 +15,7 @@ public class ChiTietSanPhamBanHangTaiQuayVO {
     private String tenSanPham;
     private String maSanPham;
     private String thuongHieu;
+    private Integer soLuongTonKho;
     private String danhMuc;
     private String chatLieu;
     private String mauSac;

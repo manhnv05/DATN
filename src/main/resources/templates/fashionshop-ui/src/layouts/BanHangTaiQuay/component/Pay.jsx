@@ -85,6 +85,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
         customer,
         shippingFormData,
         shippingAddress,
+        paymentDetails,
       };
     }
   }, [
@@ -98,21 +99,18 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
     customer,
     shippingFormData,
     shippingAddress,
+    paymentDetails,
   ]);
 
   useEffect(() => {
-    
     if (completedOrderId) {
-     
       const orderToClose = orders.find((o) => o.idHoaDonBackend === completedOrderId);
 
       if (orderToClose) {
-     
         handleCloseOrderTab(orderToClose.id);
       }
     }
   }, [completedOrderId]);
-
 
   const restoreData = useCallback(() => {
     if (hoaDonId && hoaDonDataRef.current[hoaDonId]) {
@@ -126,6 +124,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
       setCustomer(savedData.customer);
       setShippingFormData(savedData.shippingFormData);
       setShippingAddress(savedData.shippingAddress);
+      setPaymentDetails(savedData.paymentDetails || []);
     } else {
       // Reset về giá trị mặc định nếu chưa có dữ liệu được lưu
       resetToDefault();
@@ -141,7 +140,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
     setIsDelivery(false);
     setShippingFee(0);
     setDiscountValue(0);
-    setPaymentDetails([]);
+    setPaymentDetails([]); // <-- DÒNG QUAN TRỌNG ĐỂ SỬA LỖI
     setVoucherCode("");
     setAppliedVoucher(null);
     setSuggestedVoucher(null);
@@ -292,7 +291,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
         setInvoiceToPrintId(hoaDonId); // Lưu lại ID hóa đơn vừa thanh toán
         setIsInvoiceModalOpen(true); // Mở modal in
       }
-      // --- KẾT THÚC LOGIC MỚI ---
+      resetForm();
     } catch (error) {
       console.error("Lỗi khi lưu và in hóa đơn:", error);
       // Bạn có thể thêm toast thông báo lỗi ở đây nếu cần
@@ -410,12 +409,14 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
     if (!voucherCode.trim()) {
       setAppliedVoucher(suggestedVoucher);
       setVoucherCode(suggestedVoucher ? suggestedVoucher.phieuGiamGia.maPhieuGiamGia : "");
-     toast.info(suggestedVoucher ? "Đã quay về mã giảm giá tốt nhất!" : "Đã bỏ áp dụng mã giảm giá.");
+      toast.info(
+        suggestedVoucher ? "Đã quay về mã giảm giá tốt nhất!" : "Đã bỏ áp dụng mã giảm giá."
+      );
       return;
     }
 
     if (!customer || !customer.id) {
-     toast.warn("Vui lòng chọn khách hàng trước khi áp dụng mã!");
+      toast.warn("Vui lòng chọn khách hàng trước khi áp dụng mã!");
       return;
     }
 
@@ -434,7 +435,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
         return;
       }
       setAppliedVoucher(foundVoucher);
-       toast.success(`Đã áp dụng thành công mã: ${foundVoucher.phieuGiamGia.ma}`);
+      toast.success(`Đã áp dụng thành công mã: ${foundVoucher.phieuGiamGia.ma}`);
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Mã giảm giá không hợp lệ.";
       toast.error(errorMessage);
