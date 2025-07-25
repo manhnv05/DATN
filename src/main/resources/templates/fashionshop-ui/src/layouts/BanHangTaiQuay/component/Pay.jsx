@@ -65,12 +65,161 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [addressList, setAddressList] = useState([]);
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false);
-
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   // Tính toán tiền dựa trên `paymentDetails`
   const totalPaid = paymentDetails.reduce((sum, p) => sum + p.soTienThanhToan, 0);
   const changeToCustomer = totalPaid - finalTotal;
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [invoiceToPrintId, setInvoiceToPrintId] = useState(null);
+  const GHN_API_BASE_URL = "https://online-gateway.ghn.vn/shiip/public-api";
+  const GHN_TOKEN = "03b71be1-6891-11f0-9e03-7626358ab3e0";
+  const ghnApi = axios.create({
+  baseURL: GHN_API_BASE_URL,
+  headers: {
+    token: GHN_TOKEN,
+    "Content-Type": "application/json",
+  },
+});
+const getShippingFeeFromGHN = async (shippingInfo) => {
+  const shop_id = 5908591;
+  const { districtId: to_district_id, wardCode: to_ward_code } = shippingInfo;
+
+  if (!to_district_id || !to_ward_code) {
+    return 0;
+  }
+
+  // 🔥 GIẢI PHÁP: Thử nhiều district khác nhau trong Hà Nội
+  const alternativeDistricts = [
+    // Thử district gốc trước
+    { district_id: 1450, ward_code: "217010", name: "Cầu Giấy (Gốc)" },
+    // Backup districts
+    { district_id: 1442, ward_code: "21211", name: "Ba Đình" },
+    { district_id: 1443, ward_code: "21311", name: "Hoàn Kiếm" },
+    { district_id: 1447, ward_code: "21711", name: "Đống Đa" },
+    { district_id: 1448, ward_code: "21811", name: "Hai Bà Trưng" },
+    { district_id: 1451, ward_code: "22111", name: "Thanh Xuân" },
+  ];
+
+  // Thử từng district cho đến khi thành công
+  for (const altDistrict of alternativeDistricts) {
+    const from_district_id = altDistrict.district_id;
+    const from_ward_code = altDistrict.ward_code;
+
+    console.log(`🔄 Đang thử: ${altDistrict.name} (${from_district_id})`);
+
+    try {
+      // Bước 1: Kiểm tra dịch vụ khả dụng
+      const serviceResponse = await axios.get(
+        `${GHN_API_BASE_URL}/v2/shipping-order/available-services`,
+        {
+          params: {
+            shop_id: shop_id,
+            from_district: from_district_id,
+            to_district: to_district_id,
+          },
+          headers: {
+            'token': GHN_TOKEN,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!serviceResponse.data?.data || serviceResponse.data.data.length === 0) {
+        console.log(`❌ Không có dịch vụ cho ${altDistrict.name}`);
+        continue;
+      }
+
+      // Bước 2: Tính phí vận chuyển
+      const selectedService = serviceResponse.data.data[0];
+      const service_id = selectedService.service_id;
+      const service_type_id = selectedService.service_type_id;
+
+      const feePayload = {
+        service_id: service_id,
+        service_type_id: service_type_id,
+        from_district_id: from_district_id,
+        from_ward_code: from_ward_code,
+        to_district_id: to_district_id,
+        to_ward_code: to_ward_code,
+        height: 20,
+        length: 30,
+        weight: 500,
+        width: 15,
+        insurance_value: 0,
+        coupon: null,
+        cod_failed_amount: 0,
+      };
+
+      const feeResponse = await axios.post(
+        `${GHN_API_BASE_URL}/v2/shipping-order/fee`,
+        feePayload,
+        {
+          headers: {
+            'token': GHN_TOKEN,
+            'ShopId': shop_id,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (feeResponse.data?.code === 200) {
+        console.log(`✅ Thành công với ${altDistrict.name}!`);
+        console.log(`💰 Phí vận chuyển: ${feeResponse.data.data.total} VND`);
+        
+        // Thông báo cho user biết đang dùng địa chỉ backup (nếu không phải district gốc)
+        if (from_district_id !== 1450) {
+          toast.info(`Đang sử dụng điểm gửi tại ${altDistrict.name} để tính phí vận chuyển.`);
+        }
+        
+        return feeResponse.data.data.total;
+      }
+
+    } catch (error) {
+      const errorCode = error.response?.data?.code_message;
+      console.log(`❌ Lỗi với ${altDistrict.name}: ${errorCode}`);
+      
+      // Nếu không phải lỗi district invalid thì dừng (có thể lỗi khác)
+      if (errorCode !== 'SEND_DISTRICT_IS_INVALID') {
+        console.error("Lỗi không phải district invalid:", error.response?.data);
+        break;
+      }
+      continue;
+    }
+  }
+
+  // 🎯 FALLBACK: Nếu tất cả districts đều fail, dùng phí ước tính
+  console.log("🔄 Tất cả districts đều fail, sử dụng phí ước tính");
+  
+  const estimatedFee = getEstimatedShippingFee(to_district_id);
+  toast.warning(`Không thể tính phí chính xác. Sử dụng phí ước tính: ${formatCurrency(estimatedFee)}`);
+  
+  return estimatedFee;
+};
+
+// Hàm tính phí ước tính dựa trên district đích
+const getEstimatedShippingFee = (to_district_id) => {
+  // Phí ước tính dựa trên khoảng cách (có thể customize)
+  const feeRanges = {
+    // Nội thành Hà Nội (1442-1465)
+    hanoi_inner: 25000,
+    // Ngoại thành Hà Nội (1466-1490) 
+    hanoi_outer: 35000,
+    // TP.HCM và các thành phố lớn
+    major_cities: 45000,
+    // Các tỉnh khác
+    other_provinces: 55000,
+  };
+
+  if (to_district_id >= 1442 && to_district_id <= 1465) {
+    return feeRanges.hanoi_inner;
+  } else if (to_district_id >= 1466 && to_district_id <= 1490) {
+    return feeRanges.hanoi_outer;
+  } else if (to_district_id >= 1460 && to_district_id <= 1520) {
+    return feeRanges.major_cities;
+  } else {
+    return feeRanges.other_provinces;
+  }
+};
   // Hàm lưu dữ liệu hiện tại vào ref
   const saveCurrentData = useCallback(() => {
     if (hoaDonId) {
@@ -178,7 +327,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
   const handleDeliveryToggle = (event) => {
     const isChecked = event.target.checked;
     setIsDelivery(isChecked);
-    setShippingFee(isChecked ? 30000 : 0);
+
     if (!isChecked) {
       setShippingFormData(null);
       setShippingAddress(null);
@@ -188,6 +337,19 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
   const handleFormChange = useCallback((formData) => {
     setShippingFormData(formData);
   }, []);
+
+useEffect(() => {
+    // Chỉ tính phí khi bật chế độ giao hàng và có đủ thông tin
+    if (isDelivery && shippingFormData && shippingFormData.wardCode) {
+      const handleFeeCalculation = async () => {
+        setIsCalculatingFee(true);
+        const fee = await getShippingFeeFromGHN(shippingFormData);
+        setShippingFee(fee);
+        setIsCalculatingFee(false);
+      };
+      handleFeeCalculation();
+    }
+  }, [shippingFormData, isDelivery]);
 
   useEffect(() => {
     if (onDataChange) {
@@ -534,10 +696,11 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
                     {formatCurrency(totalAmount)}
                   </Typography>
                 </Box>
-                <Box display="flex" justifyContent="space-between">
+               <Box display="flex" justifyContent="space-between">
+                  {/* --- MODIFIED: Hiển thị phí ship động --- */}
                   <Typography variant="body1">Phí vận chuyển</Typography>
                   <Typography variant="body1" fontWeight="bold">
-                    {formatCurrency(isDelivery ? shippingFee : 0)}
+                    {isCalculatingFee ? "Đang tính..." : formatCurrency(isDelivery ? shippingFee : 0)}
                   </Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between">

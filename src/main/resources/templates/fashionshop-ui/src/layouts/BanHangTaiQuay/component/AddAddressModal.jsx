@@ -15,61 +15,117 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import SoftTypography from "components/SoftTypography";
 import PropTypes from 'prop-types';
-const VIETNAM_PROVINCE_API = "https://vietnamlabs.com/api/vietnamprovince";
+
+// === THAY ĐỔI: API ENDPOINTS CỦA GIAO HÀNG NHANH ===
+const GHN_API_BASE_URL = "https://online-gateway.ghn.vn/shiip/public-api/master-data";
+const GHN_API_TOKEN = "03b71be1-6891-11f0-9e03-7626358ab3e0"; // <<< !!! THAY THẾ BẰNG TOKEN CỦA BẠN !!!
+
+const GHN_API_CONFIG = {
+  headers: {
+    token: GHN_API_TOKEN,
+  },
+};
 
 function AddAddressModal({ open, onClose, customerId, onAddressAdded }) {
+  // === THÊM STATE CHO QUẬN/HUYỆN ===
   const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]); // State cho Quận/Huyện
   const [wards, setWards] = useState([]);
   
   const [selectedProvince, setSelectedProvince] = useState(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(null); // State cho lựa chọn Quận/Huyện
   const [selectedWard, setSelectedWard] = useState(null);
   const [detailedAddress, setDetailedAddress] = useState("");
 
   const [loading, setLoading] = useState(false);
-  
-  // <<< THÊM 1: State để lưu các lỗi validation
   const [errors, setErrors] = useState({});
 
   // Reset form và lỗi khi modal được mở
   useEffect(() => {
     if (open) {
       setSelectedProvince(null);
+      setSelectedDistrict(null); // Reset Quận/Huyện
       setSelectedWard(null);
       setDetailedAddress("");
+      setDistricts([]); // Reset danh sách Quận/Huyện
       setWards([]);
-      setErrors({}); // Reset lỗi
+      setErrors({});
     }
   }, [open]);
 
-  // Các useEffect để lấy dữ liệu địa chỉ không đổi
+  // === CẬP NHẬT LOGIC LẤY ĐỊA CHỈ TỪ GHN ===
+
+  // 1. Lấy danh sách Tỉnh/Thành phố khi modal mở
   useEffect(() => {
-    const fetchProvinces = async () => {
-      try {
-        const response = await axios.get(VIETNAM_PROVINCE_API);
-        if (Array.isArray(response.data.data)) {
+    if (open) {
+      const fetchProvinces = async () => {
+        try {
+          const response = await axios.get(`${GHN_API_BASE_URL}/province`, GHN_API_CONFIG);
+          if (Array.isArray(response.data.data)) {
             setProvinces(response.data.data);
+          }
+        } catch (error) {
+          console.error("Lỗi API Tỉnh/Thành phố (GHN):", error);
         }
-      } catch (error) {
-        console.error("Lỗi API Tỉnh/Thành phố:", error);
-      }
-    };
-    fetchProvinces();
-  }, []);
-  
-  useEffect(() => {
-    if (selectedProvince && Array.isArray(selectedProvince.wards)) {
-      setWards(selectedProvince.wards);
-    } else {
-      setWards([]);
+      };
+      fetchProvinces();
     }
+  }, [open]);
+  
+  // 2. Lấy danh sách Quận/Huyện khi Tỉnh/Thành phố thay đổi
+  useEffect(() => {
+    if (selectedProvince) {
+      const fetchDistricts = async () => {
+        try {
+          const response = await axios.get(
+            `${GHN_API_BASE_URL}/district?province_id=${selectedProvince.ProvinceID}`,
+            GHN_API_CONFIG
+          );
+          if (Array.isArray(response.data.data)) {
+            setDistricts(response.data.data);
+          }
+        } catch (error) {
+          console.error("Lỗi API Quận/Huyện (GHN):", error);
+        }
+      };
+      fetchDistricts();
+    }
+    setDistricts([]);
+    setWards([]);
+    setSelectedDistrict(null);
     setSelectedWard(null);
   }, [selectedProvince]);
 
-  // <<< THÊM 2: Hàm để kiểm tra validation
+  // 3. Lấy danh sách Xã/Phường khi Quận/Huyện thay đổi
+  useEffect(() => {
+    if (selectedDistrict) {
+      const fetchWards = async () => {
+        try {
+          const response = await axios.get(
+            `${GHN_API_BASE_URL}/ward?district_id=${selectedDistrict.DistrictID}`,
+            GHN_API_CONFIG
+          );
+          if (Array.isArray(response.data.data)) {
+            setWards(response.data.data);
+          }
+        } catch (error) {
+          console.error("Lỗi API Xã/Phường (GHN):", error);
+        }
+      };
+      fetchWards();
+    }
+    setWards([]);
+    setSelectedWard(null);
+  }, [selectedDistrict]);
+
+  // Hàm validate, thêm kiểm tra cho Quận/Huyện
   const validateForm = () => {
     const newErrors = {};
     if (!selectedProvince) {
       newErrors.tinhThanhPho = "Vui lòng chọn Tỉnh/Thành phố.";
+    }
+    if (!selectedDistrict) { // Thêm validation cho Quận/Huyện
+      newErrors.quanHuyen = "Vui lòng chọn Quận/Huyện.";
     }
     if (!selectedWard) {
       newErrors.xaPhuong = "Vui lòng chọn Xã/Phường.";
@@ -77,36 +133,40 @@ function AddAddressModal({ open, onClose, customerId, onAddressAdded }) {
     if (!detailedAddress.trim()) {
       newErrors.diaChiChiTiet = "Vui lòng nhập địa chỉ chi tiết.";
     }
+    setErrors(newErrors);
     return newErrors;
   };
 
   const handleSave = async () => {
-    // <<< THÊM 3: Gọi validation trước khi thực hiện
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
-      return; // Dừng lại nếu có lỗi
+      return;
     }
     
     setLoading(true);
+    // Cập nhật payload với Quận/Huyện
     const payload = {
       idKhachHang: customerId,
-      tinhThanhPho: selectedProvince.province,
-      quanHuyen: null,
-      xaPhuong: selectedWard.name,
+      tinhThanhPho: selectedProvince.ProvinceName,
+      quanHuyen: selectedDistrict.DistrictName, // Thêm Quận/Huyện
+      xaPhuong: selectedWard.WardName,
       diaChiChiTiet: detailedAddress,
       trangThai: 1,
     };
 
     try {
       await axios.post("http://localhost:8080/diaChi", payload);
-    
       onAddressAdded(); 
     } catch (error) {
       console.error("Lỗi khi thêm địa chỉ:", error);
-     
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearError = (fieldName) => {
+    if (errors[fieldName]) {
+      setErrors(prev => ({ ...prev, [fieldName]: undefined }));
     }
   };
 
@@ -121,15 +181,13 @@ function AddAddressModal({ open, onClose, customerId, onAddressAdded }) {
         </Box>
       </DialogTitle>
       <DialogContent dividers>
-        {/* <<< THÊM 4: Kết nối lỗi với giao diện Autocomplete và TextField */}
         <Autocomplete
           options={provinces}
-          getOptionLabel={(option) => option.province || ""}
+          getOptionLabel={(option) => option.ProvinceName || ""}
           value={selectedProvince}
           onChange={(e, value) => {
             setSelectedProvince(value);
-            // Xóa lỗi khi người dùng tương tác
-            if (errors.tinhThanhPho) setErrors(prev => ({...prev, tinhThanhPho: undefined}));
+            clearError('tinhThanhPho');
           }}
           renderInput={(params) => (
             <TextField 
@@ -142,14 +200,35 @@ function AddAddressModal({ open, onClose, customerId, onAddressAdded }) {
           )}
         />
         
+        {/* <<< THÊM: AUTOCOMPLETE CHO QUẬN/HUYỆN >>> */}
         <Autocomplete
-          options={wards}
-          getOptionLabel={(option) => option.name || ""}
-          value={selectedWard}
+          options={districts}
+          getOptionLabel={(option) => option.DistrictName || ""}
+          value={selectedDistrict}
           disabled={!selectedProvince}
           onChange={(e, value) => {
+            setSelectedDistrict(value);
+            clearError('quanHuyen');
+          }}
+          renderInput={(params) => (
+            <TextField 
+              {...params} 
+              label="Quận/Huyện" 
+              margin="normal" 
+              error={!!errors.quanHuyen}
+              helperText={errors.quanHuyen || ""}
+            />
+          )}
+        />
+
+        <Autocomplete
+          options={wards}
+          getOptionLabel={(option) => option.WardName || ""}
+          value={selectedWard}
+          disabled={!selectedDistrict} // Disable dựa trên Quận/Huyện
+          onChange={(e, value) => {
             setSelectedWard(value);
-            if (errors.xaPhuong) setErrors(prev => ({...prev, xaPhuong: undefined}));
+            clearError('xaPhuong');
           }}
           renderInput={(params) => (
             <TextField 
@@ -169,7 +248,7 @@ function AddAddressModal({ open, onClose, customerId, onAddressAdded }) {
           value={detailedAddress}
           onChange={(e) => {
             setDetailedAddress(e.target.value);
-            if (errors.diaChiChiTiet) setErrors(prev => ({...prev, diaChiChiTiet: undefined}));
+            clearError('diaChiChiTiet');
           }}
           error={!!errors.diaChiChiTiet}
           helperText={errors.diaChiChiTiet || ""}
@@ -186,10 +265,12 @@ function AddAddressModal({ open, onClose, customerId, onAddressAdded }) {
     </Dialog>
   );
 }
+
 AddAddressModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   customerId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onAddressAdded: PropTypes.func.isRequired,
 };
+
 export default AddAddressModal;

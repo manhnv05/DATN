@@ -52,7 +52,7 @@ function AddressSelectionModal({ open, onClose, addresses = [], onSelectAddress 
               <TableRow>
                 <TableCell>STT</TableCell>
                 <TableCell>Tỉnh/Thành phố</TableCell>
-         
+           <TableCell>Quận/Huyện</TableCell>
                 <TableCell>Xã/Phường</TableCell>
                 <TableCell align="center">Thao tác</TableCell>
               </TableRow>
@@ -63,7 +63,7 @@ function AddressSelectionModal({ open, onClose, addresses = [], onSelectAddress 
                   <TableRow key={addr.id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{addr.tinhThanhPho}</TableCell>
-                 
+                    <TableCell>{addr.quanHuyen}</TableCell>
                     <TableCell>{addr.xaPhuong}</TableCell>
                     <TableCell align="center">
                       <SoftButton 
