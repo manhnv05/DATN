@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 public class PhieuGiamGiaServiceImpl implements PhieuGiamGiaService {
@@ -45,6 +46,10 @@ public class PhieuGiamGiaServiceImpl implements PhieuGiamGiaService {
 
     @Override
     public PhieuGiamGiaDTO createPhieuGiamGia(PhieuGiamGiaVO phieuGiamGiaRequest) {
+        List<PhieuGiamGia> checkMaPhieuGiamGia = phieuGiamGiaRepository.getPhieuGiamGiaByMaPhieuGiamGia(phieuGiamGiaRequest.getMaPhieuGiamGia());
+        if (!checkMaPhieuGiamGia.isEmpty()) {
+            throw new AppException(ErrorCode.MA_PHIEU_GIAM_GIA_TON_TAI);
+        }
         PhieuGiamGia phieuGiamGia = PhieuGiamGiaMapper.INSTANCE.toPhieuGiamGia(phieuGiamGiaRequest);
         phieuGiamGiaRepository.save(phieuGiamGia);
         return PhieuGiamGiaMapper.INSTANCE.toResponse(phieuGiamGia);

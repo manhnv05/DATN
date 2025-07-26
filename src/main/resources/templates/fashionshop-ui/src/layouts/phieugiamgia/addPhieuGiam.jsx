@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import Card from "@mui/material/Card";
 import FormControl from "@mui/material/FormControl";
+import { FormHelperText } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
@@ -58,6 +59,9 @@ export default function AddPhieuGiam() {
     const [dangTaiDuLieu, setDangTaiDuLieu] = useState(false);
     const [timKiemKhachHang, setTimKiemKhachHang] = useState("");
     const [isReadOnly, setIsReadOnly] = useState(false);
+    const [dieuKienGiamDisplay, setDieuKienGiamDisplay] = useState("");
+    const [giaTriGiamDisplay, setGiaTriGiamDisplay] = useState("");
+    const [giamToiDaDisplay, setGiamToiDaDisplay] = useState("");
 
     const navigate = useNavigate();
 
@@ -65,6 +69,165 @@ export default function AddPhieuGiam() {
         danhSachKhachHang.every(function (khachHang) { return danhSachDaChon.includes(khachHang.id); });
 
     const cacLuaChonXem = [5, 10, 20];
+
+    // Hàm format số thành tiền tệ (cải tiến)
+    function formatCurrency(value) {
+        if (!value || value === "0") return "";
+        // Loại bỏ tất cả ký tự không phải số
+        const numericValue = value.toString().replace(/\D/g, "");
+        if (!numericValue) return "";
+
+        // Format số với dấu phẩy phân cách hàng nghìn
+        const formatted = new Intl.NumberFormat('vi-VN').format(numericValue);
+        return formatted + " VNĐ";
+    }
+
+    // Hàm lấy giá trị số từ chuỗi đã format
+    function getNumericValue(formattedValue) {
+        if (!formattedValue) return "";
+        return formattedValue.replace(/\D/g, "");
+    }
+
+    // Thêm hàm xử lý sự kiện keydown để hỗ trợ xóa tốt hơn
+    function handleKeyDown(event, fieldType, fieldType2) {
+        // Xử lý phím Backspace và Delete
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+            const currentValue = event.target.value;
+
+            // Nếu đang ở cuối chuỗi và nhấn Backspace
+            if (event.key === 'Backspace' && event.target.selectionStart === currentValue.length) {
+                event.preventDefault();
+
+                if (fieldType === 'currency') {
+                    // Xóa từng ký tự số từ cuối
+                    const numericValue = getNumericValue(currentValue);
+                    if (numericValue.length > 1) {
+                        const newNumericValue = numericValue.slice(0, -1);
+                        const newValue = formatCurrency(newNumericValue);
+                        console.log(newValue, fieldType)
+                        // Cập nhật state tương ứng
+                        if (fieldType2 === 'dieuKienGiam') {
+                            setDieuKienGiamDisplay(newValue);
+                            setValue("dieuKienGiam", newNumericValue);
+                        } else if (fieldType2 === 'giamToiDa') {
+                            setGiamToiDaDisplay(newValue);
+                            setValue("giamToiDa", newNumericValue);
+                        } else if (fieldType2 === 'soTienGiam' && statusPhieu === 0) {
+                            setGiaTriGiamDisplay(newValue);
+                            setGiaTriGiam(newNumericValue);
+                            setValue("soTienGiam", newNumericValue);
+                            console.log(newNumericValue)
+                        }
+                    } else {
+                        // Xóa hết - cập nhật cho tất cả các trường currency
+                        if (currentValue.includes("VNĐ")) {
+                            if (currentValue === dieuKienGiamDisplay) {
+                                setDieuKienGiamDisplay("");
+                                setValue("dieuKienGiam", "");
+                            } else if (currentValue === giamToiDaDisplay) {
+                                setGiamToiDaDisplay("");
+                                setValue("giamToiDa", "");
+                            } else if (currentValue === giaTriGiamDisplay && statusPhieu === 0) {
+                                setGiaTriGiamDisplay("");
+                                setGiaTriGiam("");
+                            }
+                        }
+                    }
+                } else if (fieldType === 'percentage') {
+                    // Xử lý cho phần trăm
+                    const numericValue = currentValue.replace(/\D/g, "");
+                    if (numericValue.length > 1) {
+                        const newNumericValue = numericValue.slice(0, -1);
+                        setGiaTriGiamDisplay(newNumericValue + "%");
+                        setGiaTriGiam(newNumericValue);
+                    } else {
+                        setGiaTriGiamDisplay("");
+                        setGiaTriGiam("");
+                    }
+                }
+            }
+        }
+    }
+
+    // Hàm xử lý khi thay đổi giá trị điều kiện giảm (cải tiến)
+    function handleDieuKienGiamChange(event) {
+        const inputValue = event.target.value;
+
+        // Nếu input rỗng, cho phép xóa hoàn toàn
+        if (inputValue === "") {
+            setDieuKienGiamDisplay("");
+            setValue("dieuKienGiam", "");
+            return;
+        }
+
+        const numericValue = getNumericValue(inputValue);
+
+        // Nếu không có số nào, giữ nguyên trạng thái hiện tại
+        if (!numericValue) {
+            return;
+        }
+
+        const formattedValue = formatCurrency(numericValue);
+        setDieuKienGiamDisplay(formattedValue);
+        setValue("dieuKienGiam", numericValue);
+    }
+
+    // Hàm xử lý khi thay đổi giảm tối đa (cải tiến)
+    function handleGiamToiDaChange(event) {
+        const inputValue = event.target.value;
+
+        // Nếu input rỗng, cho phép xóa hoàn toàn
+        if (inputValue === "") {
+            setGiamToiDaDisplay("");
+            setValue("giamToiDa", "");
+            return;
+        }
+
+        const numericValue = getNumericValue(inputValue);
+
+        // Nếu không có số nào, giữ nguyên trạng thái hiện tại
+        if (!numericValue) {
+            return;
+        }
+
+        const formattedValue = formatCurrency(numericValue);
+        setGiamToiDaDisplay(formattedValue);
+        setValue("giamToiDa", numericValue);
+    }
+
+    // Hàm xử lý khi thay đổi giá trị giảm (cải tiến)
+    function handleGiaTriGiamChange(event) {
+        const inputValue = event.target.value;
+
+        // Nếu input rỗng, cho phép xóa hoàn toàn
+        if (inputValue === "") {
+            setGiaTriGiamDisplay("");
+            setGiaTriGiam("");
+            return;
+        }
+
+        if (statusPhieu === 1) {
+            // Nếu là phần trăm, chỉ cho phép số từ 0-50
+            let numericValue = inputValue.replace(/\D/g, "");
+            if (!numericValue) {
+                return;
+            }
+            if (Number(numericValue) > 50) {
+                numericValue = "50";
+            }
+            setGiaTriGiamDisplay(numericValue + "%");
+            setGiaTriGiam(numericValue);
+        } else {
+            // Nếu là tiền, format như tiền tệ
+            const numericValue = getNumericValue(inputValue);
+            if (!numericValue) {
+                return;
+            }
+            const formattedValue = formatCurrency(numericValue);
+            setGiaTriGiamDisplay(formattedValue);
+            setGiaTriGiam(numericValue);
+        }
+    }
 
     function moMenu(event) {
         setAnchorEl(event.currentTarget);
@@ -119,7 +282,10 @@ export default function AddPhieuGiam() {
         handleSubmit,
         control,
         setValue,
-    } = useForm();
+        formState: { errors }
+    } = useForm({
+        mode: "onChange", // 👈 validate mỗi khi thay đổi
+    });
 
     async function onSubmit(duLieuNhapVao) {
         const cacTruongBatBuoc = [
@@ -133,14 +299,14 @@ export default function AddPhieuGiam() {
             { field: "ngayKetThuc", message: "Ngày kết thúc không để trống" }
         ];
         for (let i = 0; i < cacTruongBatBuoc.length; i++) {
-            
+
             const truong = cacTruongBatBuoc[i].field;
             if (!duLieuNhapVao[truong] && duLieuNhapVao[truong] !== 0) {
                 toast.error(cacTruongBatBuoc[i].message);
                 return;
             }
         }
-        if (!duLieuNhapVao.soTienGiam && !duLieuNhapVao.phamTramGiamGia) {
+        if (giaTriGiam === "") {
             toast.error("Giá trị không để trống");
             return;
         }
@@ -161,9 +327,11 @@ export default function AddPhieuGiam() {
             trangThai: 2,
             soLuong: duLieuNhapVao.soLuong ? Number(duLieuNhapVao.soLuong) : 0
         };
+        console.log(duLieuGuiLen)
 
         const ketQua = await addVouchers(duLieuGuiLen);
-        if (ketQua) {
+        console.log(ketQua)
+        if (ketQua.code) {
             const danhSachEmailKhachHang = tatCaKhachHang.filter(function (khachHang) { return danhSachDaChon.includes(khachHang.id); }).map(function (khachHang) { return khachHang.email; });
             const duLieuGuiMail = {
                 phieuGiamGiaVO: duLieuGuiLen,
@@ -186,7 +354,7 @@ export default function AddPhieuGiam() {
                 },
             });
         } else {
-            toast.error("Thêm voucher thất bại");
+            toast.warning("Thêm voucher thất bại, " + ketQua.message);
         }
     }
 
@@ -211,28 +379,28 @@ export default function AddPhieuGiam() {
     }, [soTrangHienTai, soLuongXem, timKiemKhachHang]);
 
     function thayDoiLoaiGiamGia(event) {
-        setStatusPhieu(event.target.value);
+        setStatusPhieu(Number(event.target.value));
         setGiaTriGiam("");
+        setGiaTriGiamDisplay(""); // Reset display value
         if (event.target.value == 0) {
             setValue("phamTramGiamGia", "");
         } else {
             setValue("soTienGiam", "");
         }
     }
+
     function thayDoiGiaTriGiam(event) {
-        let giaTriMoi = event.target.value;
-        if (statusPhieu === 1) {
-            let giaTriSo = Number(giaTriMoi);
-            if (giaTriSo > 50) {
-                giaTriMoi = 50;
-            }
-        }
-        setGiaTriGiam(giaTriMoi);
+        // Hàm này giờ được thay thế bởi handleGiaTriGiamChange
+        handleGiaTriGiamChange(event);
     }
+
     function thayDoiRadioLoaiGiamGia(event) {
-        const giaTri = event.target.value;
-        setStatusPhieu(giaTri === "0" ? 0 : 1);
+        const giaTri = Number(event.target.value);
+        setStatusPhieu(giaTri);
+        setGiaTriGiam("");
+        setGiaTriGiamDisplay(""); // Reset display value
     }
+
     function renderCheckbox(row) {
         return (
             <Checkbox
@@ -295,6 +463,7 @@ export default function AddPhieuGiam() {
                                             Mã phiếu giảm giá
                                         </Box>
                                         <Input
+                                            placeholder="VD:PGG123"
                                             fullWidth
                                             type="text"
                                             {...register("maPhieuGiamGia")}
@@ -312,6 +481,7 @@ export default function AddPhieuGiam() {
                                             Tên phiếu
                                         </Box>
                                         <Input
+                                            placeholder="VD:Giảm giá ngày hè"
                                             fullWidth
                                             type="text"
                                             {...register("tenPhieu")}
@@ -330,18 +500,37 @@ export default function AddPhieuGiam() {
                                         <Box component="label" sx={{ display: "block", marginBottom: 1, fontSize: "14px" }}>
                                             Điều kiện giảm
                                         </Box>
-                                        <Input
-                                            fullWidth
-                                            type="number"
-                                            {...register("dieuKienGiam")}
-                                            sx={{
-                                                fontWeight: 700,
-                                                color: "#1769aa",
-                                                background: "#f2f6fa",
-                                                borderRadius: 2,
-                                                paddingLeft: 1
-                                            }}
-                                        />
+                                        <FormControl fullWidth error={!!errors.dieuKienGiam}>
+                                            <Input
+                                                placeholder="VD: 100.000 VNĐ"
+                                                fullWidth
+                                                type="text"
+                                                value={dieuKienGiamDisplay}
+                                                onChange={handleDieuKienGiamChange}
+                                                onKeyDown={(event) => handleKeyDown(event, 'currency', 'dieuKienGiam')}
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    color: "#1769aa",
+                                                    background: "#f2f6fa",
+                                                    borderRadius: 2,
+                                                    paddingLeft: 1
+                                                }}
+                                            />
+                                            {/* Hidden input để register với react-hook-form */}
+                                            <input
+                                                type="hidden"
+                                                {...register("dieuKienGiam", {
+                                                    required: "Vui lòng nhập điều kiện giảm",
+                                                    validate: (value) => {
+                                                        if (!value || value === "0") return "Vui lòng nhập điều kiện giảm";
+                                                        return /^\d+$/.test(value) || "Chỉ được nhập số";
+                                                    }
+                                                })}
+                                            />
+                                            {errors.dieuKienGiam && (
+                                                <FormHelperText>{errors.dieuKienGiam.message}</FormHelperText>
+                                            )}
+                                        </FormControl>
                                     </Box>
                                     <Box sx={{ flex: 1 }}>
                                         <Box component="label" sx={{ display: "block", marginBottom: 1, fontSize: "14px" }}>
@@ -384,11 +573,11 @@ export default function AddPhieuGiam() {
                                         </Box>
                                         <Input
                                             fullWidth
-                                            {...register(statusPhieu ? "phamTramGiamGia" : "soTienGiam")}
-                                            type="number"
-                                            value={giaTriGiam}
-                                            onChange={thayDoiGiaTriGiam}
-                                            placeholder={statusPhieu ? "Giảm theo phần trăm" : "Giảm theo số tiền"}
+                                            type="text"
+                                            value={giaTriGiamDisplay}
+                                            onChange={handleGiaTriGiamChange}
+                                            onKeyDown={(event) => handleKeyDown(event, statusPhieu === 1 ? 'percentage' : 'currency', 'soTienGiam')}
+                                            placeholder={statusPhieu ? "VD: 10%" : "VD: 100.000 VNĐ"}
                                             sx={{
                                                 fontWeight: 700,
                                                 color: "#1769aa",
@@ -396,6 +585,12 @@ export default function AddPhieuGiam() {
                                                 borderRadius: 2,
                                                 paddingLeft: 1
                                             }}
+                                        />
+                                        {/* Hidden input để register với react-hook-form */}
+                                        <input
+                                            type="hidden"
+                                            {...register(statusPhieu ? "phamTramGiamGia" : "soTienGiam")}
+                                            value={giaTriGiam}
                                         />
                                     </Box>
                                     <Box sx={{ flex: 1 }}>
@@ -421,17 +616,39 @@ export default function AddPhieuGiam() {
                                         <Box component="label" sx={{ display: "block", marginBottom: 1, fontSize: "14px" }}>
                                             Giảm tối đa
                                         </Box>
-                                        <Input
-                                            fullWidth
-                                            {...register("giamToiDa")}
-                                            sx={{
-                                                fontWeight: 700,
-                                                color: "#1769aa",
-                                                background: "#f2f6fa",
-                                                borderRadius: 2,
-                                                paddingLeft: 1
-                                            }}
-                                        />
+
+                                        <FormControl fullWidth error={!!errors.giamToiDa}>
+                                            <Input
+                                                placeholder="VD: 100.000 VNĐ"
+                                                fullWidth
+                                                type="text"
+                                                value={giamToiDaDisplay}
+                                                onChange={handleGiamToiDaChange}
+                                                onKeyDown={(event) => handleKeyDown(event, 'currency', 'giamToiDa')}
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    color: "#1769aa",
+                                                    background: "#f2f6fa",
+                                                    borderRadius: 2,
+                                                    paddingLeft: 1
+                                                }}
+                                            />
+                                            {/* Hidden input để register với react-hook-form */}
+                                            <input
+                                                type="hidden"
+                                                {...register("giamToiDa", {
+                                                    required: "Vui lòng nhập giảm tối đa",
+                                                    validate: (value) => {
+                                                        if (!value || value === "0") return "Vui lòng nhập giảm tối đa";
+                                                        return /^\d+$/.test(value) || "Chỉ được nhập số";
+                                                    }
+                                                })}
+                                            />
+                                            {errors.giamToiDa && (
+                                                <FormHelperText>{errors.giamToiDa.message}</FormHelperText>
+                                            )}
+                                        </FormControl>
+
                                     </Box>
                                     <Box sx={{ flex: 1 }}>
                                         <Box component="label" sx={{ display: "block", marginBottom: 1, fontSize: "14px" }}>

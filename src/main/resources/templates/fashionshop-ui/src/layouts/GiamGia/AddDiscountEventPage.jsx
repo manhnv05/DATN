@@ -584,7 +584,7 @@ function AddDiscountEventPage() {
                 phanTramGiamGia: Number(data.phanTramGiamGia),
                 ngayBatDau: start,
                 ngayKetThuc: end,
-                trangThai: data.trangThai,
+                trangThai: 2,
             };
             let res;
             console.log(payload)
@@ -771,48 +771,6 @@ function AddDiscountEventPage() {
                                     </LocalizationProvider>
                                 </Box>
                             </Box>
-                        </Stack>
-                        <Stack>
-                            <InputLabel>Trạng thái</InputLabel>
-                            <Controller
-                                name="trangThai"
-                                control={control}
-                                render={function ({ field: { onChange, ...otherFieldProps } }) {
-                                    return (
-                                        <Select
-                                            value={otherFieldProps.value}
-                                            onChange={(event, child) => {
-                                                onChange(event, child);
-                                            }}
-                                            renderValue={(selected) => {
-                                                const selectedItem = STATUS_LIST.find(item => item.id === selected);
-                                                const color = statusColorMap[selectedItem?.id] || "black";
-
-                                                return (
-                                                    <span style={{ color, fontWeight: "bold" }}>
-                                                        {selectedItem?.label || "Chọn trạng thái"}
-                                                    </span>
-                                                );
-                                            }}
-                                            {...otherFieldProps}
-                                        >
-                                            {STATUS_LIST.map((item) => (
-                                                <MenuItem
-                                                    key={item.id}
-                                                    value={item.id}
-                                                    sx={{
-                                                        color: statusColorMap[item.id] || "black",
-                                                        fontWeight: "bold",
-                                                    }}
-                                                >
-                                                    {item.label}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-
-                                    );
-                                }}
-                            />
                         </Stack>
                         <Stack direction="row" spacing={2} pt={2}>
                             <Button
