@@ -1,6 +1,7 @@
 package com.example.datn.Service;
 
 import com.example.datn.DTO.ChiTietSanPhamDTO;
+import com.example.datn.DTO.ChiTietSanPhamDotGIamGIaDTO;
 import com.example.datn.Entity.ChatLieu;
 import com.example.datn.Entity.ChiTietSanPham;
 import com.example.datn.Entity.ThuongHieu;
@@ -15,6 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -40,6 +44,9 @@ public class ChiTietSanPhamService {
     private CoAoRepository coAoRepository;
     @Autowired
     private TayAoRepository tayAoRepository;
+
+    @Autowired
+    private ChiTietDotGiamGiaRepository chiTietDotGiamGiaRepository;
 
     public Integer save(@Valid ChiTietSanPhamVO vO) {
         ChiTietSanPham bean = new ChiTietSanPham();
@@ -70,6 +77,35 @@ public class ChiTietSanPhamService {
 
     public void delete(Integer id) {
         chiTietSanPhamRepository.deleteById(id);
+    }
+
+    public List<ChiTietSanPhamDotGIamGIaDTO> getChiTietSanPhamCoDGG() {
+        List<ChiTietSanPham> chiTietSanPhamList = chiTietSanPhamRepository.findAll();
+        List<ChiTietSanPhamDotGIamGIaDTO> chiTietSanPhamDotGIamGIaDTOS = new ArrayList<ChiTietSanPhamDotGIamGIaDTO>();
+        for (ChiTietSanPham c : chiTietSanPhamList) {
+            ChiTietSanPhamDotGIamGIaDTO ctsp = new ChiTietSanPhamDotGIamGIaDTO();
+            List<Integer> phantramgiamctsp = chiTietDotGiamGiaRepository.getDotGiamGiaByIdChiTietSanPham(c.getId());
+            phantramgiamctsp.sort(Collections.reverseOrder());
+            int pggLonNhat = 100;
+            if (!phantramgiamctsp.isEmpty()) {
+                pggLonNhat = phantramgiamctsp.getFirst();
+            }
+            ctsp.setIdChiTietSanPham(c.getId());
+            ctsp.setTenSanPham(c.getSanPham().getTenSanPham());
+            ctsp.setMaSanPham(c.getMaSanPhamChiTiet());
+            ctsp.setThuongHieu(c.getThuongHieu().getTenThuongHieu());
+            ctsp.setSoLuongTonKho(c.getSoLuong());
+            ctsp.setChatLieu(c.getChatLieu().getTenChatLieu());
+            ctsp.setMauSac(c.getMauSac().getTenMauSac());
+            ctsp.setKichThuoc(c.getKichThuoc().getTenKichCo());
+            ctsp.setCoAo(c.getCoAo().getTenCoAo());
+            ctsp.setTayAo(c.getTayAo().getTenTayAo());
+            ctsp.setGia(c.getGia());
+            ctsp.setGiaTienSauKhiGiam(c.getGia() - (c.getGia() * pggLonNhat / 100));
+            chiTietSanPhamDotGIamGIaDTOS.add(ctsp);
+        }
+
+        return chiTietSanPhamDotGIamGIaDTOS;
     }
 
     public void update(Integer id, @Valid ChiTietSanPhamUpdateVO vO) {

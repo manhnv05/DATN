@@ -123,6 +123,18 @@ StatCard.propTypes = {
     )
 };
 
+// Hàm format số thành tiền tệ (cải tiến)
+function formatCurrency(value) {
+    if (!value || value === "0") return "";
+    // Loại bỏ tất cả ký tự không phải số
+    const numericValue = value.toString().replace(/\D/g, "");
+    if (!numericValue) return "";
+
+    // Format số với dấu phẩy phân cách hàng nghìn
+    const formatted = new Intl.NumberFormat('vi-VN').format(numericValue);
+    return formatted + " VNĐ";
+}
+
 export default function DashboardStats() {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -216,7 +228,7 @@ export default function DashboardStats() {
         setStatsData([
             {
                 title: 'Hôm nay',
-                value: data.data.homNay.tongTienTatCa,
+                value: formatCurrency(data.data.homNay.tongTienTatCa),
                 icon: Today,
                 color: '#17a2b8',
                 stats: [
@@ -227,7 +239,7 @@ export default function DashboardStats() {
             },
             {
                 title: 'Tuần này',
-                value: data.data.tuanNay.tongTienTatCa,
+                value: formatCurrency(data.data.tuanNay.tongTienTatCa),
                 icon: CalendarToday,
                 color: '#fd7e14',
                 stats: [
@@ -238,7 +250,7 @@ export default function DashboardStats() {
             },
             {
                 title: 'Tháng này',
-                value: data.data.thangNay.tongTienTatCa,
+                value: formatCurrency(data.data.thangNay.tongTienTatCa),
                 icon: DateRange,
                 color: '#007bff',
                 stats: [
@@ -249,7 +261,7 @@ export default function DashboardStats() {
             },
             {
                 title: 'Năm này',
-                value: data.data.namNay.tongTienTatCa,
+                value: formatCurrency(data.data.namNay.tongTienTatCa),
                 icon: Event,
                 color: '#28a745',
                 stats: [

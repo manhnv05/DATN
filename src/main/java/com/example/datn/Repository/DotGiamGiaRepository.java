@@ -27,5 +27,4 @@ public interface DotGiamGiaRepository extends JpaRepository<DotGiamGia, Integer>
     (p.ngayKetThuc > p.ngayBatDau AND p.ngayKetThuc > :now AND p.ngayBatDau < :now AND p.trangThai != 4 AND p.trangThai !=3)
     """)
     List<DotGiamGia> findDotGiamGiaByNow(@Param("now") LocalDateTime now);
-
 }

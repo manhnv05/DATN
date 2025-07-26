@@ -1,9 +1,11 @@
 package com.example.datn.Service;
 
+import com.example.datn.DTO.ChiTietSanPhamDotGIamGIaDTO;
 import com.example.datn.DTO.SanPhamDTO;
 import com.example.datn.Entity.DanhMuc;
 import com.example.datn.Entity.SanPham;
 import com.example.datn.Entity.ChiTietSanPham;
+import com.example.datn.Repository.ChiTietDotGiamGiaRepository;
 import com.example.datn.Repository.DanhMucRepository;
 import com.example.datn.Repository.SanPhamRepository;
 import com.example.datn.Repository.ChiTietSanPhamRepository;
@@ -147,4 +149,6 @@ public class SanPhamService {
         return sanPhamRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Resource not found: " + id));
     }
+
+
 }
