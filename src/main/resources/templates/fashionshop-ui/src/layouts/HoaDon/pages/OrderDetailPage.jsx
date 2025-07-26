@@ -490,7 +490,7 @@ const OrderDetailPage = () => {
               <SoftTypography variant="h5" fontWeight="medium" mb={3} sx={{ color: "#6ea8fe" }}>
                 Danh sách sản phẩm
               </SoftTypography>
-              <ProductList orderId={orderId} />
+              <ProductList orderId={orderId} orderStatus={orderData.trangThaiGoc} />
             </SoftBox>
           </Card>
         </SoftBox>

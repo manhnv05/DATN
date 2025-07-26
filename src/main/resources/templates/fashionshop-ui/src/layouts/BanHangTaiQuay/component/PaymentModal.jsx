@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import PropTypes from "prop-types";
 import axios from "axios";
+import NumberFormatCustom from "./NumberFormatCustom";
 import {
   Dialog,
   DialogTitle,
@@ -21,6 +22,8 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import SoftButton from "components/SoftButton";
+import { toast } from "react-toastify";
+// import { IMaskInput } from "react-imask";
 
 // Hàm tiện ích định dạng tiền tệ
 const formatCurrency = (amount) => {
@@ -29,7 +32,6 @@ const formatCurrency = (amount) => {
 };
 
 function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
-
   // State cho dữ liệu thanh toán cũ từ API
   const [previousPayments, setPreviousPayments] = useState([]);
   // State cho dữ liệu thanh toán mới được thêm trong UI
@@ -55,7 +57,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
         setPreviousPayments(response.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy lịch sử thanh toán:", error);
-        setPreviousPayments([]); 
+        setPreviousPayments([]);
       }
     };
 
@@ -79,11 +81,19 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
 
   // Xử lý khi thêm một lần thanh toán mới
   const handleAddPayment = () => {
+   console.log('[DEBUG 2] State "amount" ngay khi bấm Thêm:', amount);
     const paymentAmount = Number(amount);
+
     if (!paymentAmount || paymentAmount <= 0) {
-      alert("Vui lòng nhập số tiền hợp lệ.");
+      toast.warn("Vui lòng nhập số tiền hợp lệ.");
       return;
     }
+
+    if (paymentMethod === "transfer" && !transactionCode.trim()) {
+      setTransactionCodeError("Vui lòng nhập mã giao dịch.");
+      return;
+    }
+    setTransactionCodeError("");
 
     if (paymentMethod === "transfer" && !transactionCode.trim()) {
       // Set nội dung lỗi thay vì alert
@@ -102,6 +112,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
       soTienThanhToan: paymentAmount,
       trangThaiThanhToan: 1,
     };
+    console.log('[DEBUG 3] Object chuẩn bị thêm vào bảng:', newPayment)
     setNewPayments([...newPayments, newPayment]);
     setAmount("");
     setTransactionCode("");
@@ -114,7 +125,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
       return;
     }
     // Chỉ gửi về cho component cha những thanh toán MỚI
-    onConfirm(newPayments); 
+    onConfirm(newPayments);
     handleClose();
   };
 
@@ -133,7 +144,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h5" fontWeight="bold">
-            THANH TOÁN (Hóa đơn #{hoaDonId})
+            THANH TOÁN
           </Typography>
           <IconButton onClick={handleClose}>
             <CloseIcon />
@@ -174,14 +185,18 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
             </Button>
           </Box>
           <Box display="flex" gap={2} alignItems="flex-start">
-            <TextField
-              label="Tiền khách đưa"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              sx={{ flexGrow: 1 }}
-              autoFocus
-            />
+          <TextField
+ label="Tiền khách đưa"
+ value={amount}
+ onChange={(value) => {
+          
+                  console.log('[DEBUG 1] Giá trị thô nhận được từ Input:', value);
+                  setAmount(value);
+                }}
+ sx={{ flexGrow: 1 }}
+ autoFocus
+InputProps={{ inputComponent: NumberFormatCustom }}
+ />
             {paymentMethod === "transfer" && (
               <TextField
                 label="Mã giao dịch"
@@ -200,10 +215,22 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
               />
             )}
             <SoftButton
-              variant="gradient"
-              color="info"
               onClick={handleAddPayment}
-              sx={{ height: "56px" }}
+              variant="outlined"
+              size="medium"
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 400,
+                color: "#49a3f1",
+                borderColor: "#49a3f1",
+                boxShadow: "none",
+                "&:hover": {
+                  borderColor: "#1769aa",
+                  background: "#f0f6fd",
+                  color: "#1769aa",
+                },
+              }}
             >
               Thêm
             </SoftButton>

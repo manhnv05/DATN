@@ -76,7 +76,7 @@ const [products, setProducts] = useState([]);
         // Tạo một ID duy nhất và ổn định cho mỗi chi tiết sản phẩm.
         uniqueId: `${p.maSanPham || ''}-${p.kichThuoc || ''}-${p.mauSac || ''}-${p.id || Math.random()}`
       }));
-
+      console.log("LOG 2 (ProductSelectionModal): Dữ liệu sản phẩm đã được tải:", fetchedProducts);
       setProducts(fetchedProducts);
 
       if (fetchedProducts.length > 0) {
