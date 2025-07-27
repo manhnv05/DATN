@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, IconButton, Button, Input, InputAdornment, Select, MenuItem, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Box, Avatar } from "@mui/material";
+import { Card, IconButton, Button, Input, InputAdornment, Select, MenuItem, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Box, Avatar, Slider, Popover, Typography } from "@mui/material";
 import { FaPlus, FaEye, FaTrash, FaFileExcel, FaFilePdf, FaEdit } from "react-icons/fa";
 import Icon from "@mui/material/Icon";
 import SoftBox from "components/SoftBox";
@@ -9,144 +9,408 @@ import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Notifications from "layouts/Notifications";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import NhanVienDetail from "./detail";
-import UpdateNhanVien from "./update"; // import update component
 
 // API URLs
 const API_BASE_URL = "http://localhost:8080/nhanVien";
 
 // Constants
-const GENDER_OPTIONS = ["Tất cả", "Nam", "Nữ"];
-const ROWS_PER_PAGE_OPTIONS = [5, 10, 20];
 const STATUS_OPTIONS = [
-    { value: 1, label: "Đang hoạt động" },
-    { value: 0, label: "Ngừng hoạt động" },
+    { value: "ACTIVE", label: "Đang làm việc" },
+    { value: "INACTIVE", label: "Đã nghỉ" },
 ];
 
+
 // Utility functions
-const getGenderLabel = gender => gender === "Nam" || gender === 1 ? "Nam" : gender === "Nữ" || gender === 0 ? "Nữ" : "Khác";
+const getGenderLabel = (gender) => (gender === "MALE" ? "Nam" : gender === "FEMALE" ? "Nữ" : "Khác");
 const getStatusLabel = (status, options) => {
-    const found = options.find(s => s.value === status || s.label === status);
-    return found ? found.label : status === 1 || status === "Đang làm" ? "Đang làm" : "Nghỉ";
+    const found = options.find((s) => s.value === status || s.label === status);
+    return found ? found.label : status === "ACTIVE" ? "Đang làm" : "Nghỉ";
 };
-const formatDate = date => date ? new Date(date).toLocaleDateString("vi-VN") : "";
-const getPaginationArray = (currentPage, totalPages) => {
-    if (totalPages <= 4) return Array.from({ length: totalPages }, (_, i) => i);
-    if (currentPage <= 1) return [0, 1, "...", totalPages - 2, totalPages - 1];
-    if (currentPage >= totalPages - 2) return [0, 1, "...", totalPages - 2, totalPages - 1];
-    return [0, 1, "...", currentPage, "...", totalPages - 2, totalPages - 1];
+
+// Hàm tính tuổi từ ngày sinh
+const calculateAge = (birthDate) => {
+    if (!birthDate) {
+        console.log("Ngày sinh rỗng:", birthDate);
+        return null;
+    }
+    // Xử lý các format ngày khác nhau
+    let date;
+    if (typeof birthDate === 'string') {
+        const trimmedDate = birthDate.trim();
+        
+        // Format: "DD/MM/YYYY" hoặc "YYYY/MM/DD"
+        if (trimmedDate.includes('/')) {
+            const parts = trimmedDate.split('/');
+            if (parts[0].length === 4) {
+                // Format: "YYYY/MM/DD"
+                date = new Date(trimmedDate);
+            } else {
+                // Format: "DD/MM/YYYY"
+                const [day, month, year] = parts;
+                date = new Date(year, month - 1, day);
+            }
+        } else if (trimmedDate.includes('-')) {
+            // Format: "YYYY-MM-DD" hoặc "DD-MM-YYYY"
+            const parts = trimmedDate.split('-');
+            if (parts[0].length === 4) {
+                // Format: "YYYY-MM-DD"
+                date = new Date(trimmedDate);
+            } else {
+                // Format: "DD-MM-YYYY"
+                const [day, month, year] = parts;
+                date = new Date(year, month - 1, day);
+            }
+        } else {
+            // Thử parse trực tiếp
+            date = new Date(trimmedDate);
+        }
+    } else {
+        date = new Date(birthDate);
+    }
+    if (isNaN(date.getTime())) {
+        console.warn("Không thể parse ngày sinh:", birthDate);
+        return null;
+    }
+    
+    const today = new Date();
+    let age = today.getFullYear() - date.getFullYear();
+    const monthDiff = today.getMonth() - date.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+        age--;
+    }
+    // Kiểm tra tuổi hợp lệ
+    if (age < 0 || age > 150) {
+        console.warn("Tuổi không hợp lệ:", age, "từ ngày sinh:", birthDate);
+        return null;
+    }
+    return age;
 };
+
+function generatePaginationDisplay(pageNo, totalPages) {
+    if (totalPages <= 4) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (pageNo <= 2) return [1, 2, "...", totalPages - 1, totalPages];
+    if (pageNo >= totalPages - 1) return [1, 2, "...", totalPages - 1, totalPages];
+    return [1, 2, "...", pageNo, "...", totalPages - 1, totalPages];
+}
 
 function NhanVienTable() {
-    // State
-    const [nhanVienData, setNhanVienData] = useState({ content: [], totalPages: 0, number: 0, first: true, last: true });
+    // State variables
+    const [employees, setEmployees] = useState([]);
+    const [pagination, setPagination] = useState({
+        totalPages: 0,
+        pageNo: 1,
+        pageSize: 5,
+        totalElements: 0,
+    });
 
+    const [pageNo, setPageNo] = useState(1);
+    const [pageSize, setPageSize] = useState(5);
+    const [sortBy, setSortBy] = useState("id");
+    const [sortDir, setSortDir] = useState("desc");
+
+    const [filterEmployeeName, setFilterEmployeeName] = useState("");
+    const [filterPhoneNumber, setFilterPhoneNumber] = useState("");
+    const [filterGender, setFilterGender] = useState("Tất cả");
+    const [filterStatus, setFilterStatus] = useState("Tất cả");
+
+    const [minAge, setMinAge] = useState("");
+    const [maxAge, setMaxAge] = useState("");
+    const [ageRange, setAgeRange] = useState([18, 100]);
+
+    const [filterAnchorEl, setFilterAnchorEl] = useState(null);
     const [loading, setLoading] = useState(false);
-
     const [error, setError] = useState(null);
-    const [search, setSearch] = useState("");
-    const [genderFilter, setGenderFilter] = useState("Tất cả");
-    const [statusFilter, setStatusFilter] = useState("Tất cả");
-    const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [notification, setNotification] = useState({ open: false, message: "", severity: "info" });
     const navigate = useNavigate();
 
-    // Fetch employee data
+    // Handle filter change to reset pageNo
+    const handleFilterChange = (setter) => (value) => {
+        setter(value);
+        setPageNo(1); // Reset to page 1 when filter changes
+    };
+
+    // API params
+    const params = {
+        pageNo,
+        pageSize,
+        sortBy,
+        sortDir,
+        filterByEmployeeName: filterEmployeeName || undefined,
+        filterByPhoneNumber: filterPhoneNumber || undefined,
+        filterByGender: filterGender !== "Tất cả" ? filterGender : undefined,
+        filterByStatus: filterStatus !== "Tất cả" ? filterStatus : undefined,
+        minAge: minAge || undefined,
+        maxAge: maxAge || undefined,
+    };
+
+    // Fetch employees
     useEffect(() => {
         const fetchEmployees = async () => {
             setLoading(true);
             setError(null);
             try {
-                const params = {
-                    page: currentPage,
-                    size: rowsPerPage,
-                    hoVaTen: search,
-                    ...(genderFilter !== "Tất cả" && { gioiTinh: genderFilter }),
-                    ...(statusFilter !== "Tất cả" && { trangThai: STATUS_OPTIONS.find(s => s.label === statusFilter)?.value }),
-                };
                 const response = await axios.get(API_BASE_URL, { params });
-                setNhanVienData({ ...response.data, content: response.data.content || [] });
+                setEmployees(response.data.data.employees || []);
+                setPagination(response.data.data.pagination || {});
             } catch {
                 setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
-                setNhanVienData({ content: [], totalPages: 0, number: 0, first: true, last: true });
+                setEmployees([]);
+                setPagination({});
             } finally {
                 setLoading(false);
             }
         };
         fetchEmployees();
-    }, [search, genderFilter, statusFilter, rowsPerPage, currentPage]);
+    }, [pageNo, pageSize, sortBy, sortDir, filterEmployeeName, filterPhoneNumber, filterGender, filterStatus, minAge, maxAge]);
+
+    // Test function để kiểm tra format ngày sinh
+    useEffect(() => {
+        if (employees.length > 0) {
+            console.log("=== DEBUG: Kiểm tra format ngày sinh ===");
+            employees.forEach((emp, index) => {
+                console.log(`${index + 1}. ${emp.hoVaTen}:`, {
+                    ngaySinh: emp.ngaySinh,
+                    type: typeof emp.ngaySinh,
+                    length: emp.ngaySinh?.length,
+                    hasSlash: emp.ngaySinh?.includes('/'),
+                    hasDash: emp.ngaySinh?.includes('-')
+                });
+            });
+            console.log("=== END DEBUG ===");
+        }
+    }, [employees]);
 
     // Handlers
-    const handlePageChange = newPage => typeof newPage === "number" && newPage >= 0 && newPage < nhanVienData.totalPages && newPage !== currentPage && setCurrentPage(newPage);
-    const handleSearchChange = e => { setSearch(e.target.value); setCurrentPage(0); };
-    const handleGenderFilterChange = e => { setGenderFilter(e.target.value); setCurrentPage(0); };
-    const handleStatusFilterChange = e => { setStatusFilter(e.target.value); setCurrentPage(0); };
-    const handleRowsPerPageChange = e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(0); };
-    const handleNotificationClose = (_, reason) => reason !== "clickaway" && setNotification({ ...notification, open: false });
+    const handlePageChange = setPageNo;
+
+    const handleRowsPerPageChange = (e) => {
+        setPageSize(Number(e.target.value));
+        setPageNo(1);
+    };
+
+    const handleAgeRangeChange = (event, newValue) => {
+        console.log("Age range changed:", newValue);
+        setAgeRange(newValue);
+        setMinAge(newValue[0]);
+        setMaxAge(newValue[1]);
+        setPageNo(1); // Reset to page 1
+    };
+
+    const handleResetFilters = () => {
+        setFilterEmployeeName("");
+        setFilterPhoneNumber("");
+        setFilterGender("Tất cả");
+        setFilterStatus("Tất cả");
+        setMinAge("");
+        setMaxAge("");
+        setAgeRange([18, 100]);
+        setSortBy("id");
+        setSortDir("desc");
+        setPageNo(1);
+        setFilterAnchorEl(null);
+    };
 
     // Table configuration
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         {
-            name: "hinhAnh", label: "Ảnh", align: "center", width: "100px", render: (v, r) => (
-                <Avatar src={v || "/default-avatar.png"} alt={r.hoVaTen} sx={{ width: 40, height: 40 }} />
-            )
+            name: "hinhAnh",
+            label: "Ảnh",
+            align: "center",
+            width: "100px",
+            render: (v, r) => (
+                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <Avatar 
+                        src={v || "/default-avatar.png"} 
+                        alt={r.hoVaTen} 
+                        sx={{ 
+                            width: 45, 
+                            height: 45,
+                            border: "2px solid #e3f2fd",
+                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                            background: v ? "transparent" : "linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)",
+                            color: "#1976d2",
+                            fontWeight: 600,
+                            fontSize: 18
+                        }}
+                    >
+                        {!v && r.hoVaTen?.[0]?.toUpperCase()}
+                    </Avatar>
+                </Box>
+            ),
         },
         { name: "maNhanVien", label: "Mã nhân viên", align: "left", width: "90px" },
-        { name: "hoVaTen", label: "Họ và tên", align: "left", width: "170px" },
-        { name: "email", label: "Email", align: "left", width: "200px" },
+        { 
+            name: "hoVaTen", 
+            label: "Họ và tên", 
+            align: "left", 
+            width: "200px",
+            render: (v, r) => (
+                <Box>
+                    <Typography variant="body2" fontWeight={600} color="#1976d2">
+                        {v}
+                    </Typography>
+                    <Typography variant="caption" color="#666" sx={{ fontSize: '12px' }}>
+                        {r.email || "Chưa có email"}
+                    </Typography>
+                </Box>
+            )
+        },
         { name: "soDienThoai", label: "SĐT", align: "center", width: "120px" },
-        { name: "ngaySinh", label: "Ngày sinh", align: "center", width: "120px", render: v => formatDate(v) },
-        { name: "gioiTinh", label: "Giới tính", align: "center", width: "90px", render: v => getGenderLabel(v) },
-        { name: "idVaiTro", label: "Vai trò", align: "center",width: "100px",
+        { 
+            name: "ngaySinh", 
+            label: "Ngày sinh", 
+            align: "center", 
+            width: "140px",
+            render: (v, r) => {
+                const age = calculateAge(v);
+                console.log(`Ngày sinh của ${r.hoVaTen}:`, v, "Tuổi:", age);
+                
+                return (
+                    <Box textAlign="center">
+                        <Typography variant="body2" fontWeight={500}>
+                            {v || "Chưa có"}
+                        </Typography>
+                        {age !== null && age >= 0 && (
+                            <Typography variant="caption" color="#1976d2" sx={{ fontSize: '11px', fontWeight: 600 }}>
+                                ({age} tuổi)
+                            </Typography>
+                        )}
+                        {age === null && v && (
+                            <Typography variant="caption" color="#f57c00" sx={{ fontSize: '10px' }}>
+                                (Lỗi format)
+                            </Typography>
+                        )}
+                    </Box>
+                );
+            }
+        },
+        {
+            name: "gioiTinh",
+            label: "Giới tính",
+            align: "center",
+            width: "90px",
             render: (v) => {
-                if (v === 1) return "Quản lý";
-                if (v === 2) return "Nhân viên";
-                return "Không xác định"; // fallback nếu có giá trị khác
+                const isMale = v === "MALE";
+                const isFemale = v === "FEMALE";
+                const style = {
+                    background: isMale ? "#e3f2fd" : isFemale ? "#fce4ec" : "#f5f5f5",
+                    color: isMale ? "#1976d2" : isFemale ? "#c2185b" : "#888",
+                    border: `1px solid ${isMale ? "#1976d2" : isFemale ? "#c2185b" : "#ccc"}`,
+                    borderRadius: 6,
+                    fontWeight: 500,
+                    padding: "2px 8px",
+                    fontSize: 12,
+                    display: "inline-block",
+                    width: 60,
+                    minWidth: 60,
+                    textAlign: "center",
+                };
+                return <span style={style}>{isMale ? "Nam" : isFemale ? "Nữ" : "Khác"}</span>;
+            },
+        },
+        {
+            name: "vaiTro",
+            label: "Vai trò",
+            align: "center",
+            width: "100px",
+            render: (v) => {
+                const isAdmin = v === "ADMIN";
+                const style = {
+                    background: isAdmin ? "#fff3e0" : "#e8f5e8",
+                    color: isAdmin ? "#f57c00" : "#2e7d32",
+                    border: `1px solid ${isAdmin ? "#f57c00" : "#2e7d32"}`,
+                    borderRadius: 6,
+                    fontWeight: 500,
+                    padding: "2px 8px",
+                    fontSize: 12,
+                    display: "inline-block",
+                };
+                return <span style={style}>{isAdmin ? "Quản lý" : "Nhân viên"}</span>;
             },
         },
         { name: "diaChi", label: "Địa chỉ", align: "center", width: "230px" },
         {
-            name: "trangThai", label: "Trạng thái", align: "center", width: "110px", render: v => {
-                const label = getStatusLabel(v, STATUS_OPTIONS), isWork = label === "Đang làm";
-                return <span style={{ background: isWork ? "#e6f4ea" : "#f4f6fb", color: isWork ? "#219653" : "#bdbdbd", border: `1px solid ${isWork ? "#219653" : "#bdbdbd"}`, borderRadius: 6, fontWeight: 500, padding: "2px 12px", fontSize: 13, display: "inline-block" }}>{label}</span>;
-            }
+            name: "trangThai",
+            label: "Trạng thái",
+            align: "center",
+            width: "110px",
+            render: (v) => {
+                const isWork = v === "ACTIVE";
+                const style = {
+                    background: isWork ? "#e6f4ea" : "#f4f6fb",
+                    color: isWork ? "#219653" : "#bdbdbd",
+                    border: `1px solid ${isWork ? "#219653" : "#bdbdbd"}`,
+                    borderRadius: 6,
+                    fontWeight: 500,
+                    padding: "2px 12px",
+                    fontSize: 13,
+                    display: "inline-block",
+                };
+                return <span style={style}>{getStatusLabel(v, STATUS_OPTIONS)}</span>;
+            },
         },
         {
-            name: "actions", label: "Thao tác", width: "140px", align: "center", render: (_, r) => (
-                <SoftBox display="flex" gap={0.5} justifyContent="center">
-                    <IconButton size="small" sx={{ color: "#4acbf2" }} title="Chi tiết" onClick={() => navigate(`/nhanvien/chitiet/${r.id}`)}><FaEye /></IconButton>
-                    <IconButton size="small" sx={{ color: "#f7b731" }} title="Sửa" onClick={() => navigate(`/nhanvien/update/${r.id}`)}><FaEdit /></IconButton>
+            name: "actions",
+            label: "Thao tác",
+            width: "100px",
+            align: "center",
+            render: (_, r) => (
+                <SoftBox display="flex" justifyContent="center">
+                    <IconButton 
+                        size="small" 
+                        sx={{ 
+                            color: "#1976d2",
+                            background: "rgba(25, 118, 210, 0.08)",
+                            "&:hover": {
+                                background: "rgba(25, 118, 210, 0.15)",
+                                transform: "scale(1.1)"
+                            },
+                            transition: "all 0.2s ease"
+                        }} 
+                        title="Xem chi tiết & Chỉnh sửa" 
+                        onClick={() => navigate(`/nhanvien/detail/${r.id}`)}
+                    >
+                        <FaEye />
+                    </IconButton>
                 </SoftBox>
-            )
+            ),
         },
     ];
-    const rows = nhanVienData.content.map((item, idx) => ({
-        stt: currentPage * rowsPerPage + idx + 1,
+
+    const rows = employees.map((item, idx) => ({
+        stt: (pageNo - 1) * pageSize + idx + 1,
         id: item.id,
         hinhAnh: item.hinhAnh || "",
         maNhanVien: item.maNhanVien,
         hoVaTen: item.hoVaTen,
-        email: item.email || "",
+        email: item.email || "", // Giữ lại để render trong cột họ tên
         soDienThoai: item.soDienThoai || "",
         ngaySinh: item.ngaySinh || "",
         gioiTinh: item.gioiTinh,
-        idVaiTro: item.idVaiTro || "",
+        vaiTro: item.vaiTro || "",
         diaChi: item.diaChi || "",
         trangThai: item.trangThai,
         actions: "",
     }));
 
     // Export handlers
-    const exportTableData = () => nhanVienData.content.map((item, idx) => {
-        const address = item.diaChi?.trim() ? item.diaChi : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
-        return [currentPage * rowsPerPage + idx + 1, item.maNhanVien, item.hoVaTen, item.soDienThoai || item.sdt, getGenderLabel(item.gioiTinh), address, getStatusLabel(item.trangThai, STATUS_OPTIONS)];
-    });
+    const exportTableData = () =>
+        employees.map((item, idx) => {
+            const address = item.diaChi?.trim() ? item.diaChi : [item.xaPhuong, item.quanHuyen, item.tinhThanhPho].filter(Boolean).join(", ");
+            return [
+                pageNo * pageSize + idx + 1,
+                item.maNhanVien,
+                item.hoVaTen,
+                item.soDienThoai || item.sdt,
+                getGenderLabel(item.gioiTinh),
+                address,
+                getStatusLabel(item.trangThai, STATUS_OPTIONS),
+            ];
+        });
 
     const handleExportExcel = () => {
         const sheetData = [["STT", "Mã nhân viên", "Họ và tên", "Số điện thoại", "Giới tính", "Địa chỉ", "Trạng thái"], ...exportTableData()];
@@ -172,29 +436,213 @@ function NhanVienTable() {
 
     return (
         <DashboardLayout>
-            {/* Notifications */}
-            <Notifications open={notification.open} onClose={handleNotificationClose} message={notification.message} severity={notification.severity} autoHideDuration={2500} />
             <DashboardNavbar />
-            <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "100vh", userSelect: "none" }}>
+            <SoftBox py={3} sx={{ background: "#F4F6FB", minHeight: "150vh", userSelect: "none" }}>
                 {/* Filter and action buttons */}
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
                     <SoftBox display="flex" flexDirection={{ xs: "column", md: "row" }} alignItems="center" justifyContent="space-between" gap={2}>
                         <SoftBox flex={1} display="flex" alignItems="center" gap={2} maxWidth={600}>
-                            <Input fullWidth placeholder="Tìm kiếm nhân viên" value={search} onChange={handleSearchChange}
+                            <Input
+                                fullWidth
+                                placeholder="Tìm kiếm theo tên"
+                                value={filterEmployeeName}
+                                onChange={(e) => handleFilterChange(setFilterEmployeeName)(e.target.value)}
                                 startAdornment={<InputAdornment position="start"><Icon fontSize="small" sx={{ color: "#868686" }}>search</Icon></InputAdornment>}
-                                sx={{ background: "#f5f6fa", borderRadius: 2, p: 0.5, color: "#222" }} />
-                            <FormControl sx={{ minWidth: 120 }}><Select value={genderFilter} onChange={handleGenderFilterChange} size="small" displayEmpty sx={{ borderRadius: 2, background: "#f5f6fa", height: 40 }} inputProps={{ "aria-label": "Giới tính" }}>
-                                {GENDER_OPTIONS.map(gender => <MenuItem key={gender} value={gender}>{gender}</MenuItem>)}
-                            </Select></FormControl>
-                            <FormControl sx={{ minWidth: 120 }}><Select value={statusFilter} onChange={handleStatusFilterChange} size="small" displayEmpty sx={{ borderRadius: 2, background: "#f5f6fa", height: 40 }} inputProps={{ "aria-label": "Trạng thái" }}>
-                                <MenuItem value="Tất cả">Tất cả</MenuItem>
-                                {STATUS_OPTIONS.map(status => <MenuItem key={status.value} value={status.label}>{status.label}</MenuItem>)}
-                            </Select></FormControl>
+                                sx={{ background: "#f5f6fa", borderRadius: 2, p: 0.5, color: "#222" }}
+                            />
+                            <Input
+                                fullWidth
+                                placeholder="Nhập SĐT"
+                                value={filterPhoneNumber}
+                                onChange={(e) => handleFilterChange(setFilterPhoneNumber)(e.target.value)}
+                                sx={{ background: "#f5f6fa", borderRadius: 2, p: 0.5, color: "#222", minWidth: 120 }}
+                                inputProps={{ maxLength: 10 }}
+                            />
+                            <IconButton
+                                onClick={(e) => setFilterAnchorEl(e.currentTarget)}
+                                sx={{ color: "#49a3f1", border: "1px solid #49a3f1", borderRadius: 2 }}
+                            >
+                                <Icon>filter_list</Icon>
+                            </IconButton>
                         </SoftBox>
+                        {/* Popover for advanced filters */}
+                        <Popover
+                            open={Boolean(filterAnchorEl)}
+                            anchorEl={filterAnchorEl}
+                            onClose={() => setFilterAnchorEl(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                            PaperProps={{ sx: { p: 2, minWidth: 280, borderRadius: 3, background: "#f5f6fa" } }}
+                        >
+                            <SoftBox display="flex" flexDirection="column" gap={2}>
+                                {/* Age range */}
+                                <div>
+                                    <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Khoảng tuổi</span>
+                                    <Slider
+                                        value={ageRange}
+                                        onChange={handleAgeRangeChange}
+                                        valueLabelDisplay="auto"
+                                        min={18}
+                                        max={100}
+                                        sx={{
+                                            mt: 1,
+                                            color: "#1976d2",
+                                            "& .MuiSlider-thumb": { bgcolor: "#1976d2" },
+                                            "& .MuiSlider-track": { bgcolor: "#1976d2" },
+                                            "& .MuiSlider-rail": { bgcolor: "#bdbdbd" },
+                                        }}
+                                    />
+                                    <div style={{ fontSize: 13, color: "#888", marginTop: -8 }}>
+                                        {ageRange[0]} tuổi - {ageRange[1]} tuổi
+                                    </div>
+                                </div>
+                                {/* Gender filter */}
+                                <FormControl fullWidth>
+                                    <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Giới tính</span>
+                                    <Select
+                                        value={filterGender}
+                                        onChange={(e) => handleFilterChange(setFilterGender)(e.target.value)}
+                                        size="small"
+                                        displayEmpty
+                                        sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
+                                    >
+                                        <MenuItem value="Tất cả">Tất cả</MenuItem>
+                                        <MenuItem value="MALE">Nam</MenuItem>
+                                        <MenuItem value="FEMALE">Nữ</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                {/* Status filter */}
+                                <FormControl fullWidth>
+                                    <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Trạng thái</span>
+                                    <Select
+                                        value={filterStatus}
+                                        onChange={(e) => handleFilterChange(setFilterStatus)(e.target.value)}
+                                        size="small"
+                                        displayEmpty
+                                        sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
+                                    >
+                                        <MenuItem value="Tất cả">Tất cả</MenuItem>
+                                        <MenuItem value="ACTIVE">Đang hoạt động</MenuItem>
+                                        <MenuItem value="INACTIVE">Ngừng hoạt động</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                {/* Sort options */}
+                                <SoftBox display="flex" gap={2}>
+                                    <FormControl fullWidth>
+                                        <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Sắp xếp</span>
+                                        <Select
+                                            value={sortBy}
+                                            onChange={(e) => handleFilterChange(setSortBy)(e.target.value)}
+                                            size="small"
+                                            sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
+                                        >
+                                            <MenuItem value="id">Mã nhân viên</MenuItem>
+                                            <MenuItem value="hoVaTen">Tên nhân viên</MenuItem>
+                                            <MenuItem value="ngaySinh">Ngày sinh</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl fullWidth>
+                                        <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Thứ tự</span>
+                                        <Select
+                                            value={sortDir}
+                                            onChange={(e) => handleFilterChange(setSortDir)(e.target.value)}
+                                            size="small"
+                                            sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
+                                        >
+                                            <MenuItem value="desc">Giảm dần</MenuItem>
+                                            <MenuItem value="asc">Tăng dần</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </SoftBox>
+                                {/* Filter controls */}
+                                <SoftBox display="flex" gap={1} mt={1}>
+                                    <Button
+                                        variant="contained"
+                                        color="info"
+                                        sx={{
+                                            background: "#49a3f1",
+                                            color: "#fff",
+                                            fontWeight: 500,
+                                            borderRadius: 2,
+                                            textTransform: "none",
+                                            boxShadow: "none",
+                                            flex: 1,
+                                            "&:hover": { background: "#1769aa" },
+                                        }}
+                                        onClick={() => setFilterAnchorEl(null)}
+                                    >
+                                        Ẩn lọc
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        color="info"
+                                        sx={{
+                                            borderRadius: 2,
+                                            textTransform: "none",
+                                            color: "#49a3f1",
+                                            borderColor: "#49a3f1",
+                                            fontWeight: 500,
+                                            flex: 1,
+                                        }}
+                                        onClick={handleResetFilters}
+                                    >
+                                        Đặt lại
+                                    </Button>
+                                </SoftBox>
+                            </SoftBox>
+                        </Popover>
+                        {/* Action buttons */}
                         <SoftBox display="flex" alignItems="center" gap={1}>
-                            <Button variant="outlined" size="small" startIcon={<FaFileExcel />} sx={{ borderRadius: 2, textTransform: "none", fontWeight: 400, color: "#43a047", borderColor: "#43a047", boxShadow: "none", "&:hover": { borderColor: "#1769aa", background: "#e8f5e9", color: "#1769aa" } }} onClick={handleExportExcel}>Xuất Excel</Button>
-                            <Button variant="outlined" size="small" startIcon={<FaFilePdf />} sx={{ borderRadius: 2, textTransform: "none", fontWeight: 400, color: "#d32f2f", borderColor: "#d32f2f", boxShadow: "none", "&:hover": { borderColor: "#1769aa", background: "#ffebee", color: "#1769aa" } }} onClick={handleExportPDF}>Xuất PDF</Button>
-                            <Button variant="outlined" size="small" startIcon={<FaPlus />} sx={{ borderRadius: 2, textTransform: "none", fontWeight: 400, color: "#49a3f1", borderColor: "#49a3f1", boxShadow: "none", "&:hover": { borderColor: "#1769aa", background: "#f0f6fd", color: "#1769aa" } }} onClick={() => navigate("/nhanvien/add")}>Thêm nhân viên</Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<FaFileExcel />}
+                                sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                    fontWeight: 400,
+                                    color: "#43a047",
+                                    borderColor: "#43a047",
+                                    boxShadow: "none",
+                                    "&:hover": { borderColor: "#1769aa", background: "#e8f5e9", color: "#1769aa" },
+                                }}
+                                onClick={handleExportExcel}
+                            >
+                                Xuất Excel
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<FaFilePdf />}
+                                sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                    fontWeight: 400,
+                                    color: "#d32f2f",
+                                    borderColor: "#d32f2f",
+                                    boxShadow: "none",
+                                    "&:hover": { borderColor: "#1769aa", background: "#ffebee", color: "#1769aa" },
+                                }}
+                                onClick={handleExportPDF}
+                            >
+                                Xuất PDF
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<FaPlus />}
+                                sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                    fontWeight: 400,
+                                    color: "#49a3f1",
+                                    borderColor: "#49a3f1",
+                                    boxShadow: "none",
+                                    "&:hover": { borderColor: "#1769aa", background: "#f0f6fd", color: "#1769aa" },
+                                }}
+                                onClick={() => navigate("/nhanvien/add")}
+                            >
+                                Thêm nhân viên
+                            </Button>
                         </SoftBox>
                     </SoftBox>
                 </Card>
@@ -203,18 +651,61 @@ function NhanVienTable() {
                     <SoftBox>{error ? <div className="alert alert-danger">{error}</div> : <Table columns={columns} rows={rows} loading={loading} />}</SoftBox>
                     <SoftBox display="flex" justifyContent="space-between" alignItems="center" mt={2} flexWrap="wrap" gap={2}>
                         <FormControl sx={{ minWidth: 120 }}>
-                            <Select value={rowsPerPage} onChange={handleRowsPerPageChange} size="small">
-                                {ROWS_PER_PAGE_OPTIONS.map(number => <MenuItem key={number} value={number}>Xem {number}</MenuItem>)}
+                            <Select value={pageSize} onChange={handleRowsPerPageChange} size="small">
+                                <MenuItem value={5}>Xem 5</MenuItem>
+                                <MenuItem value={10}>Xem 10</MenuItem>
+                                <MenuItem value={20}>Xem 20</MenuItem>
+                                <MenuItem value={50}>Xem 50</MenuItem>
                             </Select>
                         </FormControl>
                         <SoftBox display="flex" alignItems="center" gap={1}>
-                            <Button variant="text" size="small" disabled={nhanVienData.first} onClick={() => handlePageChange(currentPage - 1)} sx={{ color: nhanVienData.first ? "#bdbdbd" : "#49a3f1" }}>Trước</Button>
-                            {getPaginationArray(nhanVienData.number, nhanVienData.totalPages).map((item, idx) => item === "..." ? (
-                                <Button key={`ellipsis-${idx}`} variant="text" size="small" disabled sx={{ minWidth: 32, borderRadius: 2, color: "#bdbdbd", pointerEvents: "none", fontWeight: 700 }}>...</Button>
-                            ) : (
-                                <Button key={item} variant={nhanVienData.number === item ? "contained" : "text"} color={nhanVienData.number === item ? "info" : "inherit"} size="small" onClick={() => handlePageChange(item)} sx={{ minWidth: 32, borderRadius: 2, color: nhanVienData.number === item ? "#fff" : "#495057", background: nhanVienData.number === item ? "#49a3f1" : "transparent" }}>{item + 1}</Button>
-                            ))}
-                            <Button variant="text" size="small" disabled={nhanVienData.last} onClick={() => handlePageChange(currentPage + 1)} sx={{ color: nhanVienData.last ? "#bdbdbd" : "#49a3f1" }}>Sau</Button>
+                            <Button
+                                variant="text"
+                                size="small"
+                                disabled={pagination.pageNo === 1}
+                                onClick={() => handlePageChange(pageNo - 1)}
+                                sx={{ color: pagination.pageNo === 1 ? "#bdbdbd" : "#49a3f1" }}
+                            >
+                                Trước
+                            </Button>
+                            {generatePaginationDisplay(pagination.pageNo, pagination.totalPages).map((item, idx) =>
+                                item === "..." ? (
+                                    <Button
+                                        key={`ellipsis-${idx}`}
+                                        variant="text"
+                                        size="small"
+                                        disabled
+                                        sx={{ minWidth: 32, borderRadius: 2, color: "#bdbdbd", pointerEvents: "none", fontWeight: 700 }}
+                                    >
+                                        ...
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        key={item}
+                                        variant={pagination.pageNo === item ? "contained" : "text"}
+                                        color={pagination.pageNo === item ? "info" : "inherit"}
+                                        size="small"
+                                        onClick={() => handlePageChange(item)}
+                                        sx={{
+                                            minWidth: 32,
+                                            borderRadius: 2,
+                                            color: pagination.pageNo === item ? "#fff" : "#495057",
+                                            background: pagination.pageNo === item ? "#49a3f1" : "transparent",
+                                        }}
+                                    >
+                                        {item}
+                                    </Button>
+                                )
+                            )}
+                            <Button
+                                variant="text"
+                                size="small"
+                                disabled={pagination.pageNo >= pagination.totalPages}
+                                onClick={() => handlePageChange(pageNo + 1)}
+                                sx={{ color: pagination.pageNo >= pagination.totalPages ? "#bdbdbd" : "#49a3f1" }}
+                            >
+                                Sau
+                            </Button>
                         </SoftBox>
                     </SoftBox>
                 </Card>

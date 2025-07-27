@@ -1,155 +1,194 @@
 package com.example.datn.Service;
 
-import com.example.datn.DTO.NhanVienDTO;
+import com.example.datn.DTO.employee.EmployeeDetailResponse;
+import com.example.datn.DTO.employee.EmployeeDuplicateCheckResponse;
+import com.example.datn.DTO.employee.EmployeeFilterResponse;
+import com.example.datn.DTO.employee.EmployeeListResponse;
+import com.example.datn.DTO.employee.EmployeeResponse;
+import com.example.datn.DTO.page.PaginationInfoResponse;
 import com.example.datn.Entity.NhanVien;
-import com.example.datn.Entity.VaiTro;
 import com.example.datn.Repository.NhanVienRepository;
-import com.example.datn.Repository.VaiTroRepository;
-import com.example.datn.VO.NhanVienQueryVO;
-import com.example.datn.VO.NhanVienUpdateVO;
-import com.example.datn.VO.NhanVienVO;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.datn.Service.impl.EmailService;
+import com.example.datn.VO.employee.EmployeeCreateRequest;
+import com.example.datn.VO.employee.EmployeeDuplicateCheckRequest;
+import com.example.datn.VO.employee.EmployeeFilterRequest;
+import com.example.datn.VO.employee.EmployeeUpdateRequest;
+import com.example.datn.VO.page.PageReq;
+import com.example.datn.exception.AppException;
+import com.example.datn.exception.ErrorCode;
+import com.example.datn.mapper.employee.EmployeeMapper;
+import com.example.datn.utils.FilterCriteriaMapper;
+import com.example.datn.utils.GenericSpecificationBuilder;
+import com.example.datn.utils.PasswordGenerator;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Qualifier;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
-/**
- * Service xử lý nghiệp vụ cho Nhân Viên và gửi mail tài khoản với HTML.
- */
 @Service
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@RequiredArgsConstructor
 public class NhanVienService {
+    Logger logger = LoggerFactory.getLogger(NhanVienService.class);
+    NhanVienRepository employeeRepository;
+    GenericSpecificationBuilder<NhanVien> specificationBuilder;
+    EmployeeMapper employeeMapper;
+    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+    EmailService emailService;
 
-    @Autowired
-    private VaiTroRepository vaiTroRepository;
+    @Transactional
+    public EmployeeDetailResponse update(Integer id, EmployeeUpdateRequest employeeUpdateRequest) {
 
-    private final NhanVienRepository nhanVienRepository;
-
-    @Autowired(required = false)
-    @Qualifier("emailConfigService")
-    private com.example.datn.Config.EmailService emailConfigService;
-
-    @Autowired
-    public NhanVienService(NhanVienRepository nhanVienRepository) {
-        this.nhanVienRepository = nhanVienRepository;
+        NhanVien existingEmployee = employeeRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+        employeeMapper.updateNhanVienFromEmployeeUpdateRequest(employeeUpdateRequest, existingEmployee);
+        //TODO: image? email? (liên quan bảo mật).
+        logger.debug("Updating existingEmployee: {}", existingEmployee);
+        return employeeMapper.toEmployeeDetailResponse(existingEmployee);
     }
 
     @Transactional
-    public Integer save(NhanVienVO vO) {
-        NhanVien bean = new NhanVien();
-        BeanUtils.copyProperties(vO, bean);
-        System.out.println( " id vai tro "+ vO.getIdVaiTro());
-        if (vO.getIdVaiTro() != null) {
-            VaiTro vaiTro = vaiTroRepository.findById(vO.getIdVaiTro()).orElse(null);
-            bean.setVaiTro(vaiTro);
-        } else {
-            bean.setVaiTro(null);
-        }
-        System.out.println("Bean thêm db: "+ bean);
-        bean = nhanVienRepository.save(bean);
+    public EmployeeDetailResponse save(EmployeeCreateRequest employeeCreateRequest) {
+        logger.info("employeeCreateRequest: {}", employeeCreateRequest);
+        NhanVien employee = employeeMapper.toNhanVien(employeeCreateRequest);
 
-        if (emailConfigService != null && bean.getEmail() != null && !bean.getEmail().trim().isEmpty()) {
-            String subject = "🎉 Tài khoản nhân viên đã được tạo thành công! 🎉";
-            String body = "<div style=\"font-family:'Segoe UI',Arial,sans-serif;background:#f9fafd;padding:32px 0;\">"
-                    + "<div style=\"max-width:520px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 4px 24px #e3e3ec;padding:40px 32px 32px 32px;\">"
-                    + "<div style=\"text-align:center;\">"
-                    + "    <img src=\"https://i.imgur.com/3fJ1P48.png\" alt=\"Logo Shop\" style=\"width:80px;margin-bottom:16px;\">"
-                    + "    <h2 style=\"color:#1976d2;margin-bottom:8px;letter-spacing:1px;\">Chào mừng bạn gia nhập Fashion Shirt Shop!</h2>"
-                    + "    <p style=\"color:#444;font-size:17px;margin:0 0 20px 0;\">Xin chào <b style='color:#1976d2'>" + bean.getHoVaTen() + "</b>,</p>"
-                    + "</div>"
-                    + "<div style=\"background:#f7fbfd;border-radius:12px;padding:24px 18px;margin:18px 0 22px 0;border:1.5px solid #e3f3fc;\">"
-                    + "    <div style=\"font-size:17px;\">"
-                    + "        <span style=\"color:#1976d2;font-weight:600;\">Thông tin đăng nhập của bạn:</span><br>"
-                    + "        <table style=\"width:100%;margin-top:12px;font-size:16px;\">"
-                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Tên đăng nhập:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getEmail() + "</td></tr>"
-                    + "            <tr><td style=\"padding:6px 0;color:#888;\">Mật khẩu:</td><td style=\"font-weight:700;color:#1976d2;\">" + bean.getMatKhau() + "</td></tr>"
-                    + "        </table>"
-                    + "        <div style=\"margin-top:20px;color:#444;\">"
-                    + "            Vui lòng đổi mật khẩu sau khi đăng nhập lần đầu để bảo mật tài khoản.<br>"
-                    + "            <a href=\"http://localhost:3000/dang-nhap\" style=\"display:inline-block;margin-top:16px;padding:10px 32px;background:#1976d2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(25,118,210,0.10);\">Đăng nhập ngay</a>"
-                    + "        </div>"
-                    + "    </div>"
-                    + "</div>"
-                    + "<div style=\"font-size:15px;color:#888;text-align:center;margin-top:12px;\">"
-                    + "    Nếu bạn không thực hiện đăng ký này, hãy bỏ qua email này.<br>"
-                    + "    <i>Đây là email tự động, vui lòng không trả lời lại.</i>"
-                    + "</div>"
-                    + "</div>"
-                    + "</div>";
-            try {
-                emailConfigService.sendEmail(
-                        bean.getEmail(),
-                        subject,
-                        body
-                );
-            } catch (Exception ex) {
-                System.err.println("Gửi email nhân viên thất bại: " + ex.getMessage());
+        //Generate Password
+        String generatedPassword = PasswordGenerator.generatePassword();
+
+        employee.setMaNhanVien(generateEmployeeCode());
+        employee.setMatKhau(passwordEncoder.encode(generatedPassword));
+        emailService.sendEmailToEmp(employee, generatedPassword);
+
+        employee.setTrangThai("ACTIVE");
+
+        //TODO: Xác định xem image lưu kiểu gì?
+
+        logger.debug("Saving employee: {}", employee);
+        employeeRepository.save(employee);
+        return employeeMapper.toEmployeeDetailResponse(employee);
+    }
+
+    public EmployeeDetailResponse getById(Integer id) {
+        NhanVien employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+        logger.debug("Employee found: {}", employee);
+        return employeeMapper.toEmployeeDetailResponse(employee);
+    }
+
+    //Build Specification + Pageable : Query --> Data --> Convert to Response
+    public EmployeeListResponse getFilteredEmployees(EmployeeFilterRequest param, PageReq pageReq) {
+        logger.info("param: {}, pageReq: {}", param, pageReq);
+        Specification<NhanVien> spec = specificationBuilder.buildSpecification(param, FilterCriteriaMapper.forEmployee());
+
+        Sort sort = Sort.by(pageReq.getSortDir().equalsIgnoreCase("asc") ?
+                Sort.Direction.ASC : Sort.Direction.DESC, pageReq.getSortBy());
+        PageRequest pageable = PageRequest.of(pageReq.getPageNo() - 1, pageReq.getPageSize(), sort);
+        Page<NhanVien> page = employeeRepository.findAll(spec, pageable);
+
+        logger.debug("page: {}", page.getContent());
+
+        PaginationInfoResponse paginationResponse = convertToPaginationInfoResponse(page, pageReq);
+        List<EmployeeResponse> customerResponses = employeeMapper.toEmployeeResponseList(page.getContent());
+        EmployeeFilterResponse filterResponse = employeeMapper.toEmployeeFilterResponse(param);
+
+        // Build EmployeeListResponse
+        return EmployeeListResponse.builder()
+                .employees(customerResponses)
+                .pagination(paginationResponse)
+                .filter(filterResponse)
+                .build();
+    }
+
+    private PaginationInfoResponse convertToPaginationInfoResponse(Page<NhanVien> page, PageReq pageReq) {
+        if (page == null || pageReq == null) return PaginationInfoResponse.builder().build();
+        return PaginationInfoResponse.builder()
+                .pageNo(page.getNumber() + 1)
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .sortBy(pageReq.getSortBy())
+                .sortDir(pageReq.getSortDir())
+                .build();
+    }
+
+    public String generateEmployeeCode() {
+        long count = employeeRepository.count() + 1; // Tăng thêm 1 để lấy mã cho nhân viên mới
+        if (count < 10) {
+            return String.format("EMP-0%d", count);
+        } else {
+            return String.format("EMP-%d", count);
+        }
+    }
+
+    /**
+     * Kiểm tra trùng lặp thông tin nhân viên
+     * @param request Thông tin cần kiểm tra
+     * @return Kết quả kiểm tra trùng lặp
+     */
+    public EmployeeDuplicateCheckResponse checkDuplicate(EmployeeDuplicateCheckRequest request) {
+        Integer id = request.getId();
+        boolean emailDuplicate = (id == null)
+            ? employeeRepository.existsByEmail(request.getEmail())
+            : employeeRepository.existsByEmailAndIdNot(request.getEmail(), id);
+        boolean phoneDuplicate = (id == null)
+            ? employeeRepository.existsBySoDienThoai(request.getSoDienThoai())
+            : employeeRepository.existsBySoDienThoaiAndIdNot(request.getSoDienThoai(), id);
+        boolean cccdDuplicate = (id == null)
+            ? employeeRepository.existsByCanCuocCongDan(request.getCanCuocCongDan())
+            : employeeRepository.existsByCanCuocCongDanAndIdNot(request.getCanCuocCongDan(), id);
+        
+        // Tạo danh sách các trường bị trùng lặp
+        List<String> duplicateFields = new ArrayList<>();
+        if (emailDuplicate) duplicateFields.add("email");
+        if (phoneDuplicate) duplicateFields.add("soDienThoai");
+        if (cccdDuplicate) duplicateFields.add("canCuocCongDan");
+        
+        // Tạo thông báo lỗi
+        String message = "";
+        if (!duplicateFields.isEmpty()) {   
+            if (duplicateFields.size() == 1) {  // Nếu có 1 trường bị trùng lặp thì:
+                String field = duplicateFields.get(0);
+                switch (field) {
+                    case "email":
+                        message = "Email đã tồn tại trong hệ thống";
+                        break;
+                    case "soDienThoai":
+                        message = "Số điện thoại đã tồn tại trong hệ thống";
+                        break;
+                    case "canCuocCongDan":
+                        message = "Căn cước công dân đã tồn tại trong hệ thống";
+                        break;
+                }
+            } else {    // Nếu có nhiều trường bị trùng lặp thì:
+                message = "Các trường sau đã tồn tại trong hệ thống: " + String.join(", ", duplicateFields);
             }
         }
-
-        return bean.getId();
-    }
-
-    @Transactional
-    public void delete(Integer id) {
-        NhanVien bean = requireOne(id);
-        nhanVienRepository.delete(bean);
-    }
-
-    @Transactional
-    public void update(Integer id, NhanVienUpdateVO vO) {
-        NhanVien bean = requireOne(id);
-        BeanUtils.copyProperties(vO, bean);
-        if (vO.getIdVaiTro() != null) {
-            VaiTro vaiTro = vaiTroRepository.findById(vO.getIdVaiTro()).orElse(null);
-            bean.setVaiTro(vaiTro);
-        } else {
-            bean.setVaiTro(null);
-        }
-        nhanVienRepository.save(bean);
-    }
-
-    public NhanVienDTO getById(Integer id) {
-        NhanVien original = requireOne(id);
-        return toDTO(original);
-    }
-
-    public Page<NhanVienDTO> query(NhanVienQueryVO vO) {
-        int page = vO.getPage() != null ? vO.getPage() : 0;
-        int size = vO.getSize() != null ? vO.getSize() : 10;
-        PageRequest pageRequest = PageRequest.of(page, size);
-        Page<NhanVien> pageResult = nhanVienRepository.findAll(pageRequest);
-
-        List<NhanVienDTO> dtos = pageResult.getContent().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return new PageImpl<>(dtos, pageRequest, pageResult.getTotalElements());
-    }
-
-    private NhanVienDTO toDTO(NhanVien original) {
-        System.out.println("original: " + original.toString());
-        NhanVienDTO bean = new NhanVienDTO();
-        BeanUtils.copyProperties(original, bean);
-        if (original.getVaiTro() != null) {
-            bean.setIdVaiTro(original.getVaiTro().getId());
-            bean.setTenVaiTro(original.getVaiTro().getTen());
-        } else {
-            bean.setIdVaiTro(null);
-            bean.setTenVaiTro(null);
-        }
-        System.out.println("bean: " + bean.toString());
-        return bean;
-    }
-
-    private NhanVien requireOne(Integer id) {
-        return nhanVienRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Resource not found: " + id));
+        
+        // Tạo thông tin chi tiết
+        EmployeeDuplicateCheckResponse.DuplicateInfo duplicateInfo = EmployeeDuplicateCheckResponse.DuplicateInfo.builder()
+                .emailDuplicate(emailDuplicate)
+                .phoneDuplicate(phoneDuplicate)
+                .cccdDuplicate(cccdDuplicate)
+                .message(message)
+                .build();
+        
+        // Trả về kết quả
+        return EmployeeDuplicateCheckResponse.builder()
+                .hasDuplicate(!duplicateFields.isEmpty())
+                .duplicateFields(duplicateFields)
+                .duplicateInfo(duplicateInfo)
+                .build();
     }
 }

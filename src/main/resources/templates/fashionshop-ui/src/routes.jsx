@@ -18,6 +18,8 @@ import AddPhieuGiam from "layouts/phieugiamgia/addPhieuGiam";
 import UpdatePhieuGiam from "layouts/phieugiamgia/updatePhieuGiamGia";
 import KhachHang from "layouts/khachhang";
 import AddKhachHang from "layouts/khachhang/add";
+import DetailKhachHang from "layouts/khachhang/detail";
+import UpdateKhachHang from "layouts/khachhang/update";
 import NhanVien from "layouts/nhanvien";
 import AddNhanVien from "layouts/nhanvien/add";
 import DetailNhanVien from "layouts/nhanvien/detail";
@@ -26,7 +28,7 @@ import UpdateNhanVien from "layouts/nhanvien/update";
 
 
 import SignIn from "layouts/authentication/sign-in";
-import SignUp from "layouts/authentication/sign-up";
+import SignUp from "layouts/authentication/sign-up";  
 
 import Shop from "examples/Icons/Shop";
 import Office from "examples/Icons/Office";
@@ -279,6 +281,23 @@ const routes = [
     name: "Thêm khách hàng",
     route: "/khachhang/add",
     component: <AddKhachHang />,
+    noCollapse: true,
+    hidden: true,
+  },
+
+  {
+    key: "detail-customer",
+    name: "chi tiết khách hàng",
+    route: "/khachhang/detail/:id",
+    component: <DetailKhachHang />,     
+    noCollapse: true,
+    hidden: true,
+  },
+  {
+    key: "update-customer",
+    name: "Cập nhật khách hàng",
+    route: "/khachhang/update/:id",
+    component: <UpdateKhachHang />,
     noCollapse: true,
     hidden: true,
   },

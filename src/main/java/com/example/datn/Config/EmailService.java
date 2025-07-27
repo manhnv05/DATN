@@ -31,7 +31,6 @@ public class EmailService {
         messageHelper.setTo(to);
         messageHelper.setSubject(subject);
         messageHelper.setText(body, true); // true cho phép gửi HTML
-
         javaMailSender.send(mimeMessage);
     }
 }

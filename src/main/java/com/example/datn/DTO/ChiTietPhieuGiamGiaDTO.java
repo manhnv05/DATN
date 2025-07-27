@@ -1,5 +1,6 @@
 package com.example.datn.DTO;
 
+import com.example.datn.DTO.customer.KhachHangDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
