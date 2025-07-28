@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface DiaChiRepository extends JpaRepository<DiaChi, Integer>, JpaSpecificationExecutor<DiaChi> {
     List<DiaChi> getDiaChiByKhachHang_Id(Integer customerId);
+
+    List<DiaChi> findByKhachHangId (Integer khachHangId);
 }

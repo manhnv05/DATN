@@ -1,5 +1,6 @@
 package com.example.datn.Service;
 
+import com.example.datn.DTO.DiaChiDTO;
 import com.example.datn.DTO.address.AddressResponse;
 import com.example.datn.Entity.DiaChi;
 import com.example.datn.Entity.KhachHang;
@@ -15,11 +16,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -112,8 +115,17 @@ public class DiaChiService {
             addressRepository.saveAll(addresses);
         }
     }
+    private DiaChiDTO toDTO(DiaChi original) {
+        DiaChiDTO bean = new DiaChiDTO();
+        BeanUtils.copyProperties(original, bean);
+        if (original.getKhachHang() != null) {
+            bean.setIdKhachHang(original.getKhachHang().getId());
+        }
+        return bean;
+    }
+
     public List<DiaChiDTO> getAllDiaChiByIdKhachHang(Integer idKhachHang) {
-        List<DiaChi> diaChis = diaChiRepository.findByKhachHangId(idKhachHang);
+        List<DiaChi> diaChis = addressRepository.findByKhachHangId(idKhachHang);
         return diaChis.stream().map(this::toDTO).collect(Collectors.toList());
     }
 }
