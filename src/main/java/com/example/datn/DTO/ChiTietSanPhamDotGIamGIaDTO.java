@@ -25,4 +25,5 @@ public class ChiTietSanPhamDotGIamGIaDTO {
     private String tayAo;
     private Integer giaTienSauKhiGiam;
     private int gia;
+    private int phanTramGiam;
 }

@@ -639,7 +639,7 @@ function AddDiscountEventPage() {
             </Stack>
             <Stack direction="row" spacing={3} mb={3}>
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
-                    <SoftTypography sx={{ fontWeight: 500 }}>Chỉnh sửa đợt giảm giá</SoftTypography>
+                    <SoftTypography sx={{ fontWeight: 500 }}>{eventId ? "Thêm đợt giảm giá":"Sửa đợt giảm giá"}</SoftTypography>
                     <Stack
                         spacing={1}
                         component="form"

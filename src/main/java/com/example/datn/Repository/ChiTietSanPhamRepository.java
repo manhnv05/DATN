@@ -64,4 +64,11 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
         WHERE (ctsp.soLuong < 10)
     """)
     Page<ChiTietSanPham> getChiTietSanPhamSapHetHan(Pageable pageable);
+
+    @Query("""
+    SELECT ctsp FROM ChiTietSanPham ctsp
+        WHERE (ctsp.soLuong > 0 AND ctsp.trangThai = 1)
+        ORDER BY ctsp.id desc
+""")
+    List<ChiTietSanPham> getChiTietSanPhamTrangThai();
 }

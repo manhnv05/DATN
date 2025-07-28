@@ -80,7 +80,7 @@ public class ChiTietSanPhamService {
     }
 
     public List<ChiTietSanPhamDotGIamGIaDTO> getChiTietSanPhamCoDGG() {
-        List<ChiTietSanPham> chiTietSanPhamList = chiTietSanPhamRepository.findAll();
+        List<ChiTietSanPham> chiTietSanPhamList = chiTietSanPhamRepository.getChiTietSanPhamTrangThai();
         List<ChiTietSanPhamDotGIamGIaDTO> chiTietSanPhamDotGIamGIaDTOS = new ArrayList<ChiTietSanPhamDotGIamGIaDTO>();
         for (ChiTietSanPham c : chiTietSanPhamList) {
             ChiTietSanPhamDotGIamGIaDTO ctsp = new ChiTietSanPhamDotGIamGIaDTO();
@@ -102,6 +102,12 @@ public class ChiTietSanPhamService {
             ctsp.setTayAo(c.getTayAo().getTenTayAo());
             ctsp.setGia(c.getGia());
             ctsp.setGiaTienSauKhiGiam(c.getGia() - (c.getGia() * pggLonNhat / 100));
+            if (pggLonNhat == 100){
+                ctsp.setPhanTramGiam(0);
+            }
+            else {
+                ctsp.setPhanTramGiam(pggLonNhat);
+            }
             chiTietSanPhamDotGIamGIaDTOS.add(ctsp);
         }
 
