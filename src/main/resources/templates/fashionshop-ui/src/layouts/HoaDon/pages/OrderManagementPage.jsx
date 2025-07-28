@@ -41,7 +41,7 @@ function OrderManagementPage() {
       ngayTaoEnd: "",
       loaiHoaDon: "",
     });
-    setCurrentPage(0); // Reset về trang đầu tiên
+    setCurrentPage(0);
   };
 
   return (

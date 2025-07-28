@@ -49,7 +49,7 @@ const orderTypeMap = { tai_quay: "Tại quầy", giao_hang: "Giao hàng", online
 const mapStatus = (apiStatus) => statusMap[apiStatus] || apiStatus;
 const mapPaymentStatus = (apiStatus) => paymentStatusMap[apiStatus] || apiStatus;
 const mapOrderType = (apiType) => orderTypeMap[apiType] || apiType;
-
+const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 const OrderDetailPage = () => {
   // === HOOKS VÀ STATE ===
   const { orderId } = useParams();

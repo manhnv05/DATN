@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import styles from "./PaymentHistory.module.css"; // File CSS module của bạn
-
+import PaymentModal from "../../BanHangTaiQuay/component/PaymentModal"
 // --- Các hàm tiện ích (giữ nguyên) ---
 const formatCurrency = (amount) => {
   if (typeof amount !== "number") return "";

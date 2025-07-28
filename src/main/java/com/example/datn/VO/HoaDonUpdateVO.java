@@ -29,5 +29,6 @@ public class HoaDonUpdateVO {
     private String diaChi;
 
     @Size(max = 1000, message = "Ghi chú không được vượt quá 1000 ký tự")
-    private String ghiChu; 
+    private String ghiChu;
+    private Integer phiVanChuyen;
 }
