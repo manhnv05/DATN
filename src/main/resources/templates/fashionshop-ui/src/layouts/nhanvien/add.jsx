@@ -1,1026 +1,1096 @@
 import React, { useState, useEffect } from "react";
-import Card from "@mui/material/Card";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import FormControl from "@mui/material/FormControl";
-import Avatar from "@mui/material/Avatar";
-import FormHelperText from "@mui/material/FormHelperText";
-import UploadIcon from "@mui/icons-material/Upload";
+import {
+    Card, Box, Typography, Grid, TextField, Button, FormControl,
+    Avatar, CircularProgress, Divider, Select, MenuItem, Dialog,
+    DialogTitle, DialogContent, DialogActions, DialogContentText,
+} from "@mui/material";
+import { Upload, CheckCircle } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { styled } from "@mui/material/styles";
+import Fade from "@mui/material/Fade";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import dayjs from "dayjs";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Fade from "@mui/material/Fade";
-import Paper from "@mui/material/Paper";
-import Divider from "@mui/material/Divider";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import Tooltip from "@mui/material/Tooltip";
-import CircularProgress from "@mui/material/CircularProgress";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import axios from "axios";
-import { styled } from "@mui/material/styles";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import SafeAutocomplete from "./component/SafeAutocomplete";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import CCCDCameraModal from "./modalQuetCCCD";
-import { handleCameraCapture, parseCCCDText } from "./component/handleCameraCapture";
+import { toast } from "react-toastify";
+import InputAdornment from "@mui/material/InputAdornment";
+import PropTypes from "prop-types";
 
-const nhanVienAddAPI = "http://localhost:8080/nhanVien";
-const roleListAPI = "http://localhost:8080/vaiTro/list";
+// API URLs
+const API_BASE_URL = "http://localhost:8080/nhanVien";
 const provinceAPI = "https://provinces.open-api.vn/api/?depth=1";
-const districtAPI = (code) => "https://provinces.open-api.vn/api/p/" + code + "?depth=2";
-const wardAPI = (code) => "https://provinces.open-api.vn/api/d/" + code + "?depth=2";
+const districtAPI = (code) => `https://provinces.open-api.vn/api/p/${code}?depth=2`;
+const wardAPI = (code) => `https://provinces.open-api.vn/api/d/${code}?depth=2`;
 
-function arraySafe(array) {
-    if (Array.isArray(array)) {
-        return array;
-    } else {
-        return [];
+// UI Styles
+const labelStyle = { fontWeight: 600, color: "#1769aa", mb: 0.5, fontSize: 15, display: "block" };
+const GradientCard = styled(Card)({
+    borderRadius: 16, background: "#fff", boxShadow: "0 8px 32px rgba(28, 72, 180, 0.09)", p: 3,
+    maxWidth: 1800,
+    minHeight: "83vh",
+    width: "100%",
+});
+const AvatarWrapper = styled(Box)({ display: "flex", alignItems: "center", flexDirection: "column", gap: 1.5, width: "100%" });
+const AvatarUploadButton = styled(Button)({
+    textTransform: "none", fontWeight: 700, borderRadius: 12, fontSize: 14,
+    background: "#fff", color: "#1565c0", border: "1.5px solid #90caf9",
+    boxShadow: "0 2px 8px #e3f0fa", mt: 0.5,
+    "&:hover": { background: "#e3f0fa", borderColor: "#42a5f5", color: "#1769aa" },
+});
+const SectionTitle = styled(Typography)({
+    fontWeight: 900, color: "#1769aa", fontSize: 26, letterSpacing: 1.3,
+    textShadow: "0 2px 10px #e3f0fa, 0 1px 0 #fff",
+});
+const getFieldSx = (focusField, name, errorField) => ({
+    bgcolor: focusField === name ? "#e3f0fa" : "#fafdff",
+    borderRadius: 2,
+    boxShadow: focusField === name ? "0 0 0 3px #90caf9" : errorField === name ? "0 0 0 2px #d32f2f" : "none",
+    border: errorField === name ? "1px solid #d32f2f" : "none",
+    transition: "all 0.3s",
+    "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+            borderColor: errorField === name ? "#d32f2f" : "transparent",
+        },
+        "&:hover fieldset": {
+            borderColor: errorField === name ? "#d32f2f" : "#90caf9",
+        },
+        "&.Mui-focused fieldset": {
+            borderColor: errorField === name ? "#d32f2f" : "#1976d2",
+        },
+    },
+});
+
+// Hàm tính tuổi từ ngày sinh.
+function getAgeFromDateString(dateString) {
+    if (!dateString) return "";
+    const [day, month, year] = dateString.split("/");//VD: "01/01/2000" → ["01", "01", "2000"]
+    const birthDate = new Date(`${year}-${month}-${day}`);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
     }
+    return age;
 }
 
-function findById(array, value, key) {
-    if (!array || !value) return null;
-    if (!key) key = "id";
-    return array.find((item) => item && item[key] === value) || null;
-}
+function AddNhanVienForm() {
 
-const GENDER_OPTIONS = [
-    { value: "Nam", label: "Nam" },
-    { value: "Nữ", label: "Nữ" },
-    { value: "Khác", label: "Khác" }
-];
+    useEffect(() => {
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, []);
 
-const labelStyle = {
-    fontWeight: 600,
-    color: "#1769aa",
-    marginBottom: 4,
-    fontSize: 15,
-    display: "block",
-    letterSpacing: "0.3px"
-};
+    const today = new Date();
+    // Năm sinh tối đa được phép (không dưới 18 tuổi)
+    const minBirthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    // Năm sinh tối thiểu được phép (không quá 80 tuổi)
+    const maxBirthDate = new Date(today.getFullYear() - 80, today.getMonth(), today.getDate());
 
-const GradientCard = styled(Card)(({ theme }) => ({
-    borderRadius: 16,
-    background: "#fff",
-    boxShadow: "0 8px 32px 0 rgba(28, 72, 180, 0.09)",
-    padding: theme.spacing(3),
-    position: "relative",
-    overflow: "visible",
-    maxWidth: 1500,
-    width: "100%"
-}));
-
-const AvatarWrapper = styled(Box)(({ theme }) => ({
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-    flexDirection: "column",
-    gap: theme.spacing(1.5),
-    width: "100%"
-}));
-
-const AvatarUploadButton = styled(Button)(({ theme }) => ({
-    textTransform: "none",
-    fontWeight: 700,
-    borderRadius: 12,
-    fontSize: 14,
-    background: "#fff",
-    color: "#1565c0",
-    border: "1.5px solid #90caf9",
-    boxShadow: "0 2px 8px #e3f0fa",
-    marginTop: theme.spacing(0.5),
-    "&:hover": {
-        background: "#e3f0fa",
-        borderColor: "#42a5f5",
-        color: "#1769aa"
-    }
-}));
-
-const SectionTitle = styled(Typography)(({ theme }) => ({
-    fontWeight: 900,
-    color: "#1769aa",
-    fontSize: 26,
-    letterSpacing: 1.3,
-    textShadow: "0 2px 10px #e3f0fa, 0 1px 0 #fff"
-}));
-
-function generateEmployeeCode() {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    const randomNumber = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-    return "NV" + year + month + day + randomNumber;
-}
-
-function generatePassword() {
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let password = "";
-    for (let index = 0; index < 10; index++) {
-        password += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return password;
-}
-
-export default function AddNhanVienForm() {
-    const [employee, setEmployee] = useState({
-        hoVaTen: "",
-        hinhAnh: "",
-        gioiTinh: "",
-        ngaySinh: "",
-        soDienThoai: "",
-        canCuocCongDan: "",
-        email: "",
-        vaiTro: null,
-        trangThai: 1, // luôn mặc định là "Đang hoạt động"
-        tinhThanhPho: "",
-        quanHuyen: "",
-        xaPhuong: "",
-        maNhanVien: "",
-        matKhau: "",
-        diaChi: ""
-    });
-
-    const [avatarPreview, setAvatarPreview] = useState("");
-    const [errors, setErrors] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [focusField, setFocusField] = useState("");
     const navigate = useNavigate();
-    const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
-    const [provinceInput, setProvinceInput] = useState("");
-    const [districtInput, setDistrictInput] = useState("");
-    const [wardInput, setWardInput] = useState("");
-    const [roleOptions, setRoleOptions] = useState([]);
-    const [roleInput, setRoleInput] = useState("");
-    const [openCamera, setOpenCamera] = useState(false);
 
-    function fetchRoles() {
-        axios.get(roleListAPI).then(function (response) {
-            setRoleOptions(arraySafe(response.data));
-        });
+    const [employee, setEmployee] = useState({
+        hinhAnh: "",
+        hoVaTen: "Nguyễn Văn A",
+        email: "hoangbamanh5x12@gmail.com",
+        soDienThoai: "0344667744",
+        ngaySinh: dayjs(minBirthDate).format("DD/MM/YYYY"),
+        gioiTinh: "MALE",
+        canCuocCongDan: "012345678901",   // CCCD 12 số
+        vaiTro: "EMPLOYEE",
+        tinhThanhPho: "", quanHuyen: "", xaPhuong: "",//code. 
+    });
+    const [avatarPreview, setAvatarPreview] = useState("");
+    const [focusField, setFocusField] = useState("");
+    const [errorField, setErrorField] = useState("");
+
+    /**
+     * Sinh ra props chuẩn cho TextField dùng trong form nhân viên,
+     * bao gồm xử lý focus, style, và các thuộc tính nhập liệu cơ bản.
+     * @param {string} fieldName - Tên trường dữ liệu (dùng cho style focus).
+     * @param {object} options - Tuỳ chọn mở rộng (placeholder, maxLength, inputMode, disabled, autoFocus, v.v.).
+     * @returns {object} - Object props cho TextField.
+     */
+    function buildTextFieldProps(fieldName, options = {}) {
+        const value = employee[fieldName] || "";
+        const maxLength = options.maxLength;
+        // Nếu có maxLength thì hiển thị số ký tự
+        const endAdornment = maxLength ? (
+            <InputAdornment position="end" sx={{ color: errorField === fieldName ? "#d32f2f" : "#90caf9", fontSize: 13 }}>
+                {value.length}/{maxLength}
+            </InputAdornment>
+        ) : options.endAdornment;
+
+        return {
+            name: fieldName,
+            value,
+            onChange: handleChange,
+            fullWidth: true,
+            size: "small",
+            placeholder: options.placeholder,
+            disabled: options.disabled,
+            autoFocus: options.autoFocus,
+            error: errorField === fieldName,
+            InputProps: {
+                startAdornment: options.startAdornment,
+                endAdornment,
+                onFocus: () => {
+                    setFocusField(fieldName);
+                    if (errorField === fieldName) {
+                        setErrorField("");
+                    }
+                },
+                onBlur: () => setFocusField(""),
+            },
+            inputProps: {
+                maxLength,
+                ...options.inputProps, // cho phép mở rộng thêm nếu cần
+            },
+            sx: {
+                ...getFieldSx(focusField, fieldName, errorField),
+                '& .MuiInputBase-input': {
+                    minHeight: options.minHeightInput || "20px",
+                    minWidth: options.minWidthInput || "230px",
+                },
+                ...options.sx,
+            }
+        };
     }
 
-    useEffect(function () {
-        setEmployee(function (previous) {
-            return {
-                ...previous,
-                maNhanVien: generateEmployeeCode(),
-                matKhau: generatePassword(),
-                trangThai: 1 // luôn để mặc định
-            };
-        });
-    }, []);
+    const handlers = {
+        date: (date) => {
+            // Ví dụ: date = "2024-06-01T00:00:00.000Z"
+            console.log("DatePicker value:", date);
+            date && dayjs(date).isValid() // Nếu date tồn tại và hợp lệ
+                ? setEmployee(prev => ({ ...prev, ngaySinh: dayjs(date).format("DD/MM/YYYY") })) // VD: "01/06/2024"
+                : setEmployee(prev => ({ ...prev, ngaySinh: "" }));
+        },
+        file: (file) => {
+            // Ví dụ: file = { name: "avatar.png", ... }
+            if (file) {
+                setEmployee(prev => ({ ...prev, hinhAnh: file.name })); // VD: "avatar.png"
+                setAvatarPreview(URL.createObjectURL(file)); // VD: "blob:http://localhost:3000/..."
+            }
+        },
+        input: (name, value) => {
+            // Ví dụ: name = "soDienThoai", value = "0989999999"
+            // Chỉ cho nhập số ở các trường số
+            if (name === "soDienThoai" || name === "canCuocCongDan") {
+                const numericValue = value.replace(/\D/g, ""); // Xóa tất cả ký tự không phải số trước khi render lại.
+                console.log(`Thay đổi ${name}: "${value}" -> "${numericValue}"`);
 
-    useEffect(function () {
-        axios.get(provinceAPI).then(function (response) {
-            setProvinces(arraySafe(response.data));
-        });
-    }, []);
+                // // Validation để tránh nhập nhầm
+                // if (name === "soDienThoai" && numericValue.length > 10) {
+                //     console.warn("Số điện thoại không được quá 10 số!");
+                //     return; // Không cập nhật nếu quá 10 số
+                // }
+                // if (name === "canCuocCongDan" && numericValue.length > 12) {
+                //     console.warn("CCCD không được quá 12 số!");
+                //     return; // Không cập nhật nếu quá 12 số
+                // }
 
-    useEffect(function () {
-        fetchRoles();
-    }, []);
-
-    useEffect(function () {
-        if (employee.tinhThanhPho) {
-            axios.get(districtAPI(employee.tinhThanhPho)).then(function (response) {
-                if (response.data && Array.isArray(response.data.districts)) {
-                    setDistricts(response.data.districts);
-                } else {
-                    setDistricts([]);
-                }
-            });
-        } else {
-            setDistricts([]);
+                setEmployee(prev => ({ ...prev, [name]: numericValue }));
+                return;
+            }
+            console.log(`Thay đổi ${name}: "${value}"`);
+            setEmployee(prev => ({ ...prev, [name]: value }));
         }
-        // KHÔNG reset employee.quanHuyen/xaPhuong ở đây!
-        setDistrictInput("");
-        setWardInput("");
-        setWards([]);
+    };
+
+    const handleChange = (evt) => {
+        // DatePicker event
+        if (!evt?.target) return handlers.date(evt);
+
+        const { name, value, files } = evt.target;
+
+        // File upload event
+        if (name === "hinhAnh" && files?.[0]) return handlers.file(files[0]);
+
+        // Các trường còn lại
+        console.log("name and value", name, value);
+        handlers.input(name, value);
+    };
+
+    // Component select địa chỉ dùng chung
+    function AddressSelect({ label, name, value, options, disabled, error, onFocusField }) {
+        const [focus, setFocus] = useState(false);  //Thiết lập field được focus. 
+        return (
+            <Grid item xs={12} sm={4}>
+                <label style={labelStyle}>{label}</label>
+                <FormControl
+                    fullWidth
+                    size="small"
+                    sx={{
+                        ...getFieldSx(focus ? name : "", name, error ? name : ""),
+                    }}
+                    disabled={disabled}
+                >
+                    <Select
+                        name={name}
+                        value={value || ""}
+                        onChange={handleChange}
+                        onFocus={() => {
+                            setFocus(true);
+                            onFocusField && onFocusField(name);
+                        }}
+                        onBlur={() => setFocus(false)}
+                        displayEmpty
+                    >
+                        <MenuItem value=""><em>Chọn {label}</em></MenuItem>
+                        {options.map(opt => (
+                            <MenuItem key={opt.code} value={opt.code}>{opt.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Grid>
+        );
+    }
+
+    AddressSelect.propTypes = {
+        label: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        options: PropTypes.arrayOf(PropTypes.shape({
+            code: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            name: PropTypes.string,
+        })).isRequired,
+        disabled: PropTypes.bool,
+        error: PropTypes.bool,
+        onFocusField: PropTypes.func, // Thêm dòng này để hết lỗi linter
+    };
+
+    // Mục đích: focus vào select thì lỗi của select sẽ bị reset. (Địa Chỉ)
+    const handleFocusField = (name) => {
+        setErrorField(prev => (prev === name ? "" : prev));
+    };
+
+    //Danh sách địa chỉ tỉnh/tp, quận/huyện, xã/phường hiển thị trên select.
+    const [addressData, setAddressData] = useState({ provinces: [], districts: [], wards: [] });
+
+    const fetchAddress = async (type, code) => {
+        // Chọn API dựa trên loại địa chỉ (type)
+        const api = {
+            provinces: provinceAPI,
+            districts: districtAPI(code),
+            wards: wardAPI(code)
+        }[type];
+        try {
+            const { data } = await axios.get(api);
+            const result = type === "provinces" ? data : data[type];
+            return Array.isArray(result) ? result : [];
+        } catch (error) {
+            console.error(`Error fetching ${type}:`, error);
+            return [];
+        }
+    };
+
+    //Fetch: Tỉnh: một lần duy nhất khi render xong UI lần đầu(component mounted).
+    useEffect(() => {
+        fetchAddress("provinces").then(provinces => {
+            setAddressData(prev => ({ ...prev, provinces }));
+        });
+    }, []);
+
+    useEffect(() => {
+        //Hiển d.sách Quận/Huyện - Reset Xã/Phường.
+        const districtsPromise = employee.tinhThanhPho
+            ? fetchAddress("districts", employee.tinhThanhPho) //Nếu đang chọn 1 tỉnh
+            : Promise.resolve([]);  //Nếu chọn "Chọn tỉnh/thành phố" --> value: "".
+        districtsPromise.then(districts => {
+            setAddressData(prev => ({ ...prev, districts, wards: [] }));
+            setEmployee(prev => ({ ...prev, quanHuyen: "", xaPhuong: "" }));
+        });
     }, [employee.tinhThanhPho]);
 
-    useEffect(function () {
-        if (employee.quanHuyen) {
-            axios.get(wardAPI(employee.quanHuyen)).then(function (response) {
-                if (response.data && Array.isArray(response.data.wards)) {
-                    setWards(response.data.wards);
-                } else {
-                    setWards([]);
-                }
-            });
-        } else {
-            setWards([]);
-        }
-        // KHÔNG reset employee.xaPhuong ở đây!
-        setWardInput("");
+    useEffect(() => {
+        const wardsPromise = employee.quanHuyen
+            ? fetchAddress("wards", employee.quanHuyen)
+            : Promise.resolve([]);
+        wardsPromise.then(wards => {
+            setAddressData(prev => ({ ...prev, wards }));
+            setEmployee(prev => ({ ...prev, xaPhuong: "" }));
+        });
     }, [employee.quanHuyen]);
 
-    function handleEmployeeChange(event) {
-        const name = event.target.name;
-        const value = event.target.value;
-        setEmployee(function (previous) {
-            return {
-                ...previous,
-                [name]: value
-            };
-        });
-        setErrors(function (previous) {
-            return {
-                ...previous,
-                [name]: undefined
-            };
-        });
-    }
 
-    function handleAvatarChange(event) {
-        const file = event.target.files[0];
-        if (file) {
-            setEmployee(function (previous) {
-                return {
-                    ...previous,
-                    hinhAnh: file.name
-                };
-            });
-            setAvatarPreview(URL.createObjectURL(file));
-        }
-    }
 
-    function validate() {
-        let error = {};
-        const vnf_phone = /^(0[3|5|7|8|9])[0-9]{8}$/;
-        const email_regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const cccd_regex = /^[0-9]{12}$/;
-        if (!employee.canCuocCongDan) {
-            error.canCuocCongDan = "Vui lòng nhập mã CCCD";
-            return error;
-        }
-        if (!cccd_regex.test(employee.canCuocCongDan)) {
-            error.canCuocCongDan = "Căn cước công dân phải gồm 12 chữ số";
-            return error;
-        }
-        if (!employee.hoVaTen) {
-            error.hoVaTen = "Vui lòng nhập họ tên";
-            return error;
-        }
-        if (!employee.soDienThoai) {
-            error.soDienThoai = "Vui lòng nhập số điện thoại";
-            return error;
-        }
-        if (!vnf_phone.test(employee.soDienThoai)) {
-            error.soDienThoai = "Số điện thoại không đúng định dạng";
-            return error;
-        }
-        if (!employee.email) {
-            error.email = "Vui lòng nhập email";
-            return error;
-        }
-        if (!email_regex.test(employee.email)) {
-            error.email = "Email không đúng định dạng";
-            return error;
-        }
-        if (!employee.ngaySinh) {
-            error.ngaySinh = "Vui lòng chọn ngày Sinh ";
-            return error;
-        }
-        if (!employee.gioiTinh) {
-            error.gioiTinh = "Vui lòng chọn giới tính";
-            return error;
-        }
-        if (!employee.vaiTro || !employee.vaiTro.id) {
-            error.vaiTro = "Vui lòng chọn vai trò";
-            return error;
-        }
-        if (!provinceInput && !employee.tinhThanhPho) {
-            error.tinhThanhPho = "Vui lòng chọn hoặc nhập tỉnh/thành phố";
-            return error;
-        }
-        if (!districtInput && !employee.quanHuyen) {
-            error.quanHuyen = "Vui lòng chọn hoặc nhập quận/huyện";
-            return error;
-        }
-        if (!wardInput && !employee.xaPhuong) {
-            error.xaPhuong = "Vui lòng chọn hoặc nhập phường/xã";
-            return error;
-        }
-        return error;
-    }
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [validating, setValidating] = useState(false);
 
-    function handleCCCDScan() {
-        setOpenCamera(true);
-    }
 
-    async function handleCCCDResult(img) {
-        try {
-            const data = await handleCameraCapture(img);
-            let info = Array.isArray(data) ? parseCCCDText(data) : data;
-            let updateObj = {
-                hinhAnh: typeof img === "string" ? img : "",
-                canCuocCongDan: info.canCuocCongDan || "",
-                hoVaTen: info.hoVaTen || "",
-                ngaySinh: info.ngaySinh || "",
-                gioiTinh: info.gioiTinh || "",
-                diaChi: info.queQuan || info.diaChi || ""
-            };
-            if (info.tinh) {
-                const foundProvince = provinces.find(
-                    (item) => item.name && item.name.toLowerCase() === info.tinh.toLowerCase()
-                );
-                if (foundProvince) {
-                    updateObj.tinhThanhPho = foundProvince.code;
-                    setProvinceInput(foundProvince.name);
-                    const districtRes = await axios.get(districtAPI(foundProvince.code));
-                    const districtsData = districtRes.data.districts || [];
-                    setDistricts(districtsData);
-                    if (info.huyen) {
-                        const foundDistrict = districtsData.find(
-                            (item) => item.name && item.name.toLowerCase() === info.huyen.toLowerCase()
-                        );
-                        if (foundDistrict) {
-                            updateObj.quanHuyen = foundDistrict.code;
-                            setDistrictInput(foundDistrict.name);
-                            const wardRes = await axios.get(wardAPI(foundDistrict.code));
-                            const wardsData = wardRes.data.wards || [];
-                            setWards(wardsData);
-                            if (info.xa) {
-                                const foundWard = wardsData.find(
-                                    (item) => item.name && item.name.toLowerCase() === info.xa.toLowerCase()
-                                );
-                                if (foundWard) {
-                                    updateObj.xaPhuong = foundWard.code;
-                                    setWardInput(foundWard.name);
-                                }
-                            }
-                        }
-                    }
-                }
+    // Đầu số hợp lệ của các nhà mạng Việt Nam
+    const validPrefixes = [
+        "032", "033", "034", "035", "036", "037", "038", "039", // Viettel
+        "070", "071", "072", "073", "074", "075", "076", "077", "078", "079", // MobiFone
+        "081", "082", "083", "084", "085", "086", "087", "088", "089", // Vinaphone
+        "090", "093", "094", "096", "097", "098", "099" // Gmobile, Vietnamobile, Itelecom
+    ];
+    // Lấy một số đầu số tiêu biểu để hiển thị
+    const samplePrefixes = ["032", "070", "081", "090", "096"];
+
+    // Cấu trúc validation rules
+    const validationRules = [
+        {
+            field: "hoVaTen",
+            condition: !employee.hoVaTen,
+            message: "Vui lòng nhập họ tên"
+        },
+        {
+            field: "soDienThoai",
+            condition: !employee.soDienThoai,
+            message: "Vui lòng nhập số điện thoại"
+        },
+        {
+            field: "soDienThoai",
+            condition: !/^\d{10}$/.test(employee.soDienThoai),
+            message: "Số điện thoại phải gồm 10 chữ số"
+        },
+        {
+            field: "soDienThoai",
+            condition: !validPrefixes.some(prefix => employee.soDienThoai.startsWith(prefix)),
+            message: `Số điện thoại phải bắt đầu bằng đầu số hợp lệ (VD: ${samplePrefixes.join(", ")})`
+        },
+        {
+            field: "email",
+            condition: !employee.email,
+            message: "Vui lòng nhập email"
+        },
+        {
+            field: "email",
+            condition: !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(employee.email),
+            message: "Email phải có định dạng @gmail.com"
+        },
+        {
+            field: "ngaySinh",
+            condition: !employee.ngaySinh,
+            message: "Vui lòng chọn ngày sinh"
+        },
+        {
+            field: "canCuocCongDan",
+            condition: !employee.canCuocCongDan,
+            message: "Vui lòng nhập căn cước công dân"
+        },
+        {
+            field: "canCuocCongDan",
+            condition: !/^\d{12}$/.test(employee.canCuocCongDan),
+            message: "Căn cước công dân phải gồm 12 chữ số"
+        },
+        {
+            field: "tinhThanhPho",
+            condition: !employee.tinhThanhPho,
+            message: "Vui lòng chọn tỉnh/thành phố"
+        },
+        {
+            field: "quanHuyen",
+            condition: !employee.quanHuyen,
+            message: "Vui lòng chọn quận/huyện"
+        },
+        {
+            field: "xaPhuong",
+            condition: !employee.xaPhuong,
+            message: "Vui lòng chọn phường/xã"
+        }
+    ];
+
+    // Set Filed lỗi + trả Error Message.
+    const validate = () => {
+        for (const rule of validationRules) {   //Duyệt từng rule trong validationRules.
+            if (rule.condition) {   //Nếu điều kiện đúng thì:   
+                setErrorField(rule.field); //Lưu trữ trường lỗi.
+                return rule.message; //Trả về thông báo lỗi.
             }
-            setEmployee(prev => ({
-                ...prev,
-                ...updateObj
-            }));
-        } catch (err) {
         }
-        setOpenCamera(false);
-    }
+        return null; //Nếu không có lỗi thì trả về null.
+    };
+    //------------DiaLog ------------//
 
-    async function handleSubmit(event) {
-        event.preventDefault();
-        const error = validate();
-        if (Object.keys(error).length) {
-            setErrors(error);
-            setFocusField(Object.keys(error)[0]);
-            Object.values(error).forEach((msg) => {
-                toast.error(msg);
-            });
-            return;
+    // Hàm kiểm tra dữ liệu trước khi mở dialog có submit thật.
+    const validateBeforeSubmit = async () => {
+        const validationError = validate(); // Kiểm tra validation cơ bản trước
+        if (validationError) {
+            toast.error(validationError);   // 🔴 Hiển thị thông báo lỗi
+            return false;   // ❌ Nếu không hợp lệ → dừng, không mở dialog
         }
+        // Kiểm tra trùng lặp 3 trường quan trọng
+        try {
+
+            const checkData = {
+                email: employee.email,
+                soDienThoai: employee.soDienThoai,
+                canCuocCongDan: employee.canCuocCongDan
+            };
+
+            // Gọi API kiểm tra trùng lặp
+            const response = await axios.post(`${API_BASE_URL}/check-duplicate`, checkData);
+            const responseData = response.data;
+
+            if (responseData.data.hasDuplicate) {// hasDuplicate: true
+                // Hiển thị thông báo lỗi chi tiết
+                const duplicateInfo = responseData.data.duplicateInfo;
+                let errorMessage = "Thông tin đã tồn tại trong hệ thống:\n";
+
+                if (duplicateInfo.emailDuplicate) {
+                    errorMessage += "• Email đã tồn tại\n";
+                    setErrorField("email");
+                }
+                if (duplicateInfo.phoneDuplicate) {
+                    errorMessage += "• Số điện thoại đã tồn tại\n";
+                    setErrorField("soDienThoai");
+                }
+                if (duplicateInfo.cccdDuplicate) {
+                    errorMessage += "• CCCD đã tồn tại\n";
+                    setErrorField("canCuocCongDan");
+                }
+                toast.error(errorMessage.trim());
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error("Lỗi kiểm tra trùng lặp:", error);
+            // Nếu lỗi network hoặc server, vẫn cho phép tiếp tục
+            if (error.response?.status >= 500) {
+                toast.warning("Không thể kiểm tra trùng lặp, vui lòng thử lại!");
+                return false;
+            }
+            return true; // Nếu không kiểm tra được thì cho phép tiếp tục
+        }
+    };
+
+    // Hàm mở dialog khi click vào button submit, reset, cancel.
+    const openConfirmDialog = async (type) => {
+        // Nếu là submit, kiểm tra dữ liệu trước
+        if (type === 'submit') {
+            setValidating(true); // 🔄 Bật trạng thái "đang kiểm tra" ở button submit khi mở dialog.
+            try {
+                const isValid = await validateBeforeSubmit();
+                if (!isValid) {
+                    return;  // ❌ Nếu không hợp lệ → dừng, không mở dialog
+                }
+            } finally {
+                setValidating(false);
+            }
+        }
+        const dialogConfigs = {
+            submit: {
+                title: "Xác nhận thêm nhân viên",
+                message: "✅ Dữ liệu đã được kiểm tra và hợp lệ!\n\nBạn có chắc chắn muốn thêm nhân viên mới với thông tin đã nhập? Hành động này sẽ lưu thông tin nhân viên vào hệ thống.",
+                confirmText: "Thêm nhân viên",
+                cancelText: "Hủy bỏ",
+                confirmColor: "primary"
+            },
+            cancel: {
+                title: "Xác nhận hủy bỏ",
+                message: "Bạn có chắc chắn muốn hủy bỏ? Tất cả thông tin đã nhập sẽ bị mất và bạn sẽ quay lại trang danh sách nhân viên.",
+                confirmText: "Hủy bỏ",
+                cancelText: "Tiếp tục chỉnh sửa",
+                confirmColor: "error"
+            },
+            reset: {
+                title: "Xác nhận đặt lại",
+                message: "Bạn có chắc chắn muốn đặt lại tất cả thông tin? Tất cả dữ liệu đã nhập sẽ bị xóa và thay thế bằng dữ liệu mặc định.",
+                confirmText: "Đặt lại",
+                cancelText: "Giữ nguyên",
+                confirmColor: "warning"
+            }
+        };
+        // ✅ Nếu hợp lệ → mở dialog xác nhận
+        const config = dialogConfigs[type];
+        setConfirmDialog({
+            open: true,
+            type,
+            ...config
+        });
+    };
+
+    // State quản lý các dialog xác nhận
+    const [confirmDialog, setConfirmDialog] = useState({
+        open: false,
+        type: null, // 'submit', 'cancel', 'reset'
+        title: '',
+        message: '',
+        confirmText: '',
+        cancelText: '',
+        confirmColor: 'primary'
+    });
+
+    // Hàm xử lý xác nhận từ trong dialog.
+    const handleConfirmAction = () => {
+        const { type } = confirmDialog;
+        switch (type) {
+            case 'submit':
+                closeConfirmDialog();
+                handleSubmit();
+                break;
+            case 'cancel':
+                closeConfirmDialog();
+                navigate("/staff-management");
+                break;
+            case 'reset':
+                closeConfirmDialog();
+                resetToDefaultValues();
+                toast.success("Đã đặt lại thông tin về giá trị mặc định!");
+                break;
+            default:
+                closeConfirmDialog();
+        }
+    };
+
+    // Hàm reset dữ liệu về giá trị mặc định đúng
+    const resetToDefaultValues = () => {
+        setEmployee({
+            hinhAnh: "",
+            hoVaTen: "Nguyễn Văn A",
+            email: "hoangbamanh5x12@gmail.com",
+            soDienThoai: "0344667744",        // Số điện thoại 10 số
+            ngaySinh: dayjs(minBirthDate).format("DD/MM/YYYY"),
+            gioiTinh: "MALE",
+            canCuocCongDan: "012345678901",   // CCCD 12 số
+            vaiTro: "EMPLOYEE",
+            tinhThanhPho: "", quanHuyen: "", xaPhuong: "",
+        });
+        setAvatarPreview("");
+        setErrorField("");
+        setFocusField("");
+    };
+
+    // Hàm đóng dialog xác nhận
+    const closeConfirmDialog = () => {
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+    };
+
+
+    // Hàm lấy địa chỉ đầy đủ từ mã code của tỉnh, huyện, xã
+    const getEmployeeFullAddress = (employee, addressData) => {
+        const getNameByCode = (list, code) => list.find(item => item.code === code)?.name || "";
+        const { tinhThanhPho, quanHuyen, xaPhuong } = employee; //Lấy code tỉnh, quận, xã.
+        const { provinces, districts, wards } = addressData; //Lấy d.sách tỉnh, quận, xã.
+        const wardName = getNameByCode(wards, xaPhuong); //Tìm tên xã.
+        const districtName = getNameByCode(districts, quanHuyen); //Tìm tên huyện.
+        const provinceName = getNameByCode(provinces, tinhThanhPho); //Tìm tên tỉnh.
+        return [wardName, districtName, provinceName].filter(Boolean).join(", "); //Ghép thành địa chỉ đầy đủ.
+    };
+
+    // Hàm submit chính (ở trong Dialog). Bỏ qua validation vì đã validate trước khi mở dialog.
+    const handleSubmit = async () => {
         setLoading(true);
         setSuccess(false);
         try {
-            const maNhanVien = generateEmployeeCode();
-            const matKhau = generatePassword();
-            let diaChi = "";
-            let xa = "";
-            let huyen = "";
-            let tinh = "";
-            if (wards.length > 0 && employee.xaPhuong) {
-                const foundWard = wards.find((w) => w.code === employee.xaPhuong);
-                xa = foundWard && foundWard.name ? foundWard.name : employee.xaPhuong;
-            } else {
-                xa = employee.xaPhuong;
-            }
-            if (districts.length > 0 && employee.quanHuyen) {
-                const foundDistrict = districts.find((d) => d.code === employee.quanHuyen);
-                huyen = foundDistrict && foundDistrict.name ? foundDistrict.name : employee.quanHuyen;
-            } else {
-                huyen = employee.quanHuyen;
-            }
-            if (provinces.length > 0 && employee.tinhThanhPho) {
-                const foundProvince = provinces.find((p) => p.code === employee.tinhThanhPho);
-                tinh = foundProvince && foundProvince.name ? foundProvince.name : employee.tinhThanhPho;
-            } else {
-                tinh = employee.tinhThanhPho;
-            }
-            diaChi = [xa, huyen, tinh].filter(Boolean).join(", ");
-            const data = {
-                hoVaTen: employee.hoVaTen,
-                hinhAnh: typeof employee.hinhAnh === "string" ? employee.hinhAnh : "",
-                gioiTinh: employee.gioiTinh,
-                ngaySinh: employee.ngaySinh,
+            const diaChi = getEmployeeFullAddress(employee, addressData);
+
+            // Debug: Log dữ liệu trước khi gửi
+            console.log("Dữ liệu gửi đi:", {
                 soDienThoai: employee.soDienThoai,
                 canCuocCongDan: employee.canCuocCongDan,
                 email: employee.email,
-                idVaiTro: employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : null,
-                trangThai: 1, // luôn gửi là 1 (Đang hoạt động)
-                maNhanVien: maNhanVien,
-                matKhau: matKhau,
-                xaPhuong: employee.xaPhuong,
-                quanHuyen: employee.quanHuyen,
-                tinhThanhPho: employee.tinhThanhPho,
-                diaChi: diaChi
-            };
-            await axios.post(nhanVienAddAPI, data);
+                hoVaTen: employee.hoVaTen
+            });
+
+            await axios.post(API_BASE_URL, { ...employee, diaChi });
             setSuccess(true);
             toast.success("Thêm nhân viên thành công!");
-            setTimeout(function () {
-                setLoading(false);
-                navigate(-1);
-            }, 1200);
-        } catch {
+            navigate("/staff-management");
+        } catch (error) {
+            console.log("Chi tiết lỗi: ", error);
+            const status = error.response?.status;
+            if (status >= 500) {
+                toast.error("Lỗi server, vui lòng thử lại sau!");
+            } else if (status === 400) {
+                toast.error("Lỗi dữ liệu, vui lòng kiểm tra lại!");
+            } else if (status === 401 || status === 403) {
+                toast.error("Bạn không có quyền thực hiện hành động này!");
+            } else if (error.request) {
+                toast.error("Không thể kết nối đến máy chủ. Kiểm tra lại kết nối hoặc server.");
+            } else {
+                toast.error(message || `Lỗi khác từ máy chủ: ${status}`);
+            }
+        } finally {
             setLoading(false);
-            setSuccess(false);
-            toast.error("Đã có lỗi, vui lòng thử lại!");
         }
-    }
+    };
 
-    function getFieldSx(name) {
-        if (focusField === name) {
-            return {
-                bgcolor: "#e3f0fa",
-                borderRadius: 2,
-                boxShadow: "0 0 0 3px #90caf9",
-                transition: "all 0.3s"
-            };
-        } else {
-            return {
-                bgcolor: "#fafdff",
-                borderRadius: 2,
-                transition: "all 0.3s"
-            };
-        }
-    }
+
 
     return (
         <DashboardLayout>
             <DashboardNavbar />
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    background: "linear-gradient(130deg,#f2f9fe 70%,#e9f0fa 100%)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "center",
-                    py: 4
-                }}
-            >
-                <ToastContainer />
-                <Fade in timeout={600}>
-                    <GradientCard>
-                        <SectionTitle align="center" mb={1}>
-                            Thêm Nhân Viên Mới
-                        </SectionTitle>
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                background: "#fff",
-                                mb: 2,
-                                p: 2,
-                                borderRadius: 3,
-                                textAlign: "center"
-                            }}
-                        >
-                            <Typography variant="subtitle1" color="#1769aa" fontWeight={600}>
-                                <span style={{ color: "#43a047" }}>Nhanh chóng - Chính xác - Thẩm mỹ!</span>
-                                <br />
-                                Vui lòng nhập đầy đủ thông tin nhân viên để quản lý hiệu quả và bảo mật tối ưu.
-                            </Typography>
-                        </Paper>
-                        <form onSubmit={handleSubmit} autoComplete="off">
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} md={4}>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            alignItems: "center",
-                                            gap: 2,
-                                            height: "100%",
-                                            background: "#f6fafd",
-                                            borderRadius: 3,
-                                            p: 2
-                                        }}
-                                    >
-                                        <AvatarWrapper>
-                                            <Tooltip title={avatarPreview ? "Đổi ảnh đại diện" : "Chọn ảnh đại diện"} arrow>
-                                                <Avatar
-                                                    src={avatarPreview || "/default-avatar.png"}
-                                                    alt="avatar"
-                                                    sx={{
-                                                        width: 110,
-                                                        height: 110,
-                                                        mb: 1,
-                                                        border: "3px solid #42a5f5",
-                                                        boxShadow: "0 3px 12px #e3f0fa",
-                                                        fontSize: 38,
-                                                        bgcolor: "#fafdff",
-                                                        color: "#1976d2",
-                                                        cursor: "pointer",
-                                                        transition: "all 0.3s"
-                                                    }}
-                                                    onClick={() => document.getElementById("hinhAnh-upload-nv").click()}
-                                                >
-                                                    {employee.hoVaTen && typeof employee.hoVaTen === "string" && employee.hoVaTen
-                                                        ? employee.hoVaTen[0].toUpperCase()
-                                                        : "A"}
-                                                </Avatar>
-                                            </Tooltip>
-                                            <label htmlFor="hinhAnh-upload-nv">
-                                                <input
-                                                    type="file"
-                                                    id="hinhAnh-upload-nv"
-                                                    name="hinhAnh"
-                                                    accept="image/*"
-                                                    style={{ display: "none" }}
-                                                    onChange={handleAvatarChange}
-                                                />
-                                                <AvatarUploadButton
-                                                    variant="outlined"
-                                                    component="span"
-                                                    startIcon={<UploadIcon />}
-                                                >
-                                                    Ảnh đại diện
-                                                </AvatarUploadButton>
-                                            </label>
-                                        </AvatarWrapper>
-                                        <Divider sx={{ width: "100%", my: 1, opacity: 0.13 }} />
-                                        <Box sx={{ width: "100%" }}>
-                                            <label style={labelStyle}>Căn cước công dân</label>
-                                            <TextField
-                                                name="canCuocCongDan"
-                                                value={employee.canCuocCongDan}
-                                                onChange={handleEmployeeChange}
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("canCuocCongDan")}
-                                                placeholder="Nhập căn cước công dân"
-                                                onFocus={() => setFocusField("canCuocCongDan")}
-                                                onBlur={() => setFocusField("")}
-                                                InputLabelProps={{ shrink: true }}
-                                                margin="dense"
-                                            />
-                                            <Button
-                                                variant="contained"
-                                                size="medium"
-                                                color="info"
-                                                startIcon={<CameraAltIcon />}
+            <Box sx={{ overflowY: "hidden", minHeight: "100vh", background: "linear-gradient(130deg,#f2f9fe 70%,#e9f0fa 100%)", display: "flex", alignItems: "flex-start", justifyContent: "center", py: 4 }}>
+                {addressData.provinces.length > 0 ? (
+                    <Fade in timeout={600}>
+                        <div>
+                            <GradientCard>
+                                <SectionTitle align="center" mb={1}>Thêm Nhân Viên Mới</SectionTitle>
+                                <Box sx={{ background: "linear-gradient(130deg,#f2f9fe 70%,#e9f0fa 100%)", mb: 2, p: 2, borderRadius: 3, textAlign: "center" }}>
+                                    <Typography variant="subtitle1" color="#1769aa" fontWeight={600}>
+                                        <span style={{ color: "#43a047" }}>Nhanh chóng - Chính xác - Thẩm mỹ!</span> Vui lòng nhập đầy đủ thông tin.
+                                    </Typography>
+                                </Box>
+                                <form autoComplete="off">
+                                    <Grid container spacing={3} sx={{ px: 2 }}>
+                                        <Grid item xs={12} md={4}>
+                                            <Box
                                                 sx={{
-                                                    fontWeight: 600,
-                                                    borderRadius: 2,
-                                                    minWidth: 0,
-                                                    px: 2,
-                                                    boxShadow: "0 2px 8px #90caf9",
-                                                    background: "#1976d2",
-                                                    color: "#fff",
-                                                    "&:hover": { background: "#125ea2" },
-                                                    width: "100%",
-                                                    mt: 1
+                                                    height: "100%",
+                                                    minHeight: 500,
+                                                    background: "#f6fafd",
+                                                    borderRadius: 3,
+                                                    p: 2,
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    gap: 2,
                                                 }}
-                                                onClick={handleCCCDScan}
                                             >
-                                                Quét CCCD
-                                            </Button>
-                                            <CCCDCameraModal
-                                                open={openCamera}
-                                                onClose={() => setOpenCamera(false)}
-                                                onCapture={handleCCCDResult}
-                                            />
-                                        </Box>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={12} md={8}>
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Họ và tên</label>
-                                            <TextField
-                                                name="hoVaTen"
-                                                value={employee.hoVaTen}
-                                                onChange={handleEmployeeChange}
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("hoVaTen")}
-                                                placeholder="Nhập họ và tên"
-                                                onFocus={() => setFocusField("hoVaTen")}
-                                                onBlur={() => setFocusField("")}
-                                                InputLabelProps={{ shrink: true }}
-                                                margin="dense"
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Số điện thoại</label>
-                                            <TextField
-                                                name="soDienThoai"
-                                                value={employee.soDienThoai}
-                                                onChange={handleEmployeeChange}
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("soDienThoai")}
-                                                placeholder="Nhập số điện thoại"
-                                                onFocus={() => setFocusField("soDienThoai")}
-                                                onBlur={() => setFocusField("")}
-                                                InputLabelProps={{ shrink: true }}
-                                                margin="dense"
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Email</label>
-                                            <TextField
-                                                name="email"
-                                                value={employee.email}
-                                                onChange={handleEmployeeChange}
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("email")}
-                                                placeholder="Nhập email"
-                                                onFocus={() => setFocusField("email")}
-                                                onBlur={() => setFocusField("")}
-                                                InputLabelProps={{ shrink: true }}
-                                                margin="dense"
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Ngày sinh</label>
-                                            <TextField
-                                                type="date"
-                                                name="ngaySinh"
-                                                value={employee.ngaySinh}
-                                                onChange={handleEmployeeChange}
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("ngaySinh")}
-                                                onFocus={() => setFocusField("ngaySinh")}
-                                                onBlur={() => setFocusField("")}
-                                                InputLabelProps={{ shrink: true }}
-                                                margin="dense"
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Giới tính</label>
-                                            <FormControl
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("gioiTinh")}
-                                                margin="dense"
-                                            >
-                                                <Select
-                                                    name="gioiTinh"
-                                                    value={employee.gioiTinh}
-                                                    onChange={handleEmployeeChange}
-                                                    displayEmpty
-                                                    onFocus={() => setFocusField("gioiTinh")}
-                                                    onBlur={() => setFocusField("")}
-                                                    inputProps={{ "aria-label": "Giới tính" }}
-                                                >
-                                                    <MenuItem value="">
-                                                        <em>Chọn giới tính</em>
-                                                    </MenuItem>
-                                                    {GENDER_OPTIONS.map((gender) => (
-                                                        <MenuItem key={gender.value} value={gender.value}>
-                                                            {gender.label}
-                                                        </MenuItem>
-                                                    ))}
-                                                </Select>
-                                                <FormHelperText />
-                                            </FormControl>
-                                        </Grid>
-                                        {/* Không render trường trạng thái ở đây, hoặc nếu muốn hiện thì chỉ hiện trạng thái mặc định và disable */}
-                                        {/* <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Trạng thái</label>
-                                            <FormControl fullWidth size="small" sx={getFieldSx("trangThai")} margin="dense">
-                                                <Select
-                                                    name="trangThai"
-                                                    value={employee.trangThai}
-                                                    disabled
-                                                    inputProps={{ "aria-label": "Trạng thái" }}
-                                                >
-                                                    <MenuItem value={1}>Đang hoạt động</MenuItem>
-                                                    <MenuItem value={0}>Ngừng hoạt động</MenuItem>
-                                                </Select>
-                                                <FormHelperText />
-                                            </FormControl>
-                                        </Grid> */}
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Vai trò</label>
-                                            <FormControl
-                                                fullWidth
-                                                size="small"
-                                                sx={getFieldSx("vaiTro")}
-                                                margin="dense"
-                                            >
-                                                <Select
-                                                    name="vaiTro"
-                                                    value={employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : ""}
-                                                    onChange={function (event) {
-                                                        const selectedId = event.target.value;
-                                                        const foundRole = roleOptions.find(function (role) {
-                                                            return role.id === selectedId || String(role.id) === String(selectedId);
-                                                        });
-                                                        setEmployee(function (previous) {
-                                                            return {
-                                                                ...previous,
-                                                                vaiTro: foundRole || null
-                                                            };
-                                                        });
-                                                        setRoleInput(foundRole ? foundRole.ten : "");
-                                                        setErrors(function (previous) {
-                                                            return {
-                                                                ...previous,
-                                                                vaiTro: undefined
-                                                            };
-                                                        });
-                                                    }}
-                                                    displayEmpty
-                                                    onFocus={() => setFocusField("vaiTro")}
-                                                    onBlur={() => setFocusField("")}
-                                                    inputProps={{ "aria-label": "Vai trò" }}
-                                                >
-                                                    <MenuItem value="">
-                                                        <em>Chọn vai trò</em>
-                                                    </MenuItem>
-                                                    {roleOptions.map((role) => (
-                                                        <MenuItem value={role.id} key={role.id}>
-                                                            {role.ten}
-                                                        </MenuItem>
-                                                    ))}
-                                                </Select>
-                                                <FormHelperText />
-                                            </FormControl>
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Tỉnh/Thành phố</label>
-                                            <SafeAutocomplete
-                                                freeSolo
-                                                options={provinces}
-                                                getOptionLabel={(option) =>
-                                                    typeof option === "string"
-                                                        ? option
-                                                        : option && typeof option.name === "string"
-                                                            ? option.name
-                                                            : ""
-                                                }
-                                                value={
-                                                    employee.tinhThanhPho
-                                                        ? findById(provinces, employee.tinhThanhPho, "code")
-                                                        : provinceInput
-                                                            ? { name: provinceInput }
-                                                            : null
-                                                }
-                                                inputValue={provinceInput}
-                                                onInputChange={(_, newInputValue, reason) => {
-                                                    setProvinceInput(newInputValue);
-                                                    if (reason === "clear") {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            tinhThanhPho: "",
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                onChange={(_, newValue) => {
-                                                    if (typeof newValue === "string") {
-                                                        setProvinceInput(newValue);
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            tinhThanhPho: "",
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    } else if (newValue && newValue.code) {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            tinhThanhPho: newValue.code,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                        setProvinceInput(newValue.name);
-                                                    } else {
-                                                        setProvinceInput("");
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            tinhThanhPho: "",
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                renderInput={(params) => (
+                                                <AvatarWrapper>
+                                                    <Box
+                                                        sx={{
+                                                            position: 'relative',
+                                                            width: 450,
+                                                            height: 300,
+                                                            mb: 2,
+                                                            borderRadius: 4, // Tăng viền tròn hơn một chút
+                                                            border: "3px solid #42a5f5",
+                                                            boxShadow: "0 8px 25px rgba(66, 165, 245, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)",
+                                                            background: "#fafdff",
+                                                            cursor: "pointer",
+                                                            overflow: "hidden",
+                                                            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                            "&:hover": {
+                                                                transform: "scale(1.03)",
+                                                                boxShadow: "0 15px 35px rgba(66, 165, 245, 0.25), 0 5px 15px rgba(0, 0, 0, 0.15)",
+                                                                borderColor: "#1976d2"
+                                                            },
+                                                            "&:active": {
+                                                                transform: "scale(0.98)"
+                                                            }
+                                                        }}
+                                                        onClick={() => document.getElementById("hinhAnh-upload-nv")?.click()}
+                                                    >
+                                                        {avatarPreview ? (
+                                                            <img
+                                                                src={avatarPreview}
+                                                                alt="avatar"
+                                                                style={{
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    objectFit: "cover",
+                                                                    borderRadius: "16px" // Tăng viền tròn cho ảnh
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Box
+                                                                sx={{
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    background: "linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 50%, #e8eaf6 100%)",
+                                                                    color: "#1976d2",
+                                                                    fontSize: 52,
+                                                                    fontWeight: 700,
+                                                                    borderRadius: "16px",
+                                                                    textShadow: "0 2px 4px rgba(0, 0, 0, 0.1)"
+                                                                }}
+                                                            >
+                                                                {employee.hoVaTen?.[0]?.toUpperCase() || "A"}
+                                                            </Box>
+                                                        )}
+                                                        {/* Overlay khi hover */}
+                                                        <Box
+                                                            sx={{
+                                                                position: "absolute",
+                                                                top: 0,
+                                                                left: 0,
+                                                                right: 0,
+                                                                bottom: 0,
+                                                                background: "linear-gradient(135deg, rgba(25, 118, 210, 0.15) 0%, rgba(156, 39, 176, 0.1) 100%)",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                opacity: 0,
+                                                                transition: "opacity 0.3s ease",
+                                                                borderRadius: "16px",
+                                                                "&:hover": {
+                                                                    opacity: 1
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Box
+                                                                sx={{
+                                                                    background: "rgba(255, 255, 255, 0.9)",
+                                                                    borderRadius: "50%",
+                                                                    p: 1,
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+                                                                }}
+                                                            >
+                                                                <Upload sx={{ color: "#1976d2", fontSize: 28 }} />
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                    <label htmlFor="hinhAnh-upload-nv">
+                                                        <input
+                                                            type="file"
+                                                            id="hinhAnh-upload-nv"
+                                                            name="hinhAnh"
+                                                            accept="image/*"
+                                                            style={{ display: "none" }}
+                                                            onChange={handleChange}
+                                                        />
+                                                        <AvatarUploadButton
+                                                            variant="outlined"
+                                                            component="span"
+                                                            startIcon={<Upload />}
+                                                            sx={{
+                                                                borderRadius: 3,
+                                                                textTransform: "none",
+                                                                fontWeight: 600,
+                                                                fontSize: 14,
+                                                                px: 4,
+                                                                py: 1.5,
+                                                                background: "linear-gradient(135deg, #fff 0%, #f8f9ff 100%)",
+                                                                color: "#1565c0",
+                                                                border: "2px solid #90caf9",
+                                                                boxShadow: "0 4px 12px rgba(144, 202, 249, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1)",
+                                                                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                                "&:hover": {
+                                                                    background: "linear-gradient(135deg, #e3f0fa 0%, #f3e5f5 100%)",
+                                                                    borderColor: "#42a5f5",
+                                                                    color: "#1769aa",
+                                                                    boxShadow: "0 6px 16px rgba(144, 202, 249, 0.3), 0 3px 8px rgba(0, 0, 0, 0.15)",
+                                                                    transform: "translateY(-1px)"
+                                                                },
+                                                                "&:active": {
+                                                                    transform: "translateY(0px)"
+                                                                }
+                                                            }}
+                                                        >
+                                                            Ảnh đại diện
+                                                        </AvatarUploadButton>
+                                                    </label>
+                                                </AvatarWrapper>
+                                                <Divider sx={{ width: "100%", my: 1, opacity: 0.13 }} />
+                                                <Box sx={{ width: "100%" }}>
+                                                    <label style={labelStyle}>Căn cước công dân</label>
                                                     <TextField
-                                                        {...params}
-                                                        placeholder="Chọn hoặc nhập tỉnh/thành phố"
-                                                        size="small"
-                                                        sx={getFieldSx("tinhThanhPho")}
-                                                        margin="dense"
+                                                        {...buildTextFieldProps("canCuocCongDan", {
+                                                            placeholder: "VD: 001234567890",
+                                                            maxLength: 12,
+                                                        })}
                                                     />
-                                                )}
-                                            />
+                                                </Box>
+                                            </Box>
                                         </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Quận/Huyện</label>
-                                            <SafeAutocomplete
-                                                freeSolo
-                                                options={districts}
-                                                getOptionLabel={(option) =>
-                                                    typeof option === "string"
-                                                        ? option
-                                                        : option && typeof option.name === "string"
-                                                            ? option.name
-                                                            : ""
-                                                }
-                                                value={
-                                                    employee.quanHuyen
-                                                        ? findById(districts, employee.quanHuyen, "code")
-                                                        : districtInput
-                                                            ? { name: districtInput }
-                                                            : null
-                                                }
-                                                inputValue={districtInput}
-                                                onInputChange={(_, newInputValue, reason) => {
-                                                    setDistrictInput(newInputValue);
-                                                    if (reason === "clear") {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                onChange={(_, newValue) => {
-                                                    if (typeof newValue === "string") {
-                                                        setDistrictInput(newValue);
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    } else if (newValue && newValue.code) {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: newValue.code,
-                                                            xaPhuong: ""
-                                                        }));
-                                                        setDistrictInput(newValue.name);
-                                                    } else {
-                                                        setDistrictInput("");
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                renderInput={(params) => (
+                                        <Grid item xs={12} md={8}>
+                                            <Grid container spacing={4}>
+                                                {/* Họ và tên */}
+                                                <Grid item xs={12}>
+                                                    <label style={labelStyle}>Họ và tên</label>
                                                     <TextField
-                                                        {...params}
-                                                        placeholder="Chọn hoặc nhập quận/huyện"
-                                                        size="small"
-                                                        sx={getFieldSx("quanHuyen")}
-                                                        margin="dense"
+                                                        {...buildTextFieldProps("hoVaTen", {
+                                                            placeholder: "VD: Nguyễn Văn A",
+                                                            autoFocus: focusField === "hoVaTen",
+                                                            maxLength: 30,
+                                                        })}
                                                     />
-                                                )}
-                                                disabled={!employee.tinhThanhPho && !provinceInput}
-                                            />
+                                                </Grid>
+                                                {/* Số điện thoại */}
+                                                <Grid item xs={12} sm={6}>
+                                                    <label style={labelStyle}>Số điện thoại</label>
+                                                    <TextField
+                                                        {...buildTextFieldProps("soDienThoai", {
+                                                            placeholder: "VD: 0989999999",
+                                                            maxLength: 10,
+                                                        })}
+                                                    />
+                                                </Grid>
+                                                {/* Email */}
+                                                <Grid item xs={12} sm={6}>
+                                                    <label style={labelStyle}>Email</label>
+                                                    <TextField
+                                                        {...buildTextFieldProps("email", {
+                                                            placeholder: "VD: email@gmail.com",
+                                                            autoFocus: focusField === "email",
+                                                            maxLength: 30,
+                                                        })}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={12}>
+                                                    <label style={labelStyle}>
+                                                        Ngày sinh
+                                                        {employee.ngaySinh && (
+                                                            <span style={{ color: "#1976d2", fontWeight: 400, marginLeft: 8, fontSize: "14px" }}>
+                                                                ({getAgeFromDateString(employee.ngaySinh)} tuổi)
+                                                            </span>
+                                                        )}
+                                                    </label>
+                                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                        <DatePicker
+                                                            value={employee.ngaySinh ? dayjs(employee.ngaySinh, "DD/MM/YYYY") : null}
+                                                            onChange={handleChange}
+                                                            minDate={dayjs(maxBirthDate)} // Tối thiểu 18 tuổi (2007)
+                                                            maxDate={dayjs(minBirthDate)} // Tối đa 80 tuổi (1945)
+                                                            renderInput={(params) => (
+                                                                <TextField
+                                                                    {...params}
+                                                                    {...buildTextFieldProps("ngaySinh", {
+                                                                        placeholder: "VD: 01/01/2000",
+                                                                        sx: {
+                                                                            '& .MuiInputAdornment-root': {
+                                                                                marginLeft: 'auto',
+                                                                                justifyContent: 'flex-end',
+                                                                            }
+                                                                        }
+                                                                    })}
+                                                                    // Ưu tiên các props từ params để tránh lỗi
+                                                                    inputProps={{ ...buildTextFieldProps("ngaySinh", {}).inputProps, ...params.inputProps }}
+                                                                    InputProps={{ ...buildTextFieldProps("ngaySinh", {}).InputProps, ...params.InputProps }}
+                                                                />
+                                                            )}
+                                                        />
+                                                    </LocalizationProvider>
+                                                </Grid>
+                                                {/* Giới tính */}
+                                                <Grid item xs={12} sm={6}>
+                                                    <label style={labelStyle}>Giới tính</label>
+                                                    <TextField
+                                                        select
+                                                        {...buildTextFieldProps("gioiTinh", {})}
+                                                    >
+                                                        <MenuItem value="MALE">Nam</MenuItem>
+                                                        <MenuItem value="FEMALE">Nữ</MenuItem>
+                                                    </TextField>
+                                                </Grid>
+                                                {/* Vai trò */}
+                                                <Grid item xs={12} sm={6}>
+                                                    <label style={labelStyle}>Vai trò</label>
+                                                    <TextField
+                                                        select
+                                                        {...buildTextFieldProps("vaiTro", {})}
+                                                    >
+                                                        <MenuItem value="EMPLOYEE">Nhân viên</MenuItem>
+                                                        <MenuItem value="ADMIN">Quản trị viên</MenuItem>
+                                                    </TextField>
+                                                </Grid>
+                                                {/* Địa chỉ */}
+                                                <Grid item xs={12}>
+                                                    <Grid container spacing={2}>
+                                                        <AddressSelect
+                                                            label="Tỉnh/Thành phố"
+                                                            name="tinhThanhPho"
+                                                            value={employee.tinhThanhPho}
+                                                            options={addressData.provinces}
+                                                            disabled={false}
+                                                            error={errorField === "tinhThanhPho"}
+                                                            onFocusField={handleFocusField}
+                                                        />
+                                                        <AddressSelect
+                                                            label="Quận/Huyện"
+                                                            name="quanHuyen"
+                                                            value={employee.quanHuyen}
+                                                            options={addressData.districts}
+                                                            disabled={!employee.tinhThanhPho}
+                                                            error={errorField === "quanHuyen"}
+                                                            onFocusField={handleFocusField}
+                                                        />
+                                                        <AddressSelect
+                                                            label="Phường/Xã"
+                                                            name="xaPhuong"
+                                                            value={employee.xaPhuong}
+                                                            options={addressData.wards}
+                                                            disabled={!employee.quanHuyen}
+                                                            error={errorField === "xaPhuong"}
+                                                            onFocusField={handleFocusField}
+                                                        />
+                                                    </Grid>
+                                                </Grid>
+                                            </Grid>
                                         </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Phường/Xã</label>
-                                            <SafeAutocomplete
-                                                freeSolo
-                                                options={wards}
-                                                getOptionLabel={(option) =>
-                                                    typeof option === "string"
-                                                        ? option
-                                                        : option && typeof option.name === "string"
-                                                            ? option.name
-                                                            : ""
-                                                }
-                                                value={
-                                                    employee.xaPhuong
-                                                        ? findById(wards, employee.xaPhuong, "code")
-                                                        : wardInput
-                                                            ? { name: wardInput }
-                                                            : null
-                                                }
-                                                inputValue={wardInput}
-                                                onInputChange={(_, newInputValue, reason) => {
-                                                    setWardInput(newInputValue);
-                                                    if (reason === "clear") {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                onChange={(_, newValue) => {
-                                                    if (typeof newValue === "string") {
-                                                        setWardInput(newValue);
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            xaPhuong: ""
-                                                        }));
-                                                    } else if (newValue && newValue.code) {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            xaPhuong: newValue.code
-                                                        }));
-                                                        setWardInput(newValue.name);
-                                                    } else {
-                                                        setWardInput("");
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        placeholder="Chọn hoặc nhập phường/xã"
-                                                        size="small"
-                                                        sx={getFieldSx("xaPhuong")}
-                                                        margin="dense"
-                                                    />
-                                                )}
-                                                disabled={
-                                                    (!employee.tinhThanhPho && !provinceInput) ||
-                                                    (!employee.quanHuyen && !districtInput)
-                                                }
-                                            />
+                                        {/* Button submit, reset, cancel */}
+                                        <Grid item xs={12}>
+                                            <Divider sx={{ my: 3, background: "#1976d2", opacity: 0.2 }} />
+
+                                            <Box sx={{ display: "flex", justifyContent: "flex-end", pr: 9, mt: 2 }}>
+                                                <Box sx={{ display: "flex", gap: 2 }}>
+                                                    {/* Button reset */}
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="large"
+                                                        onClick={async () => await openConfirmDialog('reset')}
+                                                        disabled={loading}
+                                                        sx={{
+                                                            fontWeight: 700, borderRadius: 3, minWidth: 120,
+                                                            background: "#fff",
+                                                            border: "2px solid #2196f3",
+                                                            color: "#2196f3",
+                                                            "&:hover": {
+                                                                background: "#e3f2fd",
+                                                                borderColor: "#1976d2",
+                                                                color: "#1976d2"
+                                                            },
+                                                            "&:disabled": {
+                                                                background: "#f5f5f5",
+                                                                borderColor: "#bdbdbd",
+                                                                color: "#bdbdbd"
+                                                            }
+                                                        }}
+                                                    >
+                                                        Reset
+                                                    </Button>
+                                                    {/* Button cancel */}
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="large"
+                                                        onClick={async () => await openConfirmDialog('cancel')}
+                                                        disabled={loading}
+                                                        sx={{
+                                                            fontWeight: 700, borderRadius: 3, minWidth: 120,
+                                                            background: "#fff",
+                                                            border: "2px solid #757575",
+                                                            color: "#757575",
+                                                            "&:hover": {
+                                                                background: "#f5f5f5",
+                                                                borderColor: "#424242",
+                                                                color: "#424242"
+                                                            },
+                                                            "&:disabled": {
+                                                                background: "#f5f5f5",
+                                                                borderColor: "#bdbdbd",
+                                                                color: "#bdbdbd"
+                                                            }
+                                                        }}
+                                                    >
+                                                        Hủy bỏ
+                                                    </Button>
+                                                    {/* Button submit */}
+                                                    <Button
+                                                        type="button"
+                                                        onClick={async () => await openConfirmDialog('submit')}
+                                                        size="large"
+                                                        disabled={loading || validating}
+                                                        color={success ? "success" : "info"}
+                                                        variant="contained"
+                                                        startIcon={
+                                                            loading ? <CircularProgress size={22} /> :
+                                                                validating ? <CircularProgress size={22} /> :
+                                                                    success ? <CheckCircle /> : null
+                                                        }
+                                                        sx={{
+                                                            fontWeight: 800, fontSize: 18, px: 6, borderRadius: 3,
+                                                            minWidth: 200, boxShadow: "0 2px 10px 0 #90caf9"
+                                                        }}
+                                                    >
+                                                        {loading ? "Đang lưu..." :
+                                                            validating ? "Đang kiểm tra..." :
+                                                                success ? "Thành công!" : "Thêm nhân viên"}
+                                                    </Button>
+                                                </Box>
+                                            </Box>
                                         </Grid>
                                     </Grid>
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <Divider sx={{ mb: 2, mt: 3, background: "#1976d2", opacity: 0.2 }} />
-                                    <Box
-                                        display="flex"
-                                        justifyContent="center"
-                                        mt={2}
-                                        gap={2}
-                                        sx={{ px: { xs: 0, sm: 4 } }}
-                                    >
-                                        <Button
-                                            variant="outlined"
-                                            color="inherit"
-                                            size="large"
-                                            onClick={() => navigate(-1)}
-                                            sx={{
-                                                color: "#020205",
-                                                fontWeight: 700,
-                                                borderRadius: 3,
-                                                minWidth: 120,
-                                                background: "#fafdff",
-                                                border: "2px solid #b0bec5",
-                                                "&:hover": {
-                                                    background: "#eceff1",
-                                                    borderColor: "#90caf9"
-                                                }
-                                            }}
-                                            disabled={loading}
-                                        >
-                                            Hủy bỏ
-                                        </Button>
-                                        <Button
-                                            variant="contained"
-                                            color={success ? "success" : "info"}
-                                            size="large"
-                                            type="submit"
-                                            sx={{
-                                                fontWeight: 800,
-                                                fontSize: 18,
-                                                px: 8,
-                                                borderRadius: 3,
-                                                minWidth: 200,
-                                                boxShadow: "0 2px 10px 0 #90caf9",
-                                                transition: "all 0.3s"
-                                            }}
-                                            disabled={loading}
-                                            startIcon={
-                                                loading ? (
-                                                    <CircularProgress color="inherit" size={22} />
-                                                ) : success ? (
-                                                    <CheckCircleIcon fontSize="large" />
-                                                ) : undefined
-                                            }
-                                        >
-                                            {loading
-                                                ? "Đang lưu..."
-                                                : success
-                                                    ? "Thành công!"
-                                                    : "Thêm nhân viên"}
-                                        </Button>
-                                    </Box>
-                                </Grid>
-                            </Grid>
-                        </form>
-                    </GradientCard>
-                </Fade>
+                                </form>
+                            </GradientCard>
+                        </div>
+                    </Fade>
+                ) : (
+                    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+                        <CircularProgress />
+                    </Box>
+                )}
+
+
+                {/* Dialog xác nhận */}
+                <Dialog
+                    open={confirmDialog.open}
+                    onClose={closeConfirmDialog}
+                    aria-labelledby="confirm-dialog-title"
+                    aria-describedby="confirm-dialog-description"
+                    maxWidth="sm"
+                    fullWidth
+                    PaperProps={{
+                        sx: {
+                            borderRadius: 3,
+                            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+                            border: "1px solid #e0e0e0"
+                        }
+                    }}
+                >
+                    <DialogTitle
+                        id="confirm-dialog-title"
+                        sx={{
+                            background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+                            color: "#1976d2",
+                            fontWeight: 700,
+                            fontSize: "1.25rem",
+                            borderBottom: "1px solid #e0e0e0"
+                        }}
+                    >
+                        {confirmDialog.title}
+                    </DialogTitle>
+                    <DialogContent sx={{ pt: 3, pb: 2 }}>
+                        <DialogContentText
+                            id="confirm-dialog-description"
+                            sx={{
+                                fontSize: "1rem",
+                                lineHeight: 1.6,
+                                color: "#424242",
+                                textAlign: "justify"
+                            }}
+                        >
+                            {confirmDialog.message}
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 3, pt: 1, gap: 2 }}>
+                        <Button
+                            onClick={closeConfirmDialog}
+                            variant="outlined"
+                            sx={{
+                                fontWeight: 600,
+                                borderRadius: 2,
+                                px: 3,
+                                py: 1,
+                                borderColor: "#bdbdbd",
+                                color: "#757575",
+                                "&:hover": {
+                                    borderColor: "#9e9e9e",
+                                    backgroundColor: "#f5f5f5"
+                                }
+                            }}
+                        >
+                            {confirmDialog.cancelText}
+                        </Button>
+                        <Button
+                            onClick={handleConfirmAction}
+                            variant="contained"
+                            color={confirmDialog.confirmColor}
+                            autoFocus
+                            sx={{
+                                fontWeight: 700,
+                                borderRadius: 2,
+                                px: 4,
+                                py: 1,
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                                "&:hover": {
+                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)"
+                                }
+                            }}
+                        >
+                            {confirmDialog.confirmText}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </DashboardLayout>
     );
 }
+export default AddNhanVienForm;

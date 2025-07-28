@@ -1,64 +1,64 @@
 package com.example.datn.Entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
+import lombok.experimental.FieldDefaults;
 
-import java.io.Serializable;
 import java.sql.Date;
 import java.util.List;
 
 @Entity
 @Getter
 @Setter
-@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "khach_hang")
 public class KhachHang{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
+    @Column(name = "hinh_anh")
+    String hinhAnh;
 
     @Column(name = "ma_khach_hang")
-    private String maKhachHang;
-
-    @Column(name = "mat_khau")
-    private String matKhau;
-
+    String maKhachHang;
     @Column(name = "ten_khach_hang")
-    private String tenKhachHang;
+    String tenKhachHang;
 
     @Column(name = "email")
-    private String email;
-
-    @Column(name = "gioi_tinh")
-    private Integer gioiTinh;
+    String email;
 
     @Column(name = "sdt")
-    private String sdt;
+    String sdt;
 
     @Column(name = "ngay_sinh")
-    private Date ngaySinh;
+    Date ngaySinh;
+    @Column(name = "gioi_tinh")
+    String gioiTinh;
 
-    @Column(name = "hinh_anh")
-    private String hinhAnh;
-
+    @OneToMany(mappedBy = "khachHang" , cascade = {CascadeType.PERSIST}, orphanRemoval = true)
+    List<DiaChi> diaChis;
     @Column(name = "trang_thai")
-    private Integer trangThai;
+    String trangThai;
+    @Column(name = "mat_khau")
+    String matKhau;
 
     @OneToMany(mappedBy = "khachHang")
-    private List<HoaDon> hoaDons;
-
+    List<HoaDon> hoaDons;
     @OneToMany(mappedBy = "khachHang")
-    private List<ChiTietPhieuGiamGia> chiTietPhieuGiamGias;
-
-    @OneToMany(mappedBy = "khachHang")
-    private List<DiaChi> diaChis;
+    List<ChiTietPhieuGiamGia> chiTietPhieuGiamGias;
 }

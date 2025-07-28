@@ -5,6 +5,13 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
+
+    // Thêm mã lỗi mới NV-KH.
+    CCCD_EXISTED(1012, "CCCD đã tồn tại", HttpStatus.BAD_REQUEST),
+    EMAIL_EXISTED(1013, "Email đã tồn tại", HttpStatus.BAD_REQUEST),
+    PHONE_EXISTED(1014, "Số điện thoại đã tồn tại", HttpStatus.BAD_REQUEST),
+    RESOURCE_NOT_FOUND(4040, "Tài nguyên không tồn tại", HttpStatus.NOT_FOUND),
+
     // General & User
     USER_EXISTED(1002, "User already existed", HttpStatus.INTERNAL_SERVER_ERROR),
     UNCATEGORIZED_EXCEPTION(9999, "UNCATEGORIZED_EXCEPTION", HttpStatus.BAD_REQUEST),

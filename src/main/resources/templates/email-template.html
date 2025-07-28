@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Chào Mừng</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #007bff;
+            padding: 20px;
+            text-align: center;
+        }
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+        .header h1 {
+            color: #ffffff;
+            font-size: 24px;
+            margin: 10px 0 0;
+        }
+        .content {
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .content p {
+            margin: 10px 0;
+        }
+        .content ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .content ul li {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .content a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .content a:hover {
+            text-decoration: underline;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .footer {
+            background-color: #f8f8f8;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100%;
+                margin: 10px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Phần đầu email -->
+    <div class="header">
+        <img th:src="${logoUrl}" alt="Logo Website" />
+        <h1>Chào mừng đến với công ty chúng tôi!</h1>
+    </div>
+
+    <!-- Nội dung chính -->
+    <div class="content">
+        <p>Kính gửi <span th:text="${fullName}">Nhân viên</span>,</p>
+        <p>Chúng tôi rất vui mừng chào đón bạn đến với <span th:text="${companyName}">Công ty</span>! Tài khoản của bạn đã được tạo thành công và bạn có thể đăng nhập vào hệ thống với thông tin sau:</p>
+        <ul>
+            <li><strong>Tên đăng nhập:</strong> <span th:text="${username}">username</span></li>
+            <li><strong>Mật khẩu:</strong> <span th:text="${password}">password</span></li>
+        </ul>
+        <p>Bạn có thể truy cập hệ thống tại liên kết sau:</p>
+        <p><a th:href="${loginUrl}" href="#" class="button">Đăng nhập ngay</a></p>
+        <p>Chúng tôi khuyến nghị bạn đổi mật khẩu sau lần đăng nhập đầu tiên để đảm bảo an toàn thông tin.</p>
+        <p>Nếu bạn gặp bất kỳ sự cố nào hoặc có câu hỏi, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi qua email <a th:href="'mailto:' + ${supportEmail}" href="#">support@yourcompany.com</a> hoặc gọi đến số <span th:text="${supportPhone}">(123) 456-7890</span>.</p>
+    </div>
+
+    <!-- Chân trang -->
+    <div class="footer">
+        <p>Gửi vào lúc <span th:text="${#dates.format(sentDate, 'dd MMMM yyyy HH:mm')}"></span></p>
+        <p>&copy; <span th:text="${currentYear}"></span> <span th:text="${companyName}"></span>. Mọi quyền được bảo lưu.</p>
+        <p><span th:text="${companyAddress}"></span></p>
+    </div>
+</div>
+</body>
+</html>

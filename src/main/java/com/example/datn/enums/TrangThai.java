@@ -7,6 +7,12 @@ package com.example.datn.enums;
 // import java.util.Set;
 
 public enum TrangThai {
+    //Trạng thái nhân viên/khách hàng.
+    ACTIVE("Hoạt động"),
+    INACTIVE("Không hoạt động"),
+    //Trạng thái địa chỉ nhận hàng.
+    DEFAULT("Mặc định"),
+
     // Chỉ giữ lại tên hiển thị
     TAO_DON_HANG("Tạo đơn hàng"),
     CHO_XAC_NHAN("Chờ xác nhận"),

@@ -1,40 +1,51 @@
 package com.example.datn.Entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
-import java.io.Serializable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Getter
 @Setter
-@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "dia_chi")
 public class DiaChi{
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private Integer id;
+    Integer id;
 
     @Column(name = "tinh_thanh_pho")
-    private String tinhThanhPho;
+    String tinhThanhPho;
 
     @Column(name = "quan_huyen")
-    private String quanHuyen;
+    String quanHuyen;
 
     @Column(name = "xa_phuong")
-    private String xaPhuong;
+    String xaPhuong;
 
     @Column(name = "trang_thai")
-    private Integer trangThai;
+    String trangThai;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_khach_hang", referencedColumnName = "id")
-    private KhachHang khachHang;
+    @JoinColumn(name = "id_khach_hang", referencedColumnName = "id", nullable = false)
+    KhachHang khachHang;
 }

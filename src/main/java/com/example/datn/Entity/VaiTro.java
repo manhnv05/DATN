@@ -28,8 +28,4 @@ public class VaiTro {
 
     @Column(name = "mo_ta_vai_tro")
     private String moTaVaiTro;
-
-    @OneToMany(mappedBy = "vaiTro")
-    @ToString.Exclude
-    private List<NhanVien> nhanViens;
 }
