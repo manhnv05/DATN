@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import PropTypes from "prop-types";
 import axios from "axios";
 import NumberFormatCustom from "./NumberFormatCustom";
+
 import {
   Dialog,
   DialogTitle,
@@ -23,6 +24,8 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import SoftButton from "components/SoftButton";
 import { toast } from "react-toastify";
+
+
 // import { IMaskInput } from "react-imask";
 
 // Hàm tiện ích định dạng tiền tệ
@@ -82,7 +85,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
   // Xử lý khi thêm một lần thanh toán mới
   const handleAddPayment = () => {
    console.log('[DEBUG 2] State "amount" ngay khi bấm Thêm:', amount);
-    const paymentAmount = Number(amount);
+    const paymentAmount = Number(String(amount).replace(/\./g, ""));
 
     if (!paymentAmount || paymentAmount <= 0) {
       toast.warn("Vui lòng nhập số tiền hợp lệ.");

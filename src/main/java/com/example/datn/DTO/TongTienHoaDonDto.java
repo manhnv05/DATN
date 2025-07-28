@@ -13,4 +13,5 @@ public class TongTienHoaDonDto {
     private Integer tongTien;
     private Integer phiVanChuyen;
     private Integer tongTienHang;
+    private  Integer tongHoaDon;
 }

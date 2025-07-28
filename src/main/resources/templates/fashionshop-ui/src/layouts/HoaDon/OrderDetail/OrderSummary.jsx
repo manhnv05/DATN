@@ -34,7 +34,7 @@ const OrderSummary = ({ orderId }) => {
                     totalItemsPrice: responseData.data.tongTienHang,
                     totalDiscount: responseData.data.giamGia,
                     shippingFee: responseData.data.phiVanChuyen,
-                    totalAmount: responseData.data.tongTien,
+                    totalAmount: responseData.data.tongHoaDon,
                 };
                 
                 setOrderData(formattedData);

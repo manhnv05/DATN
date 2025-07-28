@@ -149,7 +149,7 @@ const OrderDetailPage = () => {
       setLoading(false);
     }
   }, [orderId]);
-
+  console.log("OrderDetailPage orderData:", orderData);
   useEffect(() => {
     fetchOrderDetail();
   }, [fetchOrderDetail]);
@@ -185,6 +185,38 @@ const OrderDetailPage = () => {
     }
   };
   const handleConfirmStatus = async () => {
+  if (orderData?.trangThaiGoc === "DANG_VAN_CHUYEN") {
+      try {
+        // 2. Gọi API lịch sử thanh toán để lấy các giao dịch
+        const response = await fetch(
+          `http://localhost:8080/chiTietThanhToan/lich-su-thanh-toan/${orderId}`
+        );
+
+        if (!response.ok) {
+         
+        }
+
+        const historyData = await response.json();
+
+        // 3. Tính tổng số tiền đã thanh toán từ kết quả API
+        let totalPaid = 0;
+        if (historyData.code === 1000 && Array.isArray(historyData.data)) {
+          totalPaid = historyData.data.reduce(
+            (sum, payment) => sum + payment.soTienThanhToan,
+            0
+          );
+        }
+
+        // 4. So sánh với tổng giá trị hóa đơn
+        if (totalPaid < orderData.totalAmount) {
+          toast.error("Đơn hàng chưa được thanh toán đủ. Không thể hoàn thành.");
+          return;
+        }
+      } catch (err) {
+        toast.error(err.message || "Không thể xác thực trạng thái thanh toán.");
+        return;
+      }
+    }
       const originalStatus = orderData?.trangThaiGoc;
     setActionLoading(true);
     setActionError(null);

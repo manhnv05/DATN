@@ -345,7 +345,7 @@ public class HoaDonServiceImpl implements HoaDonService {
         tongTienHoaDonDto.setTongTien(hoaDon.getTongTien());
         tongTienHoaDonDto.setPhiVanChuyen(hoaDon.getPhiVanChuyen());
         tongTienHoaDonDto.setTongTienHang(hoaDon.getTongTienBanDau());
-
+        tongTienHoaDonDto.setTongHoaDon(hoaDon.getTongHoaDon());
         return tongTienHoaDonDto;
     }
 
@@ -585,6 +585,10 @@ public class HoaDonServiceImpl implements HoaDonService {
         hoaDon.setDiaChi(request.getDiaChi());
         hoaDon.setTenKhachHang(request.getTenKhachHang());
         hoaDon.setGhiChu(request.getGhiChu());
+        hoaDon.setPhiVanChuyen(request.getPhiVanChuyen());
+         Integer tongTien=    hoaDon.getTongTien();
+        Integer phiVanChuyen= request.getPhiVanChuyen();
+        hoaDon.setTongHoaDon(tongTien+phiVanChuyen);
         hoaDonRepository.save(hoaDon);
 
         return "Cập nhật thong tin đơn hàng thành công";

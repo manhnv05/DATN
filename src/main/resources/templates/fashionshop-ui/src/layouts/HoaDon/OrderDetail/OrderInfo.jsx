@@ -32,6 +32,7 @@ const getOrderTypeBadgeClassName = (type) => {
 
 const OrderInfo = ({ order }) => {
     // Hàm formatDateTime của bạn (đã thêm lại ampm)
+    
     const formatDateTime = useCallback((isoString) => {
         if (!isoString) return 'Chưa cập nhật';
         const date = new Date(isoString);

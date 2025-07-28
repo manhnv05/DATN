@@ -65,6 +65,7 @@ function SalesDashboardPage() {
           const addressParts = [
             shippingInfo?.detailedAddress,
             shippingInfo?.ward,
+            shippingInfo?.district,
             shippingInfo?.province,
           ].filter(Boolean);
 

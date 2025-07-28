@@ -65,11 +65,11 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
   useEffect(() => {
     // Nếu có tín hiệu (completedOrderId có giá trị và khác null)
     if (completedOrderId) {
-      // Tìm order trong state `orders` tương ứng với ID hóa đơn đã hoàn thành
+      // Tìm order trong state `orders` tương ứng với ID hóa đơn đã hoàn thành từ backend
       const orderToClose = orders.find(o => o.idHoaDonBackend === completedOrderId);
 
+      // Nếu tìm thấy order, gọi hàm đóng tab đã có sẵn
       if (orderToClose) {
-        // Gọi hàm đóng tab đã có sẵn
         handleCloseOrderTab(orderToClose.id);
       }
     }
