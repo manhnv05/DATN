@@ -85,7 +85,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
   // Xử lý khi thêm một lần thanh toán mới
   const handleAddPayment = () => {
    console.log('[DEBUG 2] State "amount" ngay khi bấm Thêm:', amount);
-    const paymentAmount = Number(amount);
+    const paymentAmount = Number(String(amount).replace(/\./g, ""));
 
     if (!paymentAmount || paymentAmount <= 0) {
       toast.warn("Vui lòng nhập số tiền hợp lệ.");

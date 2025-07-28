@@ -168,7 +168,7 @@ const getShippingFeeFromGHN = async (shippingInfo) => {
         
         // Thông báo cho user biết đang dùng địa chỉ backup (nếu không phải district gốc)
         if (from_district_id !== 1450) {
-          toast.info(`Đang sử dụng điểm gửi tại ${altDistrict.name} để tính phí vận chuyển.`);
+          // toast.info(`Đang sử dụng điểm gửi tại ${altDistrict.name} để tính phí vận chuyển.`);
         }
         
         return feeResponse.data.data.total;
@@ -604,7 +604,7 @@ useEffect(() => {
       setAppliedVoucher(null);
     }
   };
-
+const isDisabled = totalAmount <= 0;
   return (
     <>
       {/* Thẻ Card là thẻ bao bọc chính cho toàn bộ giao diện */}
@@ -767,6 +767,7 @@ useEffect(() => {
               },
             }}
             fullWidth
+             disabled={isDisabled}
             onClick={handleFinalSave}
           >
             <Typography variant="h6" color="#49a3f1" fontWeight="bold">

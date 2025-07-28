@@ -59,15 +59,7 @@ const routes = [
     noCollapse: true,
   },
 
-  {
-    type: "collapse",
-    name: "Bán Hàng Tại Quầy",
-    key: "sales",
-    route: "/tables",
-    icon: <Office size="12px" />,
-    // component: <Tables />,
-    noCollapse: true,
-  },
+ 
   {
   type: "collapse",
   name: "Quản Lý Hóa Đơn",
