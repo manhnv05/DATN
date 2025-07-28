@@ -104,4 +104,13 @@ public class HinhAnhController {
     public List<HinhAnhDTO> getAll() {
         return hinhAnhService.findAll();
     }
+
+//    @PutMapping("/{id}/upload")
+//    public ResponseEntity<?> updateImage(
+//            @Valid @NotNull @PathVariable("id") Integer id,
+//            @RequestParam("file") MultipartFile file
+//    ) {
+//        String url = hinhAnhService.updateImage(id, file);
+//        return ResponseEntity.ok(url);
+//    }
 }

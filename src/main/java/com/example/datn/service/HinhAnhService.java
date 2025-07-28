@@ -1,5 +1,6 @@
 package com.example.datn.service;
 
+import com.example.datn.config.CloudinaryService;
 import com.example.datn.dto.HinhAnhDTO;
 import com.example.datn.entity.HinhAnh;
 import com.example.datn.entity.ChiTietSanPham;
@@ -8,13 +9,11 @@ import com.example.datn.repository.ChiTietSanPhamRepository;
 import com.example.datn.vo.hinhAnhVO.HinhAnhQueryVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -29,11 +28,11 @@ public class HinhAnhService {
     @Autowired
     private ChiTietSanPhamRepository chiTietSanPhamRepository;
 
-    @Value("${file.upload-dir}")
-    private String uploadDir;
+    @Autowired
+    private CloudinaryService cloudinaryService; // Thêm CloudinaryService
 
     /**
-     * Sửa hàm save để nhận thêm idSanPhamChiTiet và gán vào entity
+     * Lưu ảnh lên Cloudinary, nhận thêm idSanPhamChiTiet và gán vào entity
      */
     public Integer save(
             String maAnh,
@@ -41,7 +40,7 @@ public class HinhAnhService {
             String moTa,
             Integer trangThai,
             MultipartFile duongDanAnh,
-            Integer idSanPhamChiTiet // thêm tham số này
+            Integer idSanPhamChiTiet
     ) {
         HinhAnh bean = new HinhAnh();
         bean.setMaAnh(maAnh);
@@ -49,12 +48,16 @@ public class HinhAnhService {
         bean.setMoTa(moTa);
         bean.setTrangThai(trangThai);
 
+        // Upload file lên Cloudinary, lấy URL về lưu vào duongDanAnh
         if (duongDanAnh != null && !duongDanAnh.isEmpty()) {
-            String fileName = saveFile(duongDanAnh);
-            bean.setDuongDanAnh(fileName);
+            try {
+                String url = cloudinaryService.uploadImage(duongDanAnh);
+                bean.setDuongDanAnh(url);
+            } catch (IOException e) {
+                throw new RuntimeException("Không thể upload ảnh lên Cloudinary: " + e.getMessage(), e);
+            }
         }
 
-        // Gán id_san_pham_chi_tiet vào entity nếu được truyền lên
         if (idSanPhamChiTiet != null) {
             ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.findById(idSanPhamChiTiet)
                     .orElse(null);
@@ -70,7 +73,7 @@ public class HinhAnhService {
     }
 
     /**
-     * Sửa hàm update để nhận thêm idSanPhamChiTiet và cập nhật nếu có
+     * Cập nhật hình ảnh
      */
     public void update(
             Integer id,
@@ -78,7 +81,7 @@ public class HinhAnhService {
             Integer anhMacDinh,
             String moTa,
             Integer trangThai,
-            String duongDanAnh, // <-- sửa kiểu dữ liệu
+            String duongDanAnh,
             Integer idSanPhamChiTiet
     ) {
         HinhAnh bean = requireOne(id);
@@ -91,7 +94,6 @@ public class HinhAnhService {
             bean.setDuongDanAnh(duongDanAnh);
         }
 
-        // Cập nhật chiTietSanPham nếu truyền lên
         if (idSanPhamChiTiet != null) {
             ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.findById(idSanPhamChiTiet)
                     .orElse(null);
@@ -157,47 +159,9 @@ public class HinhAnhService {
                 .orElseThrow(() -> new NoSuchElementException("Resource not found: " + id));
     }
 
-    // ✅ Lưu file ảnh và trả về đường dẫn tương đối dạng "/images/ten_anh.jpg"
-    private String saveFile(MultipartFile file) {
-        try {
-            // Đảm bảo uploadDir kết thúc bằng dấu /
-            String folderPath = uploadDir.endsWith("/") || uploadDir.endsWith("\\") ? uploadDir : uploadDir + "/";
-            File dir = new File(folderPath);
-            if (!dir.exists()) {
-                boolean created = dir.mkdirs();
-                if (!created) {
-                    throw new RuntimeException("Không tạo được thư mục lưu ảnh: " + dir.getAbsolutePath());
-                }
-            }
-
-            String fileName = file.getOriginalFilename();
-            String baseName = fileName;
-            String ext = "";
-            int dot = fileName.lastIndexOf(".");
-            if (dot > 0) {
-                baseName = fileName.substring(0, dot);
-                ext = fileName.substring(dot);
-            }
-
-            File dest = new File(dir, fileName);
-            int index = 1;
-            while (dest.exists()) {
-                fileName = baseName + "(" + index + ")" + ext;
-                dest = new File(dir, fileName);
-                index++;
-            }
-
-            file.transferTo(dest);
-
-            // ✅ Trả về đường dẫn ảnh để frontend hiển thị
-            return "/images/" + fileName;
-
-        } catch (IOException e) {
-            throw new RuntimeException("Không thể lưu file ảnh: " + e.getMessage(), e);
-        }
-    }
-
     public List<HinhAnhDTO> findAll() {
         return hinhAnhRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
+
+
 }

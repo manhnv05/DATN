@@ -32,16 +32,10 @@ import { handleCameraCapture, parseCCCDText } from "./component/handleCameraCapt
 
 const nhanVienDetailAPI = (id) => `http://localhost:8080/nhanVien/${id}`;
 const roleListAPI = "http://localhost:8080/vaiTro/list";
-const provinceAPI = "https://provinces.open-api.vn/api/?depth=1";
-const districtAPI = (code) => "https://provinces.open-api.vn/api/p/" + code + "?depth=2";
-const wardAPI = (code) => "https://provinces.open-api.vn/api/d/" + code + "?depth=2";
+const provinceAPI = "http://localhost:8080/api/vietnamlabs/province"; // proxy tới https://vietnamlabs.com/api/vietnamprovince
 
 function arraySafe(array) {
-    if (Array.isArray(array)) {
-        return array;
-    } else {
-        return [];
-    }
+    return Array.isArray(array) ? array : [];
 }
 
 function findById(array, value, key) {
@@ -119,29 +113,22 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
     textShadow: "0 2px 10px #e3f0fa, 0 1px 0 #fff"
 }));
 
-function getDiaChiString({ xaPhuong, quanHuyen, tinhThanhPho }, provinces, districts, wards) {
+function getDiaChiString({ xaPhuong, tinhThanhPho }, provinces, wards) {
     let xa = "";
-    let huyen = "";
     let tinh = "";
     if (wards.length > 0 && xaPhuong) {
-        const foundWard = wards.find((w) => w.code === xaPhuong);
+        const foundWard = wards.find((w) => w.name === xaPhuong);
         xa = foundWard && foundWard.name ? foundWard.name : xaPhuong;
     } else {
         xa = xaPhuong;
     }
-    if (districts.length > 0 && quanHuyen) {
-        const foundDistrict = districts.find((d) => d.code === quanHuyen);
-        huyen = foundDistrict && foundDistrict.name ? foundDistrict.name : quanHuyen;
-    } else {
-        huyen = quanHuyen;
-    }
     if (provinces.length > 0 && tinhThanhPho) {
-        const foundProvince = provinces.find((p) => p.code === tinhThanhPho);
-        tinh = foundProvince && foundProvince.name ? foundProvince.name : tinhThanhPho;
+        const foundProvince = provinces.find((p) => p.id === tinhThanhPho);
+        tinh = foundProvince && foundProvince.province ? foundProvince.province : tinhThanhPho;
     } else {
         tinh = tinhThanhPho;
     }
-    return [xa, huyen, tinh].filter(Boolean).join(", ");
+    return [xa, tinh].filter(Boolean).join(", ");
 }
 
 export default function UpdateNhanVienForm({ id: propId, onClose }) {
@@ -158,7 +145,6 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
         vaiTro: null,
         trangThai: 1,
         tinhThanhPho: "",
-        quanHuyen: "",
         xaPhuong: "",
         maNhanVien: "",
         matKhau: "",
@@ -172,10 +158,8 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
     const [focusField, setFocusField] = useState("");
     const navigate = useNavigate();
     const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
     const [provinceInput, setProvinceInput] = useState("");
-    const [districtInput, setDistrictInput] = useState("");
     const [wardInput, setWardInput] = useState("");
     const [roleOptions, setRoleOptions] = useState([]);
     const [roleInput, setRoleInput] = useState("");
@@ -190,7 +174,7 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
 
     useEffect(function () {
         axios.get(provinceAPI).then(function (response) {
-            setProvinces(arraySafe(response.data));
+            setProvinces(arraySafe(response.data?.data));
         });
     }, []);
 
@@ -206,74 +190,42 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                 if (!res.data) return;
                 let data = res.data;
                 let tinhThanhPho = data.tinhThanhPho || "";
-                let quanHuyen = data.quanHuyen || "";
                 let xaPhuong = data.xaPhuong || "";
                 let provinceInputName = "";
-                let districtInputName = "";
                 let wardInputName = "";
-                if ((!tinhThanhPho || !quanHuyen || !xaPhuong) && data.diaChi) {
+                if ((!tinhThanhPho || !xaPhuong) && data.diaChi) {
                     const arr = data.diaChi.split(",").map(s => s.trim());
                     let nameTinh = "";
-                    let nameHuyen = "";
                     let nameXa = "";
-                    if (arr.length === 3) [nameXa, nameHuyen, nameTinh] = arr;
-                    else if (arr.length === 2) [nameHuyen, nameTinh] = arr;
+                    if (arr.length === 2) [nameXa, nameTinh] = arr;
                     else if (arr.length === 1) [nameTinh] = arr;
                     let codeTinh = "";
                     if (nameTinh) {
                         const foundTinh = provinces.find(
-                            p => normalizeString(p.name) === normalizeString(nameTinh)
+                            p => normalizeString(p.province) === normalizeString(nameTinh)
                         );
-                        codeTinh = foundTinh?.code || "";
+                        codeTinh = foundTinh?.id || "";
                     }
                     tinhThanhPho = codeTinh;
                     provinceInputName = nameTinh;
                     if (codeTinh) {
-                        const resDistricts = await axios.get(districtAPI(codeTinh));
-                        const districtsArr = resDistricts.data.districts || [];
-                        setDistricts(districtsArr);
-                        let codeHuyen = "";
-                        let foundHuyen;
-                        if (nameHuyen) {
-                            foundHuyen = districtsArr.find(
-                                d => normalizeString(d.name) === normalizeString(nameHuyen)
+                        const foundProvince = provinces.find(p => p.id === codeTinh);
+                        const wardsArr = foundProvince?.wards || [];
+                        setWards(wardsArr);
+                        let codeXa = "";
+                        if (nameXa) {
+                            const foundXa = wardsArr.find(
+                                w => normalizeString(w.name) === normalizeString(nameXa)
                             );
-                            codeHuyen = foundHuyen?.code || "";
+                            codeXa = foundXa?.name || "";
                         }
-                        quanHuyen = codeHuyen;
-                        districtInputName = nameHuyen;
-                        if (codeHuyen) {
-                            const resWards = await axios.get(wardAPI(codeHuyen));
-                            const wardsArr = resWards.data.wards || [];
-                            setWards(wardsArr);
-                            let codeXa = "";
-                            if (nameXa) {
-                                const foundXa = wardsArr.find(
-                                    w => normalizeString(w.name) === normalizeString(nameXa)
-                                );
-                                codeXa = foundXa?.code || "";
-                            }
-                            xaPhuong = codeXa;
-                            wardInputName = nameXa;
-                            setPendingLocation({
-                                tinhThanhPho,
-                                quanHuyen,
-                                xaPhuong,
-                                provinceInputName,
-                                districtInputName,
-                                wardInputName,
-                                data
-                            });
-                            setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
-                            return;
-                        }
+                        xaPhuong = codeXa;
+                        wardInputName = nameXa;
                         setPendingLocation({
                             tinhThanhPho,
-                            quanHuyen,
-                            xaPhuong: "",
+                            xaPhuong,
                             provinceInputName,
-                            districtInputName,
-                            wardInputName: "",
+                            wardInputName,
                             data
                         });
                         setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
@@ -281,26 +233,18 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                     }
                     setPendingLocation({
                         tinhThanhPho,
-                        quanHuyen: "",
                         xaPhuong: "",
                         provinceInputName,
-                        districtInputName: "",
                         wardInputName: "",
                         data
                     });
                     setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
                     return;
                 }
-                let districtsArr = [];
                 let wardsArr = [];
                 if (tinhThanhPho) {
-                    const resDistricts = await axios.get(districtAPI(tinhThanhPho));
-                    districtsArr = resDistricts.data.districts || [];
-                    setDistricts(districtsArr);
-                }
-                if (quanHuyen) {
-                    const resWards = await axios.get(wardAPI(quanHuyen));
-                    wardsArr = resWards.data.wards || [];
+                    const foundProvince = provinces.find(p => p.id === tinhThanhPho);
+                    wardsArr = foundProvince?.wards || [];
                     setWards(wardsArr);
                 }
                 setEmployee({
@@ -314,15 +258,13 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                     vaiTro: data.vaiTro || null,
                     trangThai: data.trangThai !== undefined ? data.trangThai : 1,
                     tinhThanhPho,
-                    quanHuyen,
                     xaPhuong,
                     maNhanVien: data.maNhanVien || "",
                     matKhau: data.matKhau || "",
                     diaChi: data.diaChi || ""
                 });
-                setProvinceInput(provinces.find(p => p.code === tinhThanhPho)?.name || "");
-                setDistrictInput(districtsArr.find(d => d.code === quanHuyen)?.name || "");
-                setWardInput(wardsArr.find(w => w.code === xaPhuong)?.name || "");
+                setProvinceInput(provinces.find(p => p.id === tinhThanhPho)?.province || "");
+                setWardInput(wardsArr.find(w => w.name === xaPhuong)?.name || "");
                 setAvatarPreview(data.hinhAnh ? data.hinhAnh : "");
             } catch {
                 toast.error("Không lấy được thông tin nhân viên!");
@@ -344,68 +286,30 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                 vaiTro: pendingLocation.data.vaiTro || null,
                 trangThai: pendingLocation.data.trangThai !== undefined ? pendingLocation.data.trangThai : 1,
                 tinhThanhPho: pendingLocation.tinhThanhPho,
-                quanHuyen: pendingLocation.quanHuyen,
                 xaPhuong: pendingLocation.xaPhuong,
                 maNhanVien: pendingLocation.data.maNhanVien || "",
                 matKhau: pendingLocation.data.matKhau || "",
                 diaChi: pendingLocation.data.diaChi || ""
             });
             setProvinceInput(pendingLocation.provinceInputName || "");
-            setDistrictInput(pendingLocation.districtInputName || "");
             setWardInput(pendingLocation.wardInputName || "");
             setPendingLocation(null);
         }
-    }, [districts, wards, pendingLocation]);
+    }, [wards, pendingLocation]);
 
     useEffect(function () {
         if (employee.tinhThanhPho) {
-            axios.get(districtAPI(employee.tinhThanhPho)).then(function (response) {
-                if (response.data && Array.isArray(response.data.districts)) {
-                    setDistricts(response.data.districts);
-                } else {
-                    setDistricts([]);
-                }
-            });
-        } else {
-            setDistricts([]);
-        }
-        setDistrictInput("");
-        setWardInput("");
-        setWards([]);
-        // KHÔNG reset employee.quanHuyen/xaPhuong ở đây!
-    }, [employee.tinhThanhPho]);
-
-    useEffect(function () {
-        if (employee.quanHuyen) {
-            axios.get(wardAPI(employee.quanHuyen)).then(function (response) {
-                if (response.data && Array.isArray(response.data.wards)) {
-                    setWards(response.data.wards);
-                } else {
-                    setWards([]);
-                }
-            });
+            const foundProvince = provinces.find(p => p.id === employee.tinhThanhPho);
+            if (foundProvince && Array.isArray(foundProvince.wards)) {
+                setWards(foundProvince.wards);
+            } else {
+                setWards([]);
+            }
         } else {
             setWards([]);
         }
         setWardInput("");
-        // KHÔNG reset employee.xaPhuong ở đây!
-    }, [employee.quanHuyen]);
-
-    useEffect(function () {
-        if (employee.quanHuyen) {
-            axios.get(wardAPI(employee.quanHuyen)).then(function (response) {
-                if (response.data && Array.isArray(response.data.wards)) {
-                    setWards(response.data.wards);
-                } else {
-                    setWards([]);
-                }
-            });
-        } else {
-            setWards([]);
-        }
-        setWardInput("");
-        // KHÔNG reset employee.xaPhuong ở đây!
-    }, [employee.quanHuyen]);
+    }, [employee.tinhThanhPho, provinces]);
 
     function handleEmployeeChange(event) {
         const name = event.target.name;
@@ -490,10 +394,6 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
             error.tinhThanhPho = "Vui lòng chọn hoặc nhập tỉnh/thành phố";
             return error;
         }
-        if (!districtInput && !employee.quanHuyen) {
-            error.quanHuyen = "Vui lòng chọn hoặc nhập quận/huyện";
-            return error;
-        }
         if (!wardInput && !employee.xaPhuong) {
             error.xaPhuong = "Vui lòng chọn hoặc nhập phường/xã";
             return error;
@@ -519,33 +419,18 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
             };
             if (info.tinh) {
                 const foundProvince = provinces.find(
-                    (item) => item.name && item.name.toLowerCase() === info.tinh.toLowerCase()
+                    (item) => item.province && item.province.toLowerCase() === info.tinh.toLowerCase()
                 );
                 if (foundProvince) {
-                    updateObj.tinhThanhPho = foundProvince.code;
-                    setProvinceInput(foundProvince.name);
-                    const districtRes = await axios.get(districtAPI(foundProvince.code));
-                    const districtsData = districtRes.data.districts || [];
-                    setDistricts(districtsData);
-                    if (info.huyen) {
-                        const foundDistrict = districtsData.find(
-                            (item) => item.name && item.name.toLowerCase() === info.huyen.toLowerCase()
+                    updateObj.tinhThanhPho = foundProvince.id;
+                    setProvinceInput(foundProvince.province);
+                    if (info.xa && Array.isArray(foundProvince.wards)) {
+                        const foundWard = foundProvince.wards.find(
+                            (item) => item.name && item.name.toLowerCase() === info.xa.toLowerCase()
                         );
-                        if (foundDistrict) {
-                            updateObj.quanHuyen = foundDistrict.code;
-                            setDistrictInput(foundDistrict.name);
-                            const wardRes = await axios.get(wardAPI(foundDistrict.code));
-                            const wardsData = wardRes.data.wards || [];
-                            setWards(wardsData);
-                            if (info.xa) {
-                                const foundWard = wardsData.find(
-                                    (item) => item.name && item.name.toLowerCase() === info.xa.toLowerCase()
-                                );
-                                if (foundWard) {
-                                    updateObj.xaPhuong = foundWard.code;
-                                    setWardInput(foundWard.name);
-                                }
-                            }
+                        if (foundWard) {
+                            updateObj.xaPhuong = foundWard.name;
+                            setWardInput(foundWard.name);
                         }
                     }
                 }
@@ -554,8 +439,7 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                 ...prev,
                 ...updateObj
             }));
-        } catch (err) {
-        }
+        } catch (err) {}
         setOpenCamera(false);
     }
 
@@ -573,7 +457,7 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
         setLoading(true);
         setSuccess(false);
         try {
-            const diaChi = getDiaChiString(employee, provinces, districts, wards);
+            const diaChi = getDiaChiString(employee, provinces, wards);
             const data = {
                 hoVaTen: employee.hoVaTen,
                 hinhAnh: typeof employee.hinhAnh === "string" ? employee.hinhAnh : "",
@@ -587,7 +471,6 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                 maNhanVien: employee.maNhanVien,
                 matKhau: employee.matKhau,
                 xaPhuong: employee.xaPhuong,
-                quanHuyen: employee.quanHuyen,
                 tinhThanhPho: employee.tinhThanhPho,
                 diaChi: diaChi
             };
@@ -887,15 +770,15 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                                                 getOptionLabel={(option) =>
                                                     typeof option === "string"
                                                         ? option
-                                                        : option && typeof option.name === "string"
-                                                            ? option.name
+                                                        : option && typeof option.province === "string"
+                                                            ? option.province
                                                             : ""
                                                 }
                                                 value={
                                                     employee.tinhThanhPho
-                                                        ? findById(provinces, employee.tinhThanhPho, "code")
+                                                        ? findById(provinces, employee.tinhThanhPho, "id")
                                                         : provinceInput
-                                                            ? { name: provinceInput }
+                                                            ? { province: provinceInput }
                                                             : null
                                                 }
                                                 inputValue={provinceInput}
@@ -904,7 +787,8 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                                                     if (reason === "clear") {
                                                         setEmployee((previous) => ({
                                                             ...previous,
-                                                            tinhThanhPho: ""
+                                                            tinhThanhPho: "",
+                                                            xaPhuong: ""
                                                         }));
                                                     }
                                                 }}
@@ -914,23 +798,20 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                                                         setEmployee((previous) => ({
                                                             ...previous,
                                                             tinhThanhPho: "",
-                                                            quanHuyen: "",
                                                             xaPhuong: ""
                                                         }));
-                                                    } else if (newValue && newValue.code) {
+                                                    } else if (newValue && newValue.id) {
                                                         setEmployee((previous) => ({
                                                             ...previous,
-                                                            tinhThanhPho: newValue.code,
-                                                            quanHuyen: "",
+                                                            tinhThanhPho: newValue.id,
                                                             xaPhuong: ""
                                                         }));
-                                                        setProvinceInput(newValue.name);
+                                                        setProvinceInput(newValue.province);
                                                     } else {
                                                         setProvinceInput("");
                                                         setEmployee((previous) => ({
                                                             ...previous,
                                                             tinhThanhPho: "",
-                                                            quanHuyen: "",
                                                             xaPhuong: ""
                                                         }));
                                                     }
@@ -947,71 +828,6 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Quận/Huyện</label>
-                                            <SafeAutocomplete
-                                                freeSolo
-                                                options={districts}
-                                                getOptionLabel={(option) =>
-                                                    typeof option === "string"
-                                                        ? option
-                                                        : option && typeof option.name === "string"
-                                                            ? option.name
-                                                            : ""
-                                                }
-                                                value={
-                                                    employee.quanHuyen
-                                                        ? findById(districts, employee.quanHuyen, "code")
-                                                        : districtInput
-                                                            ? { name: districtInput }
-                                                            : null
-                                                }
-                                                inputValue={districtInput}
-                                                onInputChange={(_, newInputValue, reason) => {
-                                                    setDistrictInput(newInputValue);
-                                                    if (reason === "clear") {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                onChange={(_, newValue) => {
-                                                    if (typeof newValue === "string") {
-                                                        setDistrictInput(newValue);
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    } else if (newValue && newValue.code) {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: newValue.code,
-                                                            xaPhuong: ""  // Reset xã khi đổi huyện
-                                                        }));
-                                                        setDistrictInput(newValue.name);
-                                                    } else {
-                                                        setDistrictInput("");
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        placeholder="Chọn hoặc nhập quận/huyện"
-                                                        size="small"
-                                                        sx={getFieldSx("quanHuyen")}
-                                                        margin="dense"
-                                                    />
-                                                )}
-                                                disabled={!employee.tinhThanhPho && !provinceInput}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
                                             <label style={labelStyle}>Phường/Xã</label>
                                             <SafeAutocomplete
                                                 freeSolo
@@ -1025,7 +841,7 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                                                 }
                                                 value={
                                                     employee.xaPhuong
-                                                        ? findById(wards, employee.xaPhuong, "code")
+                                                        ? findById(wards, employee.xaPhuong, "name")
                                                         : wardInput
                                                             ? { name: wardInput }
                                                             : null
@@ -1047,10 +863,10 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                                                             ...previous,
                                                             xaPhuong: ""
                                                         }));
-                                                    } else if (newValue && newValue.code) {
+                                                    } else if (newValue && newValue.name) {
                                                         setEmployee((previous) => ({
                                                             ...previous,
-                                                            xaPhuong: newValue.code
+                                                            xaPhuong: newValue.name
                                                         }));
                                                         setWardInput(newValue.name);
                                                     } else {
@@ -1070,10 +886,7 @@ export default function UpdateNhanVienForm({ id: propId, onClose }) {
                                                         margin="dense"
                                                     />
                                                 )}
-                                                disabled={
-                                                    (!employee.tinhThanhPho && !provinceInput) ||
-                                                    (!employee.quanHuyen && !districtInput)
-                                                }
+                                                disabled={!employee.tinhThanhPho && !provinceInput}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>

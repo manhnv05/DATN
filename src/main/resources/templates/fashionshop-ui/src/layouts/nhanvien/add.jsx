@@ -1,3 +1,7 @@
+// --- CÁC CHỖ ĐÃ SỬA: lấy provinces từ response.data.data, lấy label là province, value là id, phường/xã là name ---
+// Nếu backend trả về { success: true, data: [...] } thì phải lấy data từ response.data.data
+// provinces: [{ province: "Hà Nội", id: "1", wards: [{ name: "Phường Hoàn Kiếm" }, ...] }, ...]
+
 import React, { useState, useEffect } from "react";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
@@ -31,16 +35,10 @@ import { handleCameraCapture, parseCCCDText } from "./component/handleCameraCapt
 
 const nhanVienAddAPI = "http://localhost:8080/nhanVien";
 const roleListAPI = "http://localhost:8080/vaiTro/list";
-const provinceAPI = "https://provinces.open-api.vn/api/?depth=1";
-const districtAPI = (code) => "https://provinces.open-api.vn/api/p/" + code + "?depth=2";
-const wardAPI = (code) => "https://provinces.open-api.vn/api/d/" + code + "?depth=2";
+const provinceAPI = "http://localhost:8080/api/vietnamlabs/province";
 
 function arraySafe(array) {
-    if (Array.isArray(array)) {
-        return array;
-    } else {
-        return [];
-    }
+    return Array.isArray(array) ? array : [];
 }
 
 function findById(array, value, key) {
@@ -137,9 +135,8 @@ export default function AddNhanVienForm() {
         canCuocCongDan: "",
         email: "",
         vaiTro: null,
-        trangThai: 1, // luôn mặc định là "Đang hoạt động"
+        trangThai: 1,
         tinhThanhPho: "",
-        quanHuyen: "",
         xaPhuong: "",
         maNhanVien: "",
         matKhau: "",
@@ -153,10 +150,8 @@ export default function AddNhanVienForm() {
     const [focusField, setFocusField] = useState("");
     const navigate = useNavigate();
     const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
     const [provinceInput, setProvinceInput] = useState("");
-    const [districtInput, setDistrictInput] = useState("");
     const [wardInput, setWardInput] = useState("");
     const [roleOptions, setRoleOptions] = useState([]);
     const [roleInput, setRoleInput] = useState("");
@@ -174,14 +169,15 @@ export default function AddNhanVienForm() {
                 ...previous,
                 maNhanVien: generateEmployeeCode(),
                 matKhau: generatePassword(),
-                trangThai: 1 // luôn để mặc định
+                trangThai: 1
             };
         });
     }, []);
 
     useEffect(function () {
         axios.get(provinceAPI).then(function (response) {
-            setProvinces(arraySafe(response.data));
+            // SỬA CHỖ NÀY: lấy đúng data từ response.data.data
+            setProvinces(arraySafe(response.data?.data));
         });
     }, []);
 
@@ -189,39 +185,22 @@ export default function AddNhanVienForm() {
         fetchRoles();
     }, []);
 
+    // Khi chọn tỉnh, lấy danh sách wards
     useEffect(function () {
         if (employee.tinhThanhPho) {
-            axios.get(districtAPI(employee.tinhThanhPho)).then(function (response) {
-                if (response.data && Array.isArray(response.data.districts)) {
-                    setDistricts(response.data.districts);
-                } else {
-                    setDistricts([]);
-                }
-            });
-        } else {
-            setDistricts([]);
-        }
-        // KHÔNG reset employee.quanHuyen/xaPhuong ở đây!
-        setDistrictInput("");
-        setWardInput("");
-        setWards([]);
-    }, [employee.tinhThanhPho]);
-
-    useEffect(function () {
-        if (employee.quanHuyen) {
-            axios.get(wardAPI(employee.quanHuyen)).then(function (response) {
-                if (response.data && Array.isArray(response.data.wards)) {
-                    setWards(response.data.wards);
-                } else {
-                    setWards([]);
-                }
-            });
+            const foundProvince = provinces.find(
+                (item) => item.id === employee.tinhThanhPho
+            );
+            if (foundProvince && Array.isArray(foundProvince.wards)) {
+                setWards(foundProvince.wards);
+            } else {
+                setWards([]);
+            }
         } else {
             setWards([]);
         }
-        // KHÔNG reset employee.xaPhuong ở đây!
         setWardInput("");
-    }, [employee.quanHuyen]);
+    }, [employee.tinhThanhPho, provinces]);
 
     function handleEmployeeChange(event) {
         const name = event.target.name;
@@ -302,10 +281,6 @@ export default function AddNhanVienForm() {
             error.tinhThanhPho = "Vui lòng chọn hoặc nhập tỉnh/thành phố";
             return error;
         }
-        if (!districtInput && !employee.quanHuyen) {
-            error.quanHuyen = "Vui lòng chọn hoặc nhập quận/huyện";
-            return error;
-        }
         if (!wardInput && !employee.xaPhuong) {
             error.xaPhuong = "Vui lòng chọn hoặc nhập phường/xã";
             return error;
@@ -331,33 +306,19 @@ export default function AddNhanVienForm() {
             };
             if (info.tinh) {
                 const foundProvince = provinces.find(
-                    (item) => item.name && item.name.toLowerCase() === info.tinh.toLowerCase()
+                    (item) =>
+                        (item.province && item.province.toLowerCase() === info.tinh.toLowerCase())
                 );
                 if (foundProvince) {
-                    updateObj.tinhThanhPho = foundProvince.code;
-                    setProvinceInput(foundProvince.name);
-                    const districtRes = await axios.get(districtAPI(foundProvince.code));
-                    const districtsData = districtRes.data.districts || [];
-                    setDistricts(districtsData);
-                    if (info.huyen) {
-                        const foundDistrict = districtsData.find(
-                            (item) => item.name && item.name.toLowerCase() === info.huyen.toLowerCase()
+                    updateObj.tinhThanhPho = foundProvince.id;
+                    setProvinceInput(foundProvince.province);
+                    if (info.xa && Array.isArray(foundProvince.wards)) {
+                        const foundWard = foundProvince.wards.find(
+                            (ward) => ward.name && ward.name.toLowerCase() === info.xa.toLowerCase()
                         );
-                        if (foundDistrict) {
-                            updateObj.quanHuyen = foundDistrict.code;
-                            setDistrictInput(foundDistrict.name);
-                            const wardRes = await axios.get(wardAPI(foundDistrict.code));
-                            const wardsData = wardRes.data.wards || [];
-                            setWards(wardsData);
-                            if (info.xa) {
-                                const foundWard = wardsData.find(
-                                    (item) => item.name && item.name.toLowerCase() === info.xa.toLowerCase()
-                                );
-                                if (foundWard) {
-                                    updateObj.xaPhuong = foundWard.code;
-                                    setWardInput(foundWard.name);
-                                }
-                            }
+                        if (foundWard) {
+                            updateObj.xaPhuong = foundWard.name;
+                            setWardInput(foundWard.name);
                         }
                     }
                 }
@@ -366,8 +327,7 @@ export default function AddNhanVienForm() {
                 ...prev,
                 ...updateObj
             }));
-        } catch (err) {
-        }
+        } catch (err) {}
         setOpenCamera(false);
     }
 
@@ -387,29 +347,25 @@ export default function AddNhanVienForm() {
         try {
             const maNhanVien = generateEmployeeCode();
             const matKhau = generatePassword();
-            let diaChi = "";
             let xa = "";
-            let huyen = "";
             let tinh = "";
             if (wards.length > 0 && employee.xaPhuong) {
-                const foundWard = wards.find((w) => w.code === employee.xaPhuong);
+                const foundWard = wards.find((w) => w.name === employee.xaPhuong);
                 xa = foundWard && foundWard.name ? foundWard.name : employee.xaPhuong;
             } else {
                 xa = employee.xaPhuong;
             }
-            if (districts.length > 0 && employee.quanHuyen) {
-                const foundDistrict = districts.find((d) => d.code === employee.quanHuyen);
-                huyen = foundDistrict && foundDistrict.name ? foundDistrict.name : employee.quanHuyen;
-            } else {
-                huyen = employee.quanHuyen;
-            }
             if (provinces.length > 0 && employee.tinhThanhPho) {
-                const foundProvince = provinces.find((p) => p.code === employee.tinhThanhPho);
-                tinh = foundProvince && foundProvince.name ? foundProvince.name : employee.tinhThanhPho;
+                const foundProvince = provinces.find(
+                    (p) => p.id === employee.tinhThanhPho
+                );
+                tinh = foundProvince && foundProvince.province
+                    ? foundProvince.province
+                    : employee.tinhThanhPho;
             } else {
                 tinh = employee.tinhThanhPho;
             }
-            diaChi = [xa, huyen, tinh].filter(Boolean).join(", ");
+            const diaChi = [xa, tinh].filter(Boolean).join(", ");
             const data = {
                 hoVaTen: employee.hoVaTen,
                 hinhAnh: typeof employee.hinhAnh === "string" ? employee.hinhAnh : "",
@@ -419,11 +375,10 @@ export default function AddNhanVienForm() {
                 canCuocCongDan: employee.canCuocCongDan,
                 email: employee.email,
                 idVaiTro: employee.vaiTro && employee.vaiTro.id ? employee.vaiTro.id : null,
-                trangThai: 1, // luôn gửi là 1 (Đang hoạt động)
+                trangThai: 1,
                 maNhanVien: maNhanVien,
                 matKhau: matKhau,
                 xaPhuong: employee.xaPhuong,
-                quanHuyen: employee.quanHuyen,
                 tinhThanhPho: employee.tinhThanhPho,
                 diaChi: diaChi
             };
@@ -690,22 +645,6 @@ export default function AddNhanVienForm() {
                                                 <FormHelperText />
                                             </FormControl>
                                         </Grid>
-                                        {/* Không render trường trạng thái ở đây, hoặc nếu muốn hiện thì chỉ hiện trạng thái mặc định và disable */}
-                                        {/* <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Trạng thái</label>
-                                            <FormControl fullWidth size="small" sx={getFieldSx("trangThai")} margin="dense">
-                                                <Select
-                                                    name="trangThai"
-                                                    value={employee.trangThai}
-                                                    disabled
-                                                    inputProps={{ "aria-label": "Trạng thái" }}
-                                                >
-                                                    <MenuItem value={1}>Đang hoạt động</MenuItem>
-                                                    <MenuItem value={0}>Ngừng hoạt động</MenuItem>
-                                                </Select>
-                                                <FormHelperText />
-                                            </FormControl>
-                                        </Grid> */}
                                         <Grid item xs={12} sm={6} md={4}>
                                             <label style={labelStyle}>Vai trò</label>
                                             <FormControl
@@ -761,15 +700,15 @@ export default function AddNhanVienForm() {
                                                 getOptionLabel={(option) =>
                                                     typeof option === "string"
                                                         ? option
-                                                        : option && typeof option.name === "string"
-                                                            ? option.name
+                                                        : option && option.province
+                                                            ? option.province
                                                             : ""
                                                 }
                                                 value={
                                                     employee.tinhThanhPho
-                                                        ? findById(provinces, employee.tinhThanhPho, "code")
+                                                        ? findById(provinces, employee.tinhThanhPho, "id")
                                                         : provinceInput
-                                                            ? { name: provinceInput }
+                                                            ? { province: provinceInput }
                                                             : null
                                                 }
                                                 inputValue={provinceInput}
@@ -779,7 +718,6 @@ export default function AddNhanVienForm() {
                                                         setEmployee((previous) => ({
                                                             ...previous,
                                                             tinhThanhPho: "",
-                                                            quanHuyen: "",
                                                             xaPhuong: ""
                                                         }));
                                                     }
@@ -790,23 +728,20 @@ export default function AddNhanVienForm() {
                                                         setEmployee((previous) => ({
                                                             ...previous,
                                                             tinhThanhPho: "",
-                                                            quanHuyen: "",
                                                             xaPhuong: ""
                                                         }));
-                                                    } else if (newValue && newValue.code) {
+                                                    } else if (newValue && newValue.id) {
                                                         setEmployee((previous) => ({
                                                             ...previous,
-                                                            tinhThanhPho: newValue.code,
-                                                            quanHuyen: "",
+                                                            tinhThanhPho: newValue.id,
                                                             xaPhuong: ""
                                                         }));
-                                                        setProvinceInput(newValue.name);
+                                                        setProvinceInput(newValue.province);
                                                     } else {
                                                         setProvinceInput("");
                                                         setEmployee((previous) => ({
                                                             ...previous,
                                                             tinhThanhPho: "",
-                                                            quanHuyen: "",
                                                             xaPhuong: ""
                                                         }));
                                                     }
@@ -823,72 +758,6 @@ export default function AddNhanVienForm() {
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
-                                            <label style={labelStyle}>Quận/Huyện</label>
-                                            <SafeAutocomplete
-                                                freeSolo
-                                                options={districts}
-                                                getOptionLabel={(option) =>
-                                                    typeof option === "string"
-                                                        ? option
-                                                        : option && typeof option.name === "string"
-                                                            ? option.name
-                                                            : ""
-                                                }
-                                                value={
-                                                    employee.quanHuyen
-                                                        ? findById(districts, employee.quanHuyen, "code")
-                                                        : districtInput
-                                                            ? { name: districtInput }
-                                                            : null
-                                                }
-                                                inputValue={districtInput}
-                                                onInputChange={(_, newInputValue, reason) => {
-                                                    setDistrictInput(newInputValue);
-                                                    if (reason === "clear") {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                onChange={(_, newValue) => {
-                                                    if (typeof newValue === "string") {
-                                                        setDistrictInput(newValue);
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    } else if (newValue && newValue.code) {
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: newValue.code,
-                                                            xaPhuong: ""
-                                                        }));
-                                                        setDistrictInput(newValue.name);
-                                                    } else {
-                                                        setDistrictInput("");
-                                                        setEmployee((previous) => ({
-                                                            ...previous,
-                                                            quanHuyen: "",
-                                                            xaPhuong: ""
-                                                        }));
-                                                    }
-                                                }}
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        placeholder="Chọn hoặc nhập quận/huyện"
-                                                        size="small"
-                                                        sx={getFieldSx("quanHuyen")}
-                                                        margin="dense"
-                                                    />
-                                                )}
-                                                disabled={!employee.tinhThanhPho && !provinceInput}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={12} sm={6} md={4}>
                                             <label style={labelStyle}>Phường/Xã</label>
                                             <SafeAutocomplete
                                                 freeSolo
@@ -902,7 +771,7 @@ export default function AddNhanVienForm() {
                                                 }
                                                 value={
                                                     employee.xaPhuong
-                                                        ? findById(wards, employee.xaPhuong, "code")
+                                                        ? findById(wards, employee.xaPhuong, "name")
                                                         : wardInput
                                                             ? { name: wardInput }
                                                             : null
@@ -924,10 +793,10 @@ export default function AddNhanVienForm() {
                                                             ...previous,
                                                             xaPhuong: ""
                                                         }));
-                                                    } else if (newValue && newValue.code) {
+                                                    } else if (newValue && newValue.name) {
                                                         setEmployee((previous) => ({
                                                             ...previous,
-                                                            xaPhuong: newValue.code
+                                                            xaPhuong: newValue.name
                                                         }));
                                                         setWardInput(newValue.name);
                                                     } else {
@@ -947,10 +816,7 @@ export default function AddNhanVienForm() {
                                                         margin="dense"
                                                     />
                                                 )}
-                                                disabled={
-                                                    (!employee.tinhThanhPho && !provinceInput) ||
-                                                    (!employee.quanHuyen && !districtInput)
-                                                }
+                                                disabled={!employee.tinhThanhPho && !provinceInput}
                                             />
                                         </Grid>
                                     </Grid>

@@ -18,11 +18,7 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const nhanVienDetailAPI = "http://localhost:8080/nhanVien";
 const roleListAPI = "http://localhost:8080/vaiTro/list";
-const provinceAPI = "https://provinces.open-api.vn/api/?depth=1";
-const districtAPI = (code) =>
-    "https://provinces.open-api.vn/api/p/" + code + "?depth=2";
-const wardAPI = (code) =>
-    "https://provinces.open-api.vn/api/d/" + code + "?depth=2";
+const provinceAPI = "http://localhost:8080/api/vietnamlabs/province"; // Sửa lại cho đúng backend proxy trả về { success, data: [...] }
 
 const labelStyle = {
     fontWeight: 600,
@@ -44,7 +40,6 @@ const GradientCard = styled(Card)(({ theme }) => ({
     width: "100%",
 }));
 
-// Sửa lại hàm này để so sánh kiểu chuỗi cho chắc chắn
 function getRoleName(idVaiTro, roleOptions, tenVaiTro) {
     if (tenVaiTro) return tenVaiTro;
     const role = roleOptions.find((r) => String(r.id) === String(idVaiTro));
@@ -70,7 +65,6 @@ export default function NhanVienDetail(props) {
     const [loading, setLoading] = useState(true);
     const [roleOptions, setRoleOptions] = useState([]);
     const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
 
     useEffect(() => {
@@ -89,36 +83,29 @@ export default function NhanVienDetail(props) {
         axios.get(roleListAPI).then((res) => {
             setRoleOptions(Array.isArray(res.data) ? res.data : []);
         });
-        axios.get(provinceAPI).then((res) => setProvinces(Array.isArray(res.data) ? res.data : []));
+        // SỬA CHỖ NÀY: lấy response.data.data
+        axios.get(provinceAPI).then((res) => setProvinces(Array.isArray(res.data?.data) ? res.data.data : []));
     }, []);
 
+    // Khi có nhanVien.tinhThanhPho, lấy danh sách wards của tỉnh/thành đó
     useEffect(() => {
-        if (nhanVien && nhanVien.tinhThanhPho) {
-            axios.get(districtAPI(nhanVien.tinhThanhPho)).then((res) => {
-                setDistricts(res.data && Array.isArray(res.data.districts) ? res.data.districts : []);
-            });
+        if (nhanVien && nhanVien.tinhThanhPho && provinces.length > 0) {
+            const foundProvince = provinces.find((p) => String(p.id) === String(nhanVien.tinhThanhPho));
+            if (foundProvince && Array.isArray(foundProvince.wards)) {
+                setWards(foundProvince.wards);
+            } else {
+                setWards([]);
+            }
         }
-    }, [nhanVien]);
-
-    useEffect(() => {
-        if (nhanVien && nhanVien.quanHuyen) {
-            axios.get(wardAPI(nhanVien.quanHuyen)).then((res) => {
-                setWards(res.data && Array.isArray(res.data.wards) ? res.data.wards : []);
-            });
-        }
-    }, [nhanVien]);
+    }, [nhanVien, provinces]);
 
     function resolveProvinceName(code) {
-        const found = provinces.find((p) => String(p.code) === String(code));
-        return found ? found.name : code || "-";
+        const found = provinces.find((p) => String(p.id) === String(code));
+        return found ? found.province : code || "-";
     }
-    function resolveDistrictName(code) {
-        const found = districts.find((d) => String(d.code) === String(code));
-        return found ? found.name : code || "-";
-    }
-    function resolveWardName(code) {
-        const found = wards.find((w) => String(w.code) === String(code));
-        return found ? found.name : code || "-";
+    function resolveWardName(name) {
+        const found = wards.find((w) => String(w.name) === String(name));
+        return found ? found.name : name || "-";
     }
 
     return (
@@ -287,7 +274,6 @@ export default function NhanVienDetail(props) {
                                                 {nhanVien.diaChi ||
                                                     [
                                                         resolveWardName(nhanVien.xaPhuong),
-                                                        resolveDistrictName(nhanVien.quanHuyen),
                                                         resolveProvinceName(nhanVien.tinhThanhPho),
                                                     ]
                                                         .filter(Boolean)

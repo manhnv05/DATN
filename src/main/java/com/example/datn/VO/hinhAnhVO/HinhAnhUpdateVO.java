@@ -1,4 +1,4 @@
-package com.example.datn.VO;
+package com.example.datn.vo.hinhAnhVO;
 
 
 import lombok.Data;
