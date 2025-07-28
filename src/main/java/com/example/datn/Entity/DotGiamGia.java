@@ -11,6 +11,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -39,16 +40,16 @@ public class DotGiamGia{
     private Integer phanTramGiamGia;
 
     @Column(name = "ngay_bat_dau")
-    private Date ngayBatDau;
+    private LocalDateTime ngayBatDau;
 
     @Column(name = "ngay_ket_thuc")
-    private Date ngayKetThuc;
+    private LocalDateTime ngayKetThuc;
 
     @Column(name = "ngay_tao")
-    private Date ngayTao;
+    private LocalDateTime ngayTao;
 
     @Column(name = "ngay_sua")
-    private Date ngaySua;
+    private LocalDateTime ngaySua;
 
     @Column(name = "mo_ta")
     private String moTa;

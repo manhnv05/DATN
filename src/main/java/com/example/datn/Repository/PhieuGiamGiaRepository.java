@@ -1,5 +1,6 @@
 package com.example.datn.Repository;
 
+import ch.qos.logback.core.read.ListAppender;
 import com.example.datn.VO.PhieuGiamVOSearch;
 import com.example.datn.Entity.PhieuGiamGia;
 import org.springframework.data.domain.Page;
@@ -46,5 +47,7 @@ public interface PhieuGiamGiaRepository extends JpaRepository<PhieuGiamGia, Inte
     (p.loaiPhieu = 0 AND p.trangThai = 1)
     """)
     List<PhieuGiamGia> getPhieuGiamGiaByTrangThai();
+
+    List<PhieuGiamGia> getPhieuGiamGiaByMaPhieuGiamGia(String maPhieuGiamGia);
 
 }

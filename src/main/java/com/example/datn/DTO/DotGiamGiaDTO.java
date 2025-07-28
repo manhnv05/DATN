@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 @Data
 public class DotGiamGiaDTO {
@@ -16,13 +17,13 @@ public class DotGiamGiaDTO {
 
     private Integer phanTramGiamGia;
 
-    private Date ngayBatDau;
+    private LocalDateTime ngayBatDau;
 
-    private Date ngayKetThuc;
+    private LocalDateTime ngayKetThuc;
 
-    private Date ngayTao;
+    private LocalDateTime ngayTao;
 
-    private Date ngaySua;
+    private LocalDateTime ngaySua;
 
     private String moTa;
 

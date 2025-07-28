@@ -198,6 +198,13 @@ function AddDiscountEventPage() {
     const [productPage, setProductPage] = useState(0);
     const [productTotalPages, setProductTotalPages] = useState(1);
     const [productPageSize, setProductPageSize] = useState(10);
+    
+    const statusColorMap = {
+        1: "green",       // Đang diễn ra
+        2: "#1d4ed8",     // Chưa diễn ra
+        3: "gray",        // Tạm dừng
+        4: "red",         // Kết thúc
+    };
 
     const [filterModalOpen, setFilterModalOpen] = useState(false);
     const [productFilter, setProductFilter] = useState({ tenSanPham: "", tenDanhMuc: "" });
@@ -408,9 +415,9 @@ function AddDiscountEventPage() {
                         );
                     },
                 },
-                { 
-                    name: "tenSanPham", 
-                    label: "Tên sản phẩm", 
+                {
+                    name: "tenSanPham",
+                    label: "Tên sản phẩm",
                     align: "center",
                     render: function (value) {
                         return (
@@ -420,9 +427,9 @@ function AddDiscountEventPage() {
                         );
                     }
                 },
-                { 
-                    name: "tenDanhMuc", 
-                    label: "Danh mục", 
+                {
+                    name: "tenDanhMuc",
+                    label: "Danh mục",
                     align: "center",
                     render: function (value) {
                         return (
@@ -577,7 +584,7 @@ function AddDiscountEventPage() {
                 phanTramGiamGia: Number(data.phanTramGiamGia),
                 ngayBatDau: start,
                 ngayKetThuc: end,
-                trangThai: data.trangThai,
+                trangThai: 2,
             };
             let res;
             console.log(payload)
@@ -764,31 +771,6 @@ function AddDiscountEventPage() {
                                     </LocalizationProvider>
                                 </Box>
                             </Box>
-                        </Stack>
-                        <Stack>
-                            <InputLabel>Trạng thái</InputLabel>
-                            <Controller
-                                name="trangThai"
-                                control={control}
-                                render={function ({ field: { onChange, ...otherFieldProps } }) {
-                                    return (
-                                        <Select
-                                            onChange={function (event, child) {
-                                                onChange(event, child);
-                                            }}
-                                            {...otherFieldProps}
-                                        >
-                                            {STATUS_LIST.map(function (item) {
-                                                return (
-                                                    <MenuItem key={item.id} value={item.id}>
-                                                        {item.label}
-                                                    </MenuItem>
-                                                );
-                                            })}
-                                        </Select>
-                                    );
-                                }}
-                            />
                         </Stack>
                         <Stack direction="row" spacing={2} pt={2}>
                             <Button

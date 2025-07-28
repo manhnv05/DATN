@@ -99,8 +99,8 @@ export async function addVouchers(data) {
         const result = await response.json();
         return result;
     } catch (error) {
-        console.error("Error adding voucher:", error);
-        return null;
+       
+        return error;
     }
 }
 

@@ -261,7 +261,10 @@ export default function PhieuGiamPage() {
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         { name: "maPhieuGiamGia", label: "Mã phiếu", align: "left" },
-        { name: "tenPhieu", label: "Tên phiếu", align: "left" },
+        {
+            name: "tenPhieu", label: "Tên phiếu", align: "left",
+            render: (value, row) => (value)
+        },
         { name: "loaiPhieu", label: "Loại phiếu", align: "center" },
         { name: "soTienGiam", label: "Giá trị giảm", align: "right" },
         { name: "giamToiDa", label: "Giảm tối đa", align: "right" },
@@ -352,7 +355,7 @@ export default function PhieuGiamPage() {
                                             value={endDate}
                                             inputFormat="DD-MM-YYYY HH:mm"
                                             onChange={(newValue) => setEndDate(newValue)}
-                                            renderInput={(params) => <TextField {...params}  />}
+                                            renderInput={(params) => <TextField {...params} />}
                                         />
                                     </Box>
                                 </LocalizationProvider>

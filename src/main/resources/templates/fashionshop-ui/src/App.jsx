@@ -13,6 +13,7 @@ import routes from "routes";
 import { useSoftUIController, setMiniSidenav} from "context";
 import brand from "assets/images/logo4.png";
 import "bootstrap/dist/css/bootstrap.min.css";
+import LoadingPageWrapper from "components/loading/CircularProgress";
 
 
 export default function App() {
@@ -58,6 +59,9 @@ export default function App() {
 
   const getRoutes = (allRoutes) =>
       allRoutes.map((route) => {
+        <LoadingPageWrapper>
+      
+    </LoadingPageWrapper>
         if (route.collapse) {
           return getRoutes(route.collapse);
         }
@@ -66,7 +70,27 @@ export default function App() {
         }
         return null;
       });
-
+  // const getRoutes = (allRoutes) =>
+  //   allRoutes.map((route) => {
+  //     if (route.collapse) {
+  //       return getRoutes(route.collapse);
+  //     }
+  //     if (route.route) {
+  //       return (
+  //         <Route
+  //           exact
+  //           path={route.route}
+  //           element={
+  //             <LoadingPageWrapper>
+  //               {route.component}
+  //             </LoadingPageWrapper>
+  //           }
+  //           key={route.key}
+  //         />
+  //       );
+  //     }
+  //     return null;
+  //   });
   // Messenger button (dưới cùng)
   const configsButton = (
       <SoftBox

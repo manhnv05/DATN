@@ -30,14 +30,10 @@ export function debounce(functionCallback, timeout = 500) {
 }
 
 export const STATUS_LIST = [
-    {
-        id: 1,
-        label: "Đang diễn ra",
-    },
-    {
-        id: 2,
-        label: "Chưa diễn ra",
-    },
+  { id: 1, label: "Đang diễn ra" },     // Màu xanh
+  { id: 2, label: "Chưa diễn ra" },     // Màu xám
+  { id: 3, label: "Tạm dừng" },         // Màu cam
+  { id: 4, label: "Kết thúc" },         // Màu đỏ
 ];
 
 function renderOption(properties, option) {
