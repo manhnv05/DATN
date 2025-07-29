@@ -40,30 +40,30 @@ const getStatusLabel = (status, options) => {
 
 // Styled component cho Radio Group
 const StyledRadioGroup = styled(RadioGroup)({
-  display: 'flex',
-  flexDirection: 'row',
-  gap: 2.5,
-  '& .MuiFormControlLabel-root': {
-    margin: 0,
-    marginRight: 8,
-    '& .MuiRadio-root': {
-      color: '#90caf9',
-      padding: '4px',
-      '&.Mui-checked': {
-        color: '#1976d2',
-      },
-      '&:hover': {
-        background: 'rgba(25, 118, 210, 0.04)',
-        borderRadius: '50%',
-      },
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 2.5,
+    '& .MuiFormControlLabel-root': {
+        margin: 0,
+        marginRight: 8,
+        '& .MuiRadio-root': {
+            color: '#90caf9',
+            padding: '4px',
+            '&.Mui-checked': {
+                color: '#1976d2',
+            },
+            '&:hover': {
+                background: 'rgba(25, 118, 210, 0.04)',
+                borderRadius: '50%',
+            },
+        },
+        '& .MuiFormControlLabel-label': {
+            fontSize: 13,
+            fontWeight: 500,
+            color: '#333',
+            marginLeft: '6px',
+        },
     },
-    '& .MuiFormControlLabel-label': {
-      fontSize: 13,
-      fontWeight: 500,
-      color: '#333',
-      marginLeft: '6px',
-    },
-  },
 });
 
 // Hàm tính tuổi từ ngày sinh
@@ -76,7 +76,7 @@ const calculateAge = (birthDate) => {
     let date;
     if (typeof birthDate === 'string') {
         const trimmedDate = birthDate.trim();
-        
+
         // Format: "DD/MM/YYYY" hoặc "YYYY/MM/DD"
         if (trimmedDate.includes('/')) {
             const parts = trimmedDate.split('/');
@@ -110,11 +110,11 @@ const calculateAge = (birthDate) => {
         console.warn("Không thể parse ngày sinh:", birthDate);
         return null;
     }
-    
+
     const today = new Date();
     let age = today.getFullYear() - date.getFullYear();
     const monthDiff = today.getMonth() - date.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
         age--;
     }
@@ -266,130 +266,130 @@ function NhanVienTable() {
     });
 
     // Component FilterSelect - Compact version
-      function FilterSelect({ label, name, value, options, onChange, disabled, error }) {
-    const [focus, setFocus] = useState(false);
-    return (
-      <Box>
-        <label style={labelStyle}>{label}</label>
-        <FormControl
-          fullWidth
-          size="small"
-          sx={{
-            ...getFieldSx(focus ? name : "", name, error ? name : ""),
-          }}
-          disabled={disabled}
-        >
-          <Select
-            name={name}
-            value={value || ""}
-            onChange={onChange}
-            onFocus={() => {
-              setFocus(true);
-            }}
-            onBlur={() => setFocus(false)}
-            displayEmpty
-            sx={{
-              fontSize: 13,
-              "& .MuiSelect-select": {
-                padding: "6px 12px",
-              }
-            }}
-          >
-            {options.map(opt => (
-              <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 13 }}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-    );
-  }
+    function FilterSelect({ label, name, value, options, onChange, disabled, error }) {
+        const [focus, setFocus] = useState(false);
+        return (
+            <Box>
+                <label style={labelStyle}>{label}</label>
+                <FormControl
+                    fullWidth
+                    size="small"
+                    sx={{
+                        ...getFieldSx(focus ? name : "", name, error ? name : ""),
+                    }}
+                    disabled={disabled}
+                >
+                    <Select
+                        name={name}
+                        value={value || ""}
+                        onChange={onChange}
+                        onFocus={() => {
+                            setFocus(true);
+                        }}
+                        onBlur={() => setFocus(false)}
+                        displayEmpty
+                        sx={{
+                            fontSize: 13,
+                            "& .MuiSelect-select": {
+                                padding: "6px 12px",
+                            }
+                        }}
+                    >
+                        {options.map(opt => (
+                            <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 13 }}>
+                                {opt.label}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
+        );
+    }
 
-  // Component gộp cho sắp xếp
-  function SortControl({ sortBy, sortDir, onSortByChange, onSortDirChange }) {
-    const [focus, setFocus] = useState(false);
-    return (
-      <Box>
-        <label style={labelStyle}>Sắp xếp</label>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <FormControl
-            size="small"
-            sx={{
-              ...getFieldSx(focus ? "sortBy" : "", "sortBy", ""),
-              minWidth: 120,
-            }}
-          >
-            <Select
-              name="sortBy"
-              value={sortBy || ""}
-              onChange={onSortByChange}
-              onFocus={() => setFocus(true)}
-              onBlur={() => setFocus(false)}
-              displayEmpty
-              sx={{
-                fontSize: 13,
-                "& .MuiSelect-select": {
-                  padding: "6px 12px",
-                }
-              }}
-            >
-              <MenuItem value="id" sx={{ fontSize: 13 }}>Mã nhân viên</MenuItem>
-              <MenuItem value="hoVaTen" sx={{ fontSize: 13 }}>Tên nhân viên</MenuItem>
-              <MenuItem value="ngaySinh" sx={{ fontSize: 13 }}>Ngày sinh</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl
-            size="small"
-            sx={{
-              ...getFieldSx(focus ? "sortDir" : "", "sortDir", ""),
-              minWidth: 100,
-            }}
-          >
-            <Select
-              name="sortDir"
-              value={sortDir || ""}
-              onChange={onSortDirChange}
-              onFocus={() => setFocus(true)}
-              onBlur={() => setFocus(false)}
-              displayEmpty
-              sx={{
-                fontSize: 13,
-                "& .MuiSelect-select": {
-                  padding: "6px 12px",
-                }
-              }}
-            >
-              <MenuItem value="desc" sx={{ fontSize: 13 }}>Giảm dần</MenuItem>
-              <MenuItem value="asc" sx={{ fontSize: 13 }}>Tăng dần</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      </Box>
-    );
-  }
+    // Component gộp cho sắp xếp
+    function SortControl({ sortBy, sortDir, onSortByChange, onSortDirChange }) {
+        const [focus, setFocus] = useState(false);
+        return (
+            <Box>
+                <label style={labelStyle}>Sắp xếp</label>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <FormControl
+                        size="small"
+                        sx={{
+                            ...getFieldSx(focus ? "sortBy" : "", "sortBy", ""),
+                            minWidth: 120,
+                        }}
+                    >
+                        <Select
+                            name="sortBy"
+                            value={sortBy || ""}
+                            onChange={onSortByChange}
+                            onFocus={() => setFocus(true)}
+                            onBlur={() => setFocus(false)}
+                            displayEmpty
+                            sx={{
+                                fontSize: 13,
+                                "& .MuiSelect-select": {
+                                    padding: "6px 12px",
+                                }
+                            }}
+                        >
+                            <MenuItem value="id" sx={{ fontSize: 13 }}>Mã nhân viên</MenuItem>
+                            <MenuItem value="hoVaTen" sx={{ fontSize: 13 }}>Tên nhân viên</MenuItem>
+                            <MenuItem value="ngaySinh" sx={{ fontSize: 13 }}>Ngày sinh</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl
+                        size="small"
+                        sx={{
+                            ...getFieldSx(focus ? "sortDir" : "", "sortDir", ""),
+                            minWidth: 100,
+                        }}
+                    >
+                        <Select
+                            name="sortDir"
+                            value={sortDir || ""}
+                            onChange={onSortDirChange}
+                            onFocus={() => setFocus(true)}
+                            onBlur={() => setFocus(false)}
+                            displayEmpty
+                            sx={{
+                                fontSize: 13,
+                                "& .MuiSelect-select": {
+                                    padding: "6px 12px",
+                                }
+                            }}
+                        >
+                            <MenuItem value="desc" sx={{ fontSize: 13 }}>Giảm dần</MenuItem>
+                            <MenuItem value="asc" sx={{ fontSize: 13 }}>Tăng dần</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Box>
+            </Box>
+        );
+    }
 
-      // PropTypes cho FilterSelect
-  FilterSelect.propTypes = {
-    label: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    options: PropTypes.arrayOf(PropTypes.shape({
-      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      label: PropTypes.string,
-    })).isRequired,
-    onChange: PropTypes.func.isRequired,
-    disabled: PropTypes.bool,
-    error: PropTypes.bool,
-  };
+    // PropTypes cho FilterSelect
+    FilterSelect.propTypes = {
+        label: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        options: PropTypes.arrayOf(PropTypes.shape({
+            value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            label: PropTypes.string,
+        })).isRequired,
+        onChange: PropTypes.func.isRequired,
+        disabled: PropTypes.bool,
+        error: PropTypes.bool,
+    };
 
-  // PropTypes cho SortControl
-  SortControl.propTypes = {
-    sortBy: PropTypes.string,
-    sortDir: PropTypes.string,
-    onSortByChange: PropTypes.func.isRequired,
-    onSortDirChange: PropTypes.func.isRequired,
-  };
+    // PropTypes cho SortControl
+    SortControl.propTypes = {
+        sortBy: PropTypes.string,
+        sortDir: PropTypes.string,
+        onSortByChange: PropTypes.func.isRequired,
+        onSortDirChange: PropTypes.func.isRequired,
+    };
 
     // Table configuration
     const columns = [
@@ -401,11 +401,11 @@ function NhanVienTable() {
             width: "100px",
             render: (v, r) => (
                 <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    <Avatar 
-                        src={v || "/default-avatar.png"} 
-                        alt={r.hoVaTen} 
-                        sx={{ 
-                            width: 45, 
+                    <Avatar
+                        src={v || "/default-avatar.png"}
+                        alt={r.hoVaTen}
+                        sx={{
+                            width: 45,
                             height: 45,
                             border: "2px solid #e3f2fd",
                             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
@@ -421,10 +421,10 @@ function NhanVienTable() {
             ),
         },
         { name: "maNhanVien", label: "Mã nhân viên", align: "left", width: "90px" },
-        { 
-            name: "hoVaTen", 
-            label: "Họ và tên", 
-            align: "left", 
+        {
+            name: "hoVaTen",
+            label: "Họ và tên",
+            align: "left",
             width: "200px",
             render: (v, r) => (
                 <Box>
@@ -438,15 +438,15 @@ function NhanVienTable() {
             )
         },
         { name: "soDienThoai", label: "SĐT", align: "center", width: "120px" },
-        { 
-            name: "ngaySinh", 
-            label: "Ngày sinh", 
-            align: "center", 
+        {
+            name: "ngaySinh",
+            label: "Ngày sinh",
+            align: "center",
             width: "140px",
             render: (v, r) => {
                 const age = calculateAge(v);
                 console.log(`Ngày sinh của ${r.hoVaTen}:`, v, "Tuổi:", age);
-                
+
                 return (
                     <Box textAlign="center">
                         <Typography variant="body2" fontWeight={500}>
@@ -538,9 +538,9 @@ function NhanVienTable() {
             align: "center",
             render: (_, r) => (
                 <SoftBox display="flex" justifyContent="center">
-                    <IconButton 
-                        size="small" 
-                        sx={{ 
+                    <IconButton
+                        size="small"
+                        sx={{
                             color: "#1976d2",
                             background: "rgba(25, 118, 210, 0.08)",
                             "&:hover": {
@@ -548,8 +548,8 @@ function NhanVienTable() {
                                 transform: "scale(1.1)"
                             },
                             transition: "all 0.2s ease"
-                        }} 
-                        title="Xem chi tiết & Chỉnh sửa" 
+                        }}
+                        title="Xem chi tiết & Chỉnh sửa"
                         onClick={() => navigate(`/nhanvien/detail/${r.id}`)}
                     >
                         <FaEye />
@@ -639,9 +639,9 @@ function NhanVienTable() {
                             /> */}
                             <IconButton
                                 onClick={toggleFilterSection}
-                                sx={{ 
-                                    color: showFilterSection ? "#fff" : "#49a3f1", 
-                                    border: "1px solid #49a3f1", 
+                                sx={{
+                                    color: showFilterSection ? "#fff" : "#49a3f1",
+                                    border: "1px solid #49a3f1",
                                     borderRadius: 2,
                                     background: showFilterSection ? "#49a3f1" : "transparent",
                                     transition: "all 0.2s ease",
@@ -714,11 +714,11 @@ function NhanVienTable() {
 
                 {/* Filter Section - Compact and User-Friendly */}
                 {showFilterSection && (
-                    <Card 
-                        sx={{ 
-                            p: { xs: 2, md: 2.5 }, 
-                            mb: 2, 
-                            background: "#f8fafc", 
+                    <Card
+                        sx={{
+                            p: { xs: 2, md: 2.5 },
+                            mb: 2,
+                            background: "#f8fafc",
                             border: "1px solid #e5e7eb",
                             animation: "slideDown 0.3s ease-out",
                             "@keyframes slideDown": {
@@ -745,7 +745,7 @@ function NhanVienTable() {
                                 <IconButton
                                     onClick={toggleFilterSection}
                                     size="small"
-                                    sx={{ 
+                                    sx={{
                                         color: "#666",
                                         "&:hover": { background: "rgba(102, 102, 102, 0.1)" }
                                     }}
@@ -753,67 +753,64 @@ function NhanVienTable() {
                                     <Icon fontSize="small">close</Icon>
                                 </IconButton>
                             </Box>
-                            
+
                             <Box component="form" autoComplete="off">
                                 {/* Main filters in 3 rows for better layout */}
                                 <Box
-  display="grid"
-  gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }}
-  gap={2.5}
-  alignItems="center"
-  mb={2}
->
-  {/* Giới tính */}
-  <Box minWidth={120}>
-    <label style={labelStyle}>Giới tính</label>
-    <StyledRadioGroup
-      name="filterGender"
-      value={filterGender}
-      onChange={(e) => handleFilterChange(setFilterGender)(e.target.value)}
-      row
-    >
-      <FormControlLabel value="Tất cả" control={<Radio />} label="Tất cả" />
-      <FormControlLabel value="MALE" control={<Radio />} label="Nam" />
-      <FormControlLabel value="FEMALE" control={<Radio />} label="Nữ" />
-    </StyledRadioGroup>
-  </Box>
-  {/* Trạng thái */}
-  <Box minWidth={150}>
-    <label style={labelStyle}>Trạng thái</label>
-    <StyledRadioGroup
-      name="filterStatus"
-      value={filterStatus}
-      onChange={(e) => handleFilterChange(setFilterStatus)(e.target.value)}
-      row
-    >
-      <FormControlLabel value="Tất cả" control={<Radio />} label="Tất cả" />
-      <FormControlLabel value="ACTIVE" control={<Radio />} label="Đang làm việc" />
-      <FormControlLabel value="INACTIVE" control={<Radio />} label="Đã nghỉ" />
-    </StyledRadioGroup>
-  </Box>
-  {/* Khoảng tuổi */}
-  <Box minWidth={180} maxWidth={260}>
-    <label style={labelStyle}>Khoảng tuổi: <strong>{ageRange[0]} - {ageRange[1]}</strong></label>
-    <Slider
-      value={ageRange}
-      onChange={handleAgeRangeChange}
-      valueLabelDisplay="off"
-      min={18}
-      max={100}
-      sx={{ mt: 1, width: '100%' }}
-    />
-  </Box>
-  {/* Sắp xếp */}
-  <SortControl
-    sortBy={sortBy}
-    sortDir={sortDir}
-    onSortByChange={(e) => handleFilterChange(setSortBy)(e.target.value)}
-    onSortDirChange={(e) => handleFilterChange(setSortDir)(e.target.value)}
-  />
-</Box>
-
-
-
+                                    display="grid"
+                                    gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }}
+                                    gap={2.5}
+                                    alignItems="center"
+                                    mb={2}
+                                >
+                                    {/* Giới tính */}
+                                    <Box minWidth={120}>
+                                        <label style={labelStyle}>Giới tính</label>
+                                        <StyledRadioGroup
+                                            name="filterGender"
+                                            value={filterGender}
+                                            onChange={(e) => handleFilterChange(setFilterGender)(e.target.value)}
+                                            row
+                                        >
+                                            <FormControlLabel value="Tất cả" control={<Radio />} label="Tất cả" />
+                                            <FormControlLabel value="MALE" control={<Radio />} label="Nam" />
+                                            <FormControlLabel value="FEMALE" control={<Radio />} label="Nữ" />
+                                        </StyledRadioGroup>
+                                    </Box>
+                                    {/* Trạng thái */}
+                                    <Box minWidth={150}>
+                                        <label style={labelStyle}>Trạng thái</label>
+                                        <StyledRadioGroup
+                                            name="filterStatus"
+                                            value={filterStatus}
+                                            onChange={(e) => handleFilterChange(setFilterStatus)(e.target.value)}
+                                            row
+                                        >
+                                            <FormControlLabel value="Tất cả" control={<Radio />} label="Tất cả" />
+                                            <FormControlLabel value="ACTIVE" control={<Radio />} label="Đang làm việc" />
+                                            <FormControlLabel value="INACTIVE" control={<Radio />} label="Đã nghỉ" />
+                                        </StyledRadioGroup>
+                                    </Box>
+                                    {/* Khoảng tuổi */}
+                                    <Box minWidth={180} maxWidth={260}>
+                                        <label style={labelStyle}>Khoảng tuổi: <strong>{ageRange[0]} - {ageRange[1]}</strong></label>
+                                        <Slider
+                                            value={ageRange}
+                                            onChange={handleAgeRangeChange}
+                                            valueLabelDisplay="off"
+                                            min={18}
+                                            max={100}
+                                            sx={{ mt: 1, width: '100%' }}
+                                        />
+                                    </Box>
+                                    {/* Sắp xếp */}
+                                    <SortControl
+                                        sortBy={sortBy}
+                                        sortDir={sortDir}
+                                        onSortByChange={(e) => handleFilterChange(setSortBy)(e.target.value)}
+                                        onSortDirChange={(e) => handleFilterChange(setSortDir)(e.target.value)}
+                                    />
+                                </Box>
                                 {/* Footer with actions and results */}
                                 <Box display="flex" gap={2} justifyContent="space-between" alignItems="center" pt={1} borderTop="1px solid #e5e7eb">
                                     <Button
@@ -827,17 +824,17 @@ function NhanVienTable() {
                                             borderColor: "#ccc",
                                             fontWeight: 500,
                                             fontSize: 13,
-                                            "&:hover": { 
-                                                borderColor: "#999", 
+                                            "&:hover": {
+                                                borderColor: "#999",
                                                 background: "rgba(102, 102, 102, 0.05)",
-                                                color: "#333" 
+                                                color: "#333"
                                             },
                                         }}
                                         onClick={handleResetFilters}
                                     >
                                         Xóa bộ lọc
                                     </Button>
-                                    
+
                                     <Typography variant="body2" color="#666" fontWeight={500} fontSize={13}>
                                         Tìm thấy <strong>{pagination.totalElements || 0}</strong> nhân viên
                                     </Typography>
