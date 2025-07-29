@@ -27,6 +27,7 @@ import Modal from "@mui/material/Modal";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import PropTypes from "prop-types";
+import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 
 export function debounce(functionCallback, timeout = 500) {
     let timer;
@@ -198,7 +199,22 @@ function AddDiscountEventPage() {
     const [productPage, setProductPage] = useState(0);
     const [productTotalPages, setProductTotalPages] = useState(1);
     const [productPageSize, setProductPageSize] = useState(10);
-    
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+
+    const handleConfirmOpen = () => {
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmClose = () => {
+        setConfirmOpen(false);
+    };
+
+    const handleConfirmApply = () => {
+        handleConfirmClose();
+        handleApply(); // gọi hàm chính
+    };
+
     const statusColorMap = {
         1: "green",       // Đang diễn ra
         2: "#1d4ed8",     // Chưa diễn ra
@@ -307,6 +323,10 @@ function AddDiscountEventPage() {
 
     useEffect(function () {
         fetchProductsList(productPage, productPageSize, productFilter);
+        if (eventId) {
+            document.querySelectorAll(".MuiBreadcrumbs-li")[2].innerHTML = "Update đợt giảm giá"
+            document.querySelector(".MuiTypography-root.MuiTypography-h6.MuiTypography-noWrap.css-1qv4ulp-MuiTypography-root").innerHTML = "Update đợt giảm giá"
+        }
     }, [productPage, productPageSize, productFilter]);
 
     const debounceRef = useRef(
@@ -639,7 +659,7 @@ function AddDiscountEventPage() {
             </Stack>
             <Stack direction="row" spacing={3} mb={3}>
                 <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
-                    <SoftTypography sx={{ fontWeight: 500 }}>{eventId ? "Thêm đợt giảm giá":"Sửa đợt giảm giá"}</SoftTypography>
+                    <SoftTypography sx={{ fontWeight: 500 }}>{eventId ? "Sửa đợt giảm giá" : "Thêm đợt giảm giá"}</SoftTypography>
                     <Stack
                         spacing={1}
                         component="form"
@@ -961,12 +981,26 @@ function AddDiscountEventPage() {
                         <Button
                             variant="contained"
                             size="small"
-                            onClick={handleApply}
+                            onClick={handleConfirmOpen}
                             disabled={!eventId || selectedDetails.length === 0}
                         >
                             Áp dụng
                         </Button>
                     </Stack>
+                    <Dialog open={confirmOpen} onClose={handleConfirmClose}>
+                        <DialogTitle>Xác nhận áp dụng</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>
+                                Bạn có chắc chắn muốn áp dụng những thay đổi này không?
+                            </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleConfirmClose} color="inherit">Hủy</Button>
+                            <Button onClick={handleConfirmApply} variant="contained" color="primary">
+                                Xác nhận
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
                 </Card>
             )}
         </DashboardLayout>

@@ -122,7 +122,7 @@ function CustomerTable({ isSelectionMode = false, onSelectCustomer = () => {} })
         trangThai: statusFilter !== "Tất cả" ? (statusFilter === "Online" ? 1 : 0) : undefined,
       };
 
-      const response = await axios.get("http://localhost:8080/khachHang", { params });
+      const response = await axios.get("http://localhost:8080/khachHang/query", { params });
       setCustomersData({ ...response.data, content: response.data.content || [] });
     } catch (error) {
       setError("Không thể tải dữ liệu.");

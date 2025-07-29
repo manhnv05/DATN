@@ -7,7 +7,7 @@ export async function fetchKhachHang(page, size, search) {
             params.append("tenKhachHang", search.trim());
         }
 
-        const response = await fetch(`http://localhost:8080/khachHang?${params.toString()}`, {
+        const response = await fetch(`http://localhost:8080/khachHang/query?${params.toString()}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

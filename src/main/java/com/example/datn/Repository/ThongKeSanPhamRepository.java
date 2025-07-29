@@ -18,7 +18,7 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
     WHERE FUNCTION('DATE', hdct.hoaDon.ngayTao) = CURRENT_DATE
     AND hdct.hoaDon.trangThai = 4
     """)
-    Page<HoaDonChiTiet> getThongKeHomNay(Pageable pageable);
+    List<HoaDonChiTiet> getThongKeHomNay();
 
     @Query("""
     SELECT hdct FROM HoaDonChiTiet hdct
@@ -26,7 +26,7 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
     AND FUNCTION('YEAR', hdct.hoaDon.ngayTao) = FUNCTION('YEAR', CURRENT_DATE)
     AND hdct.hoaDon.trangThai = 4
     """)
-    Page<HoaDonChiTiet> getThongKeTuanNay(Pageable pageable);
+    List<HoaDonChiTiet> getThongKeTuanNay();
 
     @Query("""
     SELECT hdct FROM HoaDonChiTiet hdct
@@ -34,14 +34,14 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
     AND YEAR(hdct.hoaDon.ngayTao) = YEAR(CURRENT_DATE)
     AND hdct.hoaDon.trangThai = 4
     """)
-    Page<HoaDonChiTiet> getThongKeThangNay(Pageable pageable);
+    List<HoaDonChiTiet> getThongKeThangNay();
 
     @Query("""
     SELECT hdct FROM HoaDonChiTiet hdct
     WHERE YEAR(hdct.hoaDon.ngayTao) = YEAR(CURRENT_DATE)
     AND hdct.hoaDon.trangThai = 4
     """)
-    Page<HoaDonChiTiet> getThongKeNamNay(Pageable pageable);
+    List<HoaDonChiTiet> getThongKeNamNay();
 
     @Query("""
     SELECT hdct FROM HoaDonChiTiet hdct
@@ -49,5 +49,5 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
       AND (:#{#search.denNgay} IS NULL OR hdct.hoaDon.ngayTao <= :#{#search.denNgay})
       AND hdct.hoaDon.trangThai = 4
     """)
-    Page<HoaDonChiTiet> getAllByQuery(@RequestParam("search") ThongKeVoSearch search, Pageable pageable);
+    List<HoaDonChiTiet> getAllByQuery(@RequestParam("search") ThongKeVoSearch search);
 }

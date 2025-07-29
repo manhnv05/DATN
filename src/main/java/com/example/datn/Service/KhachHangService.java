@@ -1,14 +1,11 @@
 package com.example.datn.Service;
 
-import com.example.datn.DTO.customer.CustomerDetailResponse;
-import com.example.datn.DTO.customer.CustomerDuplicateCheckResponse;
-import com.example.datn.DTO.customer.CustomerFilterResponse;
-import com.example.datn.DTO.customer.CustomerListResponse;
-import com.example.datn.DTO.customer.CustomerResponse;
+import com.example.datn.DTO.customer.*;
 import com.example.datn.DTO.page.PaginationInfoResponse;
 import com.example.datn.Entity.DiaChi;
 import com.example.datn.Entity.KhachHang;
 import com.example.datn.Repository.KhachHangRepository;
+import com.example.datn.VO.KhachHangQueryVO;
 import com.example.datn.VO.address.AddressCreateRequest;
 import com.example.datn.VO.customer.CustomerCreateRequest;
 import com.example.datn.VO.customer.CustomerDuplicateCheckRequest;
@@ -26,12 +23,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.criteria.Predicate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +46,7 @@ public class KhachHangService {
     GenericSpecificationBuilder<KhachHang> specificationBuilder;
     CustomerMapper customerMapper;
     AddressMapper addressMapper;
+
 
     @Transactional
     public CustomerResponse update(Integer id, CustomerUpdateRequest customerCreateRequest) {
@@ -183,5 +184,53 @@ public class KhachHangService {
                 .duplicateFields(duplicateFields)
                 .duplicateInfo(duplicateInfo)
                 .build();
+    }
+    public Page<KhachHangDTO> query(KhachHangQueryVO vO) {
+        int page = vO.getPage() != null && vO.getPage() >= 0 ? vO.getPage() : 0;
+        int size = vO.getSize() != null && vO.getSize() > 0 ? vO.getSize() : 10;
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+
+        Specification<KhachHang> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (vO.getId() != null) {
+                predicates.add(cb.equal(root.get("id"), vO.getId()));
+            }
+            if (vO.getMaKhachHang() != null && !vO.getMaKhachHang().trim().isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("maKhachHang")), "%" + vO.getMaKhachHang().trim().toLowerCase() + "%"));
+            }
+            if (vO.getMatKhau() != null && !vO.getMatKhau().trim().isEmpty()) {
+                predicates.add(cb.like(root.get("matKhau"), "%" + vO.getMatKhau().trim() + "%"));
+            }
+            if (vO.getTenKhachHang() != null && !vO.getTenKhachHang().trim().isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("tenKhachHang")), "%" + vO.getTenKhachHang().trim().toLowerCase() + "%"));
+            }
+            if (vO.getEmail() != null && !vO.getEmail().trim().isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("email")), "%" + vO.getEmail().trim().toLowerCase() + "%"));
+            }
+            if (vO.getGioiTinh() != null) {
+                predicates.add(cb.equal(root.get("gioiTinh"), vO.getGioiTinh()));
+            }
+            if (vO.getSdt() != null && !vO.getSdt().trim().isEmpty()) {
+                predicates.add(cb.like(root.get("sdt"), "%" + vO.getSdt().trim() + "%"));
+            }
+            if (vO.getNgaySinh() != null) {
+                predicates.add(cb.equal(root.get("ngaySinh"), vO.getNgaySinh()));
+            }
+            if (vO.getHinhAnh() != null && !vO.getHinhAnh().trim().isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("hinhAnh")), "%" + vO.getHinhAnh().trim().toLowerCase() + "%"));
+            }
+            if (vO.getTrangThai() != null) {
+                predicates.add(cb.equal(root.get("trangThai"), vO.getTrangThai()));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<KhachHang> pageResult = customerRepository.findAll(spec, pageable);
+        return pageResult.map(this::toDTO);
+    }
+    private KhachHangDTO toDTO(KhachHang original) {
+        KhachHangDTO bean = new KhachHangDTO();
+        BeanUtils.copyProperties(original, bean);
+        return bean;
     }
 }

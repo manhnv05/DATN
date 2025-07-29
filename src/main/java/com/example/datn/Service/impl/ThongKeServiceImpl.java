@@ -53,24 +53,24 @@ public class ThongKeServiceImpl implements ThongKeService {
     public Page<ThongKeSPBanChayDTO> getThongKeSpBanChayByQuery(ThongKeVoSearch thongKeVoSearch, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         if (thongKeVoSearch.getBoLocNgayTuanThangNam() == 0){
-            Page<HoaDonChiTiet> hoaDoncts = thongKeSanPhamRepository.getThongKeHomNay(pageable);
-            return getSanPhamCt(hoaDoncts);
+            List<HoaDonChiTiet> hoaDoncts = thongKeSanPhamRepository.getThongKeHomNay();
+            return getSanPhamCt(hoaDoncts, pageable);
         }
         else if(thongKeVoSearch.getBoLocNgayTuanThangNam() == 1){
-            Page<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getThongKeTuanNay(pageable);
-            return getSanPhamCt(hoaDons);
+            List<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getThongKeTuanNay();
+            return getSanPhamCt(hoaDons, pageable);
         }
         else if(thongKeVoSearch.getBoLocNgayTuanThangNam() == 2){
-            Page<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getThongKeThangNay(pageable);
-            return getSanPhamCt(hoaDons);
+            List<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getThongKeThangNay();
+            return getSanPhamCt(hoaDons, pageable);
         }
         else if(thongKeVoSearch.getBoLocNgayTuanThangNam() == 3){
-            Page<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getThongKeNamNay(pageable);
-            return getSanPhamCt(hoaDons);
+            List<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getThongKeNamNay();
+            return getSanPhamCt(hoaDons, pageable);
         }
         else {
-            Page<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getAllByQuery(thongKeVoSearch, pageable);
-            return getSanPhamCt(hoaDons);
+            List<HoaDonChiTiet> hoaDons = thongKeSanPhamRepository.getAllByQuery(thongKeVoSearch);
+            return getSanPhamCt(hoaDons, pageable);
         }
     }
 
@@ -146,9 +146,7 @@ public class ThongKeServiceImpl implements ThongKeService {
         return thongKeBieuDoDTO;
     }
 
-    public Page<ThongKeSPBanChayDTO> getSanPhamCt(Page<HoaDonChiTiet> hoaDonChiTietPage) {
-        List<HoaDonChiTiet> hoaDonChiTietList = hoaDonChiTietPage.getContent();
-
+    public Page<ThongKeSPBanChayDTO> getSanPhamCt(List<HoaDonChiTiet> hoaDonChiTietList,Pageable pageable) {
         Map<Integer, ChiTietSanPham> mapChiTietSanPham = new HashMap<>();
 
         for (HoaDonChiTiet hdct : hoaDonChiTietList) {
@@ -174,7 +172,11 @@ public class ThongKeServiceImpl implements ThongKeService {
         List<ChiTietSanPham> mergedList = new ArrayList<>(mapChiTietSanPham.values());
         mergedList.sort((a, b) -> Integer.compare(b.getSoLuong(), a.getSoLuong()));
 
-        List<ThongKeSPBanChayDTO> result = mergedList.stream()
+        // Phân trang thủ công từ mergedList
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), mergedList.size());
+
+        List<ThongKeSPBanChayDTO> pagedList = mergedList.subList(start, end).stream()
                 .map(ctsp -> {
                     ThongKeSPBanChayDTO dto = new ThongKeSPBanChayDTO();
                     dto.setTenSp(ctsp.getSanPham().getTenSanPham());
@@ -185,8 +187,9 @@ public class ThongKeServiceImpl implements ThongKeService {
                 })
                 .toList();
 
-        return new PageImpl<>(result, hoaDonChiTietPage.getPageable(), hoaDonChiTietPage.getTotalElements());
+        return new PageImpl<>(pagedList, pageable, mergedList.size());
     }
+
 
     public ThongKeDTO getThongKeByHoaDons(List<HoaDon> hoaDons) {
         BigDecimal totalRevenue = BigDecimal.ZERO;

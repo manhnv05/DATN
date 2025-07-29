@@ -5,6 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import Chip from "@mui/material/Chip";
 import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
 import Table from "examples/Tables/Table";
@@ -12,12 +13,9 @@ import React, { memo, useMemo } from "react";
 import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
 import PropTypes from "prop-types";
 import { STATUS_LIST } from "./Filter";
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogActions from '@mui/material/DialogActions';
 import { useState } from 'react';
+import ThreeDotMenu from "components/Voucher/menu";
+import { toast } from "react-toastify";
 
 const TableList = ({
     data,
@@ -33,29 +31,91 @@ const TableList = ({
     const handlePageChange = (newPage) => {
         setPagination((pre) => ({ ...pre, page: newPage }));
     };
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [selectedStatus, setSelectedStatus] = useState(null); // trạng thái được chọn tạm
-    const [pendingRow, setPendingRow] = useState(null);         // row cần cập nhật sau xác nhận
 
-    const handleConfirm = () => {
-        if (pendingRow && selectedStatus !== null) {
-            onStatusChange(pendingRow, selectedStatus); // Gọi callback thực sự
+    // Function để hiển thị trạng thái giống phiếu giảm giá
+    function checkTrangThai(trangthai) {
+        if (trangthai === 4) { // Kết thúc
+            return (
+                <Chip
+                    label="Đã kết thúc"
+                    size="small"
+                    sx={{
+                        backgroundColor: '#fef2f2',
+                        color: '#b91c1c',
+                        fontWeight: 500,
+                        fontSize: '12px',
+                        height: '28px',
+                        '& .MuiChip-label': {
+                            paddingX: '12px'
+                        }
+                    }}
+                />
+            );
         }
-        setConfirmOpen(false);
-        setSelectedStatus(null);
-        setPendingRow(null);
+        else if (trangthai === 1) { // Đang diễn ra
+            return (
+                <Chip
+                    label="Đang diễn ra"
+                    size="small"
+                    sx={{
+                        backgroundColor: '#f0fdf4',
+                        color: '#15803d',
+                        fontWeight: 500,
+                        fontSize: '12px',
+                        height: '28px',
+                        '& .MuiChip-label': {
+                            paddingX: '12px'
+                        }
+                    }}
+                />
+            );
+        }
+        else if (trangthai === 2) { // Chưa bắt đầu
+            return (
+                <Chip
+                    label="Chưa bắt đầu"
+                    size="small"
+                    sx={{
+                        backgroundColor: '#eff6ff',
+                        color: '#1d4ed8',
+                        fontWeight: 500,
+                        fontSize: '12px',
+                        height: '28px',
+                        '& .MuiChip-label': {
+                            paddingX: '12px'
+                        }
+                    }}
+                />
+            );
+        }
+        else { // Tạm dừng (3)
+            return (
+                <Chip
+                    label="Tạm dừng"
+                    size="small"
+                    sx={{
+                        backgroundColor: '#f9fafb',
+                        color: '#374151',
+                        fontWeight: 500,
+                        fontSize: '12px',
+                        height: '28px',
+                        '& .MuiChip-label': {
+                            paddingX: '12px'
+                        }
+                    }}
+                />
+            );
+        }
+    }
+
+    // Status list cho menu thao tác
+    const statusListDotGiam = ["Tạm Dừng", "Bắt đầu", "Kết thúc"];
+
+    const handleStatusChangeMenu = (row, status) => {
+        // Chuyển đổi từ text sang số
+        onStatusChange(row, status);
     };
 
-    const handleConfirmClose = () => {
-        setConfirmOpen(false);
-        setSelectedStatus(null);
-        setPendingRow(null);
-    };
-
-    const getStatusText = (id) => {
-        const item = STATUS_LIST.find((status) => status.id === id);
-        return item?.label || "";
-    };
     const columns = [
         { name: "stt", label: "STT", align: "center", width: "60px" },
         {
@@ -67,10 +127,10 @@ const TableList = ({
             render: (value, row) => (value)
         },
         { name: "phanTramGiamGia", label: "% giảm", align: "center", width: "80px" },
-        { 
+        {
             name: "ngayBatDau", label: "Bắt đầu", align: "center", width: "100px",
             render: (value, row) => (value.replace("T", " "))
-         },
+        },
         {
             name: "ngayKetThuc", label: "Kết thúc", align: "center", width: "100px",
             render: (value, row) => (value.replace("T", " "))
@@ -80,66 +140,7 @@ const TableList = ({
             label: "Trạng thái",
             align: "center",
             width: "120px",
-            render: (value, row) => {
-                return (
-                    <Select
-                        value={value}
-                        size="small"
-                        onChange={(e) => {
-                            setSelectedStatus(Number(e.target.value));
-                            setPendingRow(row);
-                            setConfirmOpen(true);
-                        }}
-
-                        displayEmpty
-                        renderValue={(selected) => {
-                            const selectedItem = STATUS_LIST.find(item => item.id === selected);
-
-                            const colorMap = {
-                                1: "green",         // Đang diễn ra
-                                2: "#1d4ed8",       // Chưa diễn ra
-                                3: "gray",          // Tạm dừng
-                                4: "red",           // Kết thúc
-                            };
-
-                            const color = colorMap[selectedItem?.id] || "black";
-
-                            return (
-                                <span style={{ color, fontWeight: 'bold' }}>
-                                    {selectedItem?.label || "Chưa chọn"}
-                                </span>
-                            );
-                        }}
-                        sx={{
-                            fontWeight: "bold",
-                        }}
-                    >
-                        {STATUS_LIST.map((item) => {
-                            const colorMap = {
-                                1: "green",
-                                2: "#1d4ed8",
-                                3: "gray",
-                                4: "red",
-                            };
-
-                            return (
-                                <MenuItem
-                                    key={item.id}
-                                    value={item.id}
-                                    sx={{
-                                        color: colorMap[item.id],
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    {item.label}
-                                </MenuItem>
-                            );
-                        })}
-                    </Select>
-
-                );
-            }
-
+            render: (value, row) => checkTrangThai(value)
         },
         {
             name: "actions",
@@ -148,14 +149,10 @@ const TableList = ({
             width: "110px",
             render: (_, row) => (
                 <SoftBox display="flex" gap={0.5} justifyContent="center">
-                    <IconButton
-                        size="small"
-                        sx={{ color: "#4acbf2" }}
-                        title="Xem chi tiết"
-                        onClick={() => onView(row)}
-                    >
-                        <FaEye />
-                    </IconButton>
+                    <ThreeDotMenu
+                        statusList={statusListDotGiam}
+                        onSelectStatus={(status) => handleStatusChangeMenu(row, status)}
+                    />
                     <IconButton
                         size="small"
                         sx={{ color: "#4acbf2" }}
@@ -164,14 +161,7 @@ const TableList = ({
                     >
                         <FaEdit />
                     </IconButton>
-                    <IconButton
-                        size="small"
-                        sx={{ color: "#4acbf2" }}
-                        title="Xóa"
-                        onClick={() => onDelete(row.id)}
-                    >
-                        <FaTrash />
-                    </IconButton>
+
                 </SoftBox>
             ),
         },
@@ -246,20 +236,6 @@ const TableList = ({
                     </Button>
                 </SoftBox>
             </Stack>
-            <Dialog open={confirmOpen} onClose={handleConfirmClose}>
-                <DialogTitle>Xác nhận thay đổi trạng thái</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Bạn có chắc chắn muốn chuyển sang trạng thái <strong>{getStatusText(selectedStatus)}</strong> không?
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleConfirmClose}>Hủy</Button>
-                    <Button onClick={handleConfirm} variant="contained" color="primary">
-                        Xác nhận
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </Card>
     );
 };

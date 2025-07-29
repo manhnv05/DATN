@@ -11,10 +11,10 @@ import instanceAPIMain from "../../configapi";
 import { toast } from "react-toastify";
 
 export const updateDotGiamGia = (id, payload) =>
-    instanceAPIMain.put(`/dotGiamGia/${id}`, payload);
+  instanceAPIMain.put(`/dotGiamGia/${id}`, payload);
 
 export const deleteDotGiamGia = (id) =>
-    instanceAPIMain.delete(`/dotGiamGia/${id}`);
+  instanceAPIMain.delete(`/dotGiamGia/${id}`);
 
 const DisCountEvent = () => {
   const {
@@ -68,7 +68,18 @@ const DisCountEvent = () => {
   const handleStatusChange = async (row, value) => {
     try {
       await updateDotGiamGia(row.id, { ...row, trangThai: value });
-      toast.success("Cập nhật thành công");
+      if (value == 1) {
+        toast.success("Đổi trạng thái thành thành công, Đang diễn ra")
+      }
+      else if (value == 3) {
+        toast.success("Đổi trạng thái thành thành công, Tạm dừng")
+      }
+      else if (value == 4) {
+        toast.success("Đổi trạng thái thành thành công, Kết thúc")
+      }
+      else{
+        toast.success("Cập nhật thành công");
+      }
       refresh();
     } catch (e) {
       toast.error("Cập nhật thất bại");
@@ -76,27 +87,27 @@ const DisCountEvent = () => {
   };
 
   return (
-      <DashboardLayout>
-        <DashboardNavbar />
-        <Filter filter={filter} setFilter={setFilter} />
-        <TableList
-            data={data}
-            loading={loading}
-            pagination={pagination}
-            setPagination={setPagination}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStatusChange={handleStatusChange}
-        />
-        <ConfirmDialog
-            open={showDeleteDialog}
-            title="Bạn chắc chắn muốn xóa đợt giảm giá này?"
-            onClose={() => setShowDeleteDialog(false)}
-            onConfirm={handleConfirmDelete}
-            loading={loadingDel}
-        />
-      </DashboardLayout>
+    <DashboardLayout>
+      <DashboardNavbar />
+      <Filter filter={filter} setFilter={setFilter} />
+      <TableList
+        data={data}
+        loading={loading}
+        pagination={pagination}
+        setPagination={setPagination}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onStatusChange={handleStatusChange}
+      />
+      <ConfirmDialog
+        open={showDeleteDialog}
+        title="Bạn chắc chắn muốn xóa đợt giảm giá này?"
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        loading={loadingDel}
+      />
+    </DashboardLayout>
   );
 };
 

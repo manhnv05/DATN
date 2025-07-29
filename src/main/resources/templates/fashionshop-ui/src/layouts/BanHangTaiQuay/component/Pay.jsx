@@ -517,7 +517,7 @@ useEffect(() => {
       const response = await axios.post(
         "http://localhost:8080/PhieuGiamGiaKhachHang/query",
         requestBody,
-        { params: { page: 0, size: 1 } }
+        { params: { page: 0, size: 999 } }
       );
 
       const vouchers = response.data.data.content;
