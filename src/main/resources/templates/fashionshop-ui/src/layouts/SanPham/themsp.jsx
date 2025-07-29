@@ -20,6 +20,7 @@ import Select from "react-select";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 const apiUrl = (path) => `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -187,12 +188,13 @@ function ProductForm() {
     const [newProductCategory, setNewProductCategory] = useState("");
     const [newProductDesc, setNewProductDesc] = useState("");
     const [addProductLoading, setAddProductLoading] = useState(false);
-    const [addProductError, setAddProductError] = useState("");
-    const [addProductSuccess, setAddProductSuccess] = useState("");
+    const [addError, setAddError] = useState(""); // SỬA: THÊM KHAI BÁO useState CHO addError
+    const [addSuccess, setAddSuccess] = useState("");
     const autoFocusRef = useRef(null);
     const [newProductCountry, setNewProductCountry] = useState("");
     const [addProductValidate, setAddProductValidate] = useState({});
     const [isCheckedAllGlobal, setIsCheckedAllGlobal] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (showAddProductModal && autoFocusRef.current) {
@@ -524,7 +526,7 @@ function ProductForm() {
 
     const handleAddProduct = async (e) => {
         e.preventDefault();
-        setAddError("");
+        setAddError(""); // SỬA: ĐỔI TỪ setAddProductError thành setAddError nếu đang dùng addError
         setAddSuccess("");
         setAddLoading(true);
 
@@ -664,6 +666,9 @@ function ProductForm() {
             const chiTietSanPhamResults = await Promise.all(addDetailPromises);
             setAddSuccess("Thêm chi tiết sản phẩm thành công!");
             toast.success("Thêm chi tiết sản phẩm thành công!");
+            setTimeout(() => {
+                navigate("/SanPham");
+            }, 1000);
 
             const saveImagePromises = [];
             chiTietSanPhamResults.forEach((ctspResult, idx) => {
@@ -705,8 +710,8 @@ function ProductForm() {
         setNewProductCategory(selectedCategory ? selectedCategory : "");
         setNewProductCountry(selectedCountry ? selectedCountry : "");
         setNewProductDesc("");
-        setAddProductError("");
-        setAddProductSuccess("");
+        setAddError(""); // SỬA: ĐỔI TỪ setAddProductError thành setAddError nếu đang dùng addError
+        setAddSuccess("");
         setAddProductValidate({});
         const code = await generateMaSanPhamUnique();
         setProductCode(code);
@@ -714,8 +719,8 @@ function ProductForm() {
 
     const handleAddNewProduct = async () => {
         setAddProductLoading(true);
-        setAddProductError("");
-        setAddProductSuccess("");
+        setAddError(""); // SỬA: ĐỔI TỪ setAddProductError thành setAddError nếu đang dùng addError
+        setAddSuccess("");
         const errors = {};
         if (!newProductName || !newProductName.trim()) errors.newProductName = "Tên sản phẩm không được để trống";
         if (!newProductCategory) errors.newProductCategory = "Vui lòng chọn danh mục";
@@ -742,12 +747,12 @@ function ProductForm() {
             });
             if (!res.ok) throw new Error("Lỗi khi thêm sản phẩm mới");
             await res.json();
-            setAddProductSuccess("Thêm sản phẩm mới thành công!");
+            setAddSuccess("Thêm sản phẩm mới thành công!");
             toast.success("Thêm sản phẩm mới thành công!");
 
             setTimeout(() => {
                 setShowAddProductModal(false);
-                setAddProductSuccess("");
+                setAddSuccess("");
                 fetch(apiUrl("/sanPham/all-ten"))
                     .then((res) => res.json())
                     .then((data) => {
@@ -763,7 +768,7 @@ function ProductForm() {
                     });
             }, 1200);
         } catch (err) {
-            setAddProductError("Thêm sản phẩm mới thất bại!");
+            setAddError("Thêm sản phẩm mới thất bại!");
             toast.error("Thêm sản phẩm mới thất bại!");
         }
         setAddProductLoading(false);
@@ -1385,14 +1390,14 @@ function ProductForm() {
                                 rows={3}
                             />
                         </SoftBox>
-                        {addProductError && (
+                        {addError && (
                             <SoftBox color="error" mb={1}>
-                                {addProductError}
+                                {addError}
                             </SoftBox>
                         )}
-                        {addProductSuccess && (
+                        {addSuccess && (
                             <SoftBox color="success" mb={1}>
-                                {addProductSuccess}
+                                {addSuccess}
                             </SoftBox>
                         )}
                     </DialogContent>
