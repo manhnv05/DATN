@@ -170,6 +170,7 @@ const routes = [
         key: "discount-list",
         route: "/PhieuGiam",
         component: <PhieuGiamPage />,
+        sx: { textTransform: 'none', fontStyle: 'italic', fontSize: 18 },
         noCollapse: true,
       },
       {
