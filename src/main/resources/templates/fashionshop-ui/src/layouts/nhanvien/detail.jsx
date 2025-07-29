@@ -122,6 +122,29 @@ const GenderChip = styled(Chip)(({ gender, theme }) => ({
 const formatDate = (dateString) => {
     if (!dateString) return "Chưa cập nhật";
     try {
+        // Xử lý định dạng "dd/MM/yyyy" từ BE
+        if (typeof dateString === 'string' && dateString.includes('/')) {
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+                const year = parseInt(parts[2], 10);
+
+                const date = new Date(year, month, day);
+
+                // Kiểm tra xem date có hợp lệ không
+                if (date.getFullYear() === year &&
+                    date.getMonth() === month &&
+                    date.getDate() === day) {
+                    return date.toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                }
+            }
+        }
+
         // Xử lý định dạng "dd-MM-yyyy" từ BE
         if (typeof dateString === 'string' && dateString.includes('-')) {
             const parts = dateString.split('-');

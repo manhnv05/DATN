@@ -112,13 +112,17 @@ const GenderChip = styled(Chip)(({ gender, theme }) => ({
 const formatDate = (dateString) => {
     if (!dateString) return "Chưa cập nhật";
     try {
-        if (typeof dateString === 'string' && dateString.includes('-')) {
-            const parts = dateString.split('-');
+        // Xử lý định dạng "dd/MM/yyyy" từ BE
+        if (typeof dateString === 'string' && dateString.includes('/')) {
+            const parts = dateString.split('/');
             if (parts.length === 3) {
                 const day = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1;
+                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
                 const year = parseInt(parts[2], 10);
+
                 const date = new Date(year, month, day);
+
+                // Kiểm tra xem date có hợp lệ không
                 if (date.getFullYear() === year &&
                     date.getMonth() === month &&
                     date.getDate() === day) {
@@ -130,6 +134,31 @@ const formatDate = (dateString) => {
                 }
             }
         }
+
+        // Xử lý định dạng "dd-MM-yyyy" từ BE
+        if (typeof dateString === 'string' && dateString.includes('-')) {
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+                const year = parseInt(parts[2], 10);
+
+                const date = new Date(year, month, day);
+
+                // Kiểm tra xem date có hợp lệ không
+                if (date.getFullYear() === year &&
+                    date.getMonth() === month &&
+                    date.getDate() === day) {
+                    return date.toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                }
+            }
+        }
+
+        // Fallback: thử parse với Date constructor
         const date = new Date(dateString);
         if (!isNaN(date.getTime())) {
             return date.toLocaleDateString('vi-VN', {
@@ -138,8 +167,10 @@ const formatDate = (dateString) => {
                 year: 'numeric'
             });
         }
+
         return "Chưa cập nhật";
     } catch (error) {
+        console.error("Error formatting date:", error);
         return "Chưa cập nhật";
     }
 };
@@ -147,14 +178,27 @@ const formatDate = (dateString) => {
 const calculateAge = (dateString) => {
     if (!dateString) return null;
     let day, month, year;
+    
+    // Xử lý định dạng "dd/MM/yyyy" từ BE
+    if (typeof dateString === 'string' && dateString.includes('/')) {
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+            day = parseInt(parts[0], 10);
+            month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+            year = parseInt(parts[2], 10);
+        }
+    }
+    
+    // Xử lý định dạng "dd-MM-yyyy" từ BE
     if (typeof dateString === 'string' && dateString.includes('-')) {
         const parts = dateString.split('-');
         if (parts.length === 3) {
             day = parseInt(parts[0], 10);
-            month = parseInt(parts[1], 10) - 1;
+            month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
             year = parseInt(parts[2], 10);
         }
     }
+    
     if (year && month >= 0 && day) {
         const today = new Date();
         let age = today.getFullYear() - year;
@@ -166,6 +210,7 @@ const calculateAge = (dateString) => {
         }
         return age;
     }
+    
     // fallback parse
     const date = new Date(dateString);
     if (!isNaN(date.getTime())) {
