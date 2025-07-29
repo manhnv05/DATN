@@ -86,7 +86,7 @@ const routes = [
     collapse: [
       {
         type: "item",
-        name: "sản phẩm",
+        name: "Sản phẩm",
         key: "product-list",
         route: "/SanPham",
         component: <SanPham />,
@@ -94,7 +94,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "thương hiệu",
+        name: "Thương hiệu",
         key: "product-category",
         route: "/Brand",
         component: <ThuongHieu />,
@@ -102,7 +102,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "chất liệu",
+        name: "Chất liệu",
         key: "material",
         route: "/material",
         component: <ChatLieu />,
@@ -110,7 +110,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "danh mục",
+        name: "Danh mục",
         key: "category",
         route: "/category",
         component: <DanhMuc />,
@@ -118,7 +118,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "kích thước",
+        name: "Kích thước",
         key: "size",
         route: "/size",
         component: <KichThuoc />,
@@ -126,7 +126,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "màu sắc",
+        name: "Màu sắc",
         key: "color",
         route: "/color",
         component: <MauSac />,
@@ -134,7 +134,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "tay áo",
+        name: "Tay áo",
         key: "sleeve",
         route: "/sleeve",
         component: <TayAo />,
@@ -142,7 +142,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "cổ áo",
+        name: "Cổ áo",
         key: "colar",
         route: "/colar",
         component: <CoAo />,
@@ -150,7 +150,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "hình ảnh",
+        name: "Hình ảnh",
         key: "image",
         route: "/image",
         component: <HinhAnh />,
@@ -166,7 +166,7 @@ const routes = [
     collapse: [
       {
         type: "item",
-        name: "Phiếu Giảm Giá",
+        name: "Phiếu giảm giá",
         key: "discount-list",
         route: "/PhieuGiam",
         component: <PhieuGiamPage />,
@@ -175,7 +175,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Đợt Giảm Giá",
+        name: "Đợt giảm giá",
         key: "discount-event",
         route: "/discount-event",
         component: <GiamGia />,
