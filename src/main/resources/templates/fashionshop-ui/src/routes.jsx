@@ -82,7 +82,7 @@ const routes = [
     collapse: [
       {
         type: "item",
-        name: "Sản Phẩm",
+        name: "sản phẩm",
         key: "product-list",
         route: "/SanPham",
         component: <SanPham />,
@@ -90,7 +90,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Thương Hiệu",
+        name: "thương hiệu",
         key: "product-category",
         route: "/Brand",
         component: <ThuongHieu />,
@@ -98,7 +98,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Chất Liệu",
+        name: "chất liệu",
         key: "material",
         route: "/material",
         component: <ChatLieu />,
@@ -106,7 +106,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Danh Mục",
+        name: "danh mục",
         key: "category",
         route: "/category",
         component: <DanhMuc />,
@@ -114,7 +114,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Kích Thước",
+        name: "kích thước",
         key: "size",
         route: "/size",
         component: <KichThuoc />,
@@ -122,7 +122,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Màu Sắc",
+        name: "màu sắc",
         key: "color",
         route: "/color",
         component: <MauSac />,
@@ -130,7 +130,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Tay Áo",
+        name: "tay áo",
         key: "sleeve",
         route: "/sleeve",
         component: <TayAo />,
@@ -138,7 +138,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Cổ Áo",
+        name: "cổ áo",
         key: "colar",
         route: "/colar",
         component: <CoAo />,
@@ -146,7 +146,7 @@ const routes = [
       },
       {
         type: "item",
-        name: "Hình Ảnh",
+        name: "hình ảnh",
         key: "image",
         route: "/image",
         component: <HinhAnh />,

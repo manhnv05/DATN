@@ -74,6 +74,7 @@ function Sidenav({ color = "info", brand = "", routes, ...rest }) {
             />
                         <SoftTypography
                             variant="button"
+                            textTransform="none"
                             sx={{ color: "inherit", fontWeight: isActive ? 700 : 400, userSelect: "none" }}
                         >
                             {subItem.name}
