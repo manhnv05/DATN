@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Card, IconButton, Button, Input, InputAdornment, Select, MenuItem, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Box, Avatar, Slider, Typography } from "@mui/material";
+import { Card, IconButton, Button, Input, InputAdornment, Select, MenuItem, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Box, Avatar, Slider, Typography, RadioGroup, Radio, FormControlLabel } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { FaPlus, FaEye, FaTrash, FaFileExcel, FaFilePdf, FaEdit } from "react-icons/fa";
 import Icon from "@mui/material/Icon";
 import SoftBox from "components/SoftBox";
@@ -36,6 +37,34 @@ const getStatusLabel = (status, options) => {
     const found = options.find((s) => s.value === status || s.label === status);
     return found ? found.label : status === "ACTIVE" ? "Đang làm" : "Nghỉ";
 };
+
+// Styled component cho Radio Group
+const StyledRadioGroup = styled(RadioGroup)({
+  display: 'flex',
+  flexDirection: 'row',
+  gap: 2.5,
+  '& .MuiFormControlLabel-root': {
+    margin: 0,
+    marginRight: 8,
+    '& .MuiRadio-root': {
+      color: '#90caf9',
+      padding: '4px',
+      '&.Mui-checked': {
+        color: '#1976d2',
+      },
+      '&:hover': {
+        background: 'rgba(25, 118, 210, 0.04)',
+        borderRadius: '50%',
+      },
+    },
+    '& .MuiFormControlLabel-label': {
+      fontSize: 13,
+      fontWeight: 500,
+      color: '#333',
+      marginLeft: '6px',
+    },
+  },
+});
 
 // Hàm tính tuổi từ ngày sinh
 const calculateAge = (birthDate) => {
@@ -237,59 +266,130 @@ function NhanVienTable() {
     });
 
     // Component FilterSelect - Compact version
-    function FilterSelect({ label, name, value, options, onChange, disabled, error }) {
-        const [focus, setFocus] = useState(false);
-        return (
-            <Box>
-                <label style={labelStyle}>{label}</label>
-                <FormControl
-                    fullWidth
-                    size="small"
-                    sx={{
-                        ...getFieldSx(focus ? name : "", name, error ? name : ""),
-                    }}
-                    disabled={disabled}
-                >
-                    <Select
-                        name={name}
-                        value={value || ""}
-                        onChange={onChange}
-                        onFocus={() => {
-                            setFocus(true);
-                        }}
-                        onBlur={() => setFocus(false)}
-                        displayEmpty
-                        sx={{
-                            fontSize: 13,
-                            "& .MuiSelect-select": {
-                                padding: "6px 12px",
-                            }
-                        }}
-                    >
-                        {options.map(opt => (
-                            <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 13 }}>
-                                {opt.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-            </Box>
-        );
-    }
+      function FilterSelect({ label, name, value, options, onChange, disabled, error }) {
+    const [focus, setFocus] = useState(false);
+    return (
+      <Box>
+        <label style={labelStyle}>{label}</label>
+        <FormControl
+          fullWidth
+          size="small"
+          sx={{
+            ...getFieldSx(focus ? name : "", name, error ? name : ""),
+          }}
+          disabled={disabled}
+        >
+          <Select
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            onFocus={() => {
+              setFocus(true);
+            }}
+            onBlur={() => setFocus(false)}
+            displayEmpty
+            sx={{
+              fontSize: 13,
+              "& .MuiSelect-select": {
+                padding: "6px 12px",
+              }
+            }}
+          >
+            {options.map(opt => (
+              <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 13 }}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+    );
+  }
 
-    // PropTypes cho FilterSelect
-    FilterSelect.propTypes = {
-        label: PropTypes.string.isRequired,
-        name: PropTypes.string.isRequired,
-        value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-        options: PropTypes.arrayOf(PropTypes.shape({
-            value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-            label: PropTypes.string,
-        })).isRequired,
-        onChange: PropTypes.func.isRequired,
-        disabled: PropTypes.bool,
-        error: PropTypes.bool,
-    };
+  // Component gộp cho sắp xếp
+  function SortControl({ sortBy, sortDir, onSortByChange, onSortDirChange }) {
+    const [focus, setFocus] = useState(false);
+    return (
+      <Box>
+        <label style={labelStyle}>Sắp xếp</label>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <FormControl
+            size="small"
+            sx={{
+              ...getFieldSx(focus ? "sortBy" : "", "sortBy", ""),
+              minWidth: 120,
+            }}
+          >
+            <Select
+              name="sortBy"
+              value={sortBy || ""}
+              onChange={onSortByChange}
+              onFocus={() => setFocus(true)}
+              onBlur={() => setFocus(false)}
+              displayEmpty
+              sx={{
+                fontSize: 13,
+                "& .MuiSelect-select": {
+                  padding: "6px 12px",
+                }
+              }}
+            >
+              <MenuItem value="id" sx={{ fontSize: 13 }}>Mã nhân viên</MenuItem>
+              <MenuItem value="hoVaTen" sx={{ fontSize: 13 }}>Tên nhân viên</MenuItem>
+              <MenuItem value="ngaySinh" sx={{ fontSize: 13 }}>Ngày sinh</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl
+            size="small"
+            sx={{
+              ...getFieldSx(focus ? "sortDir" : "", "sortDir", ""),
+              minWidth: 100,
+            }}
+          >
+            <Select
+              name="sortDir"
+              value={sortDir || ""}
+              onChange={onSortDirChange}
+              onFocus={() => setFocus(true)}
+              onBlur={() => setFocus(false)}
+              displayEmpty
+              sx={{
+                fontSize: 13,
+                "& .MuiSelect-select": {
+                  padding: "6px 12px",
+                }
+              }}
+            >
+              <MenuItem value="desc" sx={{ fontSize: 13 }}>Giảm dần</MenuItem>
+              <MenuItem value="asc" sx={{ fontSize: 13 }}>Tăng dần</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+    );
+  }
+
+      // PropTypes cho FilterSelect
+  FilterSelect.propTypes = {
+    label: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    options: PropTypes.arrayOf(PropTypes.shape({
+      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      label: PropTypes.string,
+    })).isRequired,
+    onChange: PropTypes.func.isRequired,
+    disabled: PropTypes.bool,
+    error: PropTypes.bool,
+  };
+
+  // PropTypes cho SortControl
+  SortControl.propTypes = {
+    sortBy: PropTypes.string,
+    sortDir: PropTypes.string,
+    onSortByChange: PropTypes.func.isRequired,
+    onSortDirChange: PropTypes.func.isRequired,
+  };
 
     // Table configuration
     const columns = [
@@ -655,86 +755,64 @@ function NhanVienTable() {
                             </Box>
                             
                             <Box component="form" autoComplete="off">
-                                {/* Main filters in 2 rows */}
-                                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }} gap={2} mb={2}>
-                                    {/* Row 1: Gender, Status, Sort */}
-                                    <FilterSelect
-                                        label="Giới tính"
-                                        name="gender"
-                                        value={filterGender}
-                                        options={GENDER_OPTIONS}
-                                        onChange={(e) => handleFilterChange(setFilterGender)(e.target.value)}
-                                        disabled={false}
-                                        error={false}
-                                    />
-                                    
-                                    <FilterSelect
-                                        label="Trạng thái"
-                                        name="status"
-                                        value={filterStatus}
-                                        options={[
-                                            { value: "Tất cả", label: "Tất cả" },
-                                            { value: "ACTIVE", label: "Đang làm việc" },
-                                            { value: "INACTIVE", label: "Đã nghỉ" },
-                                        ]}
-                                        onChange={(e) => handleFilterChange(setFilterStatus)(e.target.value)}
-                                        disabled={false}
-                                        error={false}
-                                    />
-                                    
-                                    <FilterSelect
-                                        label="Sắp xếp"
-                                        name="sortBy"
-                                        value={sortBy}
-                                        options={[
-                                            { value: "id", label: "Mã nhân viên" },
-                                            { value: "hoVaTen", label: "Tên nhân viên" },
-                                            { value: "ngaySinh", label: "Ngày sinh" },
-                                        ]}
-                                        onChange={(e) => handleFilterChange(setSortBy)(e.target.value)}
-                                        disabled={false}
-                                        error={false}
-                                    />
-                                </Box>
+                                {/* Main filters in 3 rows for better layout */}
+                                <Box
+  display="grid"
+  gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }}
+  gap={2.5}
+  alignItems="center"
+  mb={2}
+>
+  {/* Giới tính */}
+  <Box minWidth={120}>
+    <label style={labelStyle}>Giới tính</label>
+    <StyledRadioGroup
+      name="filterGender"
+      value={filterGender}
+      onChange={(e) => handleFilterChange(setFilterGender)(e.target.value)}
+      row
+    >
+      <FormControlLabel value="Tất cả" control={<Radio />} label="Tất cả" />
+      <FormControlLabel value="MALE" control={<Radio />} label="Nam" />
+      <FormControlLabel value="FEMALE" control={<Radio />} label="Nữ" />
+    </StyledRadioGroup>
+  </Box>
+  {/* Trạng thái */}
+  <Box minWidth={150}>
+    <label style={labelStyle}>Trạng thái</label>
+    <StyledRadioGroup
+      name="filterStatus"
+      value={filterStatus}
+      onChange={(e) => handleFilterChange(setFilterStatus)(e.target.value)}
+      row
+    >
+      <FormControlLabel value="Tất cả" control={<Radio />} label="Tất cả" />
+      <FormControlLabel value="ACTIVE" control={<Radio />} label="Đang làm việc" />
+      <FormControlLabel value="INACTIVE" control={<Radio />} label="Đã nghỉ" />
+    </StyledRadioGroup>
+  </Box>
+  {/* Khoảng tuổi */}
+  <Box minWidth={180} maxWidth={260}>
+    <label style={labelStyle}>Khoảng tuổi: <strong>{ageRange[0]} - {ageRange[1]}</strong></label>
+    <Slider
+      value={ageRange}
+      onChange={handleAgeRangeChange}
+      valueLabelDisplay="off"
+      min={18}
+      max={100}
+      sx={{ mt: 1, width: '100%' }}
+    />
+  </Box>
+  {/* Sắp xếp */}
+  <SortControl
+    sortBy={sortBy}
+    sortDir={sortDir}
+    onSortByChange={(e) => handleFilterChange(setSortBy)(e.target.value)}
+    onSortDirChange={(e) => handleFilterChange(setSortDir)(e.target.value)}
+  />
+</Box>
 
-                                {/* Row 2: Age range and Sort direction */}
-                                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '2fr 1fr' }} gap={2} mb={2}>
-                                    {/* Age range slider */}
-                                    <Box>
-                                        <label style={{ ...labelStyle, marginBottom: '8px' }}>Khoảng tuổi: {ageRange[0]} - {ageRange[1]} tuổi</label>
-                                        <Slider
-                                            value={ageRange}
-                                            onChange={handleAgeRangeChange}
-                                            valueLabelDisplay="off"
-                                            min={18}
-                                            max={100}
-                                            sx={{
-                                                color: "#1976d2",
-                                                "& .MuiSlider-thumb": { 
-                                                    bgcolor: "#1976d2",
-                                                    width: 16,
-                                                    height: 16,
-                                                },
-                                                "& .MuiSlider-track": { bgcolor: "#1976d2" },
-                                                "& .MuiSlider-rail": { bgcolor: "#bdbdbd" },
-                                            }}
-                                        />
-                                    </Box>
 
-                                    {/* Sort direction */}
-                                    <FilterSelect
-                                        label="Thứ tự"
-                                        name="sortDir"
-                                        value={sortDir}
-                                        options={[
-                                            { value: "desc", label: "Giảm dần" },
-                                            { value: "asc", label: "Tăng dần" },
-                                        ]}
-                                        onChange={(e) => handleFilterChange(setSortDir)(e.target.value)}
-                                        disabled={false}
-                                        error={false}
-                                    />
-                                </Box>
 
                                 {/* Footer with actions and results */}
                                 <Box display="flex" gap={2} justifyContent="space-between" alignItems="center" pt={1} borderTop="1px solid #e5e7eb">
