@@ -3,6 +3,7 @@ import {
     Card, Box, Typography, Grid, TextField, Button, FormControl,
     Avatar, CircularProgress, Divider, Select, MenuItem, Dialog,
     DialogTitle, DialogContent, DialogActions, DialogContentText,
+    RadioGroup, Radio, FormControlLabel, FormLabel,
 } from "@mui/material";
 import { Upload, CheckCircle } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -39,6 +40,34 @@ const AvatarUploadButton = styled(Button)({
     background: "#fff", color: "#1565c0", border: "1.5px solid #90caf9",
     boxShadow: "0 2px 8px #e3f0fa", mt: 0.5,
     "&:hover": { background: "#e3f0fa", borderColor: "#42a5f5", color: "#1769aa" },
+});
+
+// Styled component cho Radio Group
+const StyledRadioGroup = styled(RadioGroup)({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 2,
+    '& .MuiFormControlLabel-root': {
+        margin: 0,
+        marginRight: 3,
+        '& .MuiRadio-root': {
+            color: '#90caf9',
+            padding: '6px',
+            '&.Mui-checked': {
+                color: '#1976d2',
+            },
+            '&:hover': {
+                background: 'rgba(25, 118, 210, 0.04)',
+                borderRadius: '50%',
+            },
+        },
+        '& .MuiFormControlLabel-label': {
+            fontSize: 14,
+            fontWeight: 500,
+            color: '#333',
+            marginLeft: '4px',
+        },
+    },
 });
 const SectionTitle = styled(Typography)({
     fontWeight: 900, color: "#1769aa", fontSize: 26, letterSpacing: 1.3,
@@ -103,7 +132,7 @@ function AddNhanVienForm() {
         ngaySinh: dayjs(minBirthDate).format("DD/MM/YYYY"),
         gioiTinh: "MALE",
         canCuocCongDan: "012345678901",   // CCCD 12 số
-        vaiTro: "EMPLOYEE",
+        vaiTro: "EMPLOYEE", // Mặc định là nhân viên
         tinhThanhPho: "", quanHuyen: "", xaPhuong: "",//code. 
     });
     const [avatarPreview, setAvatarPreview] = useState("");
@@ -825,7 +854,8 @@ function AddNhanVienForm() {
                                                         })}
                                                     />
                                                 </Grid>
-                                                <Grid item xs={12}>
+                                                {/* Ngày sinh và Giới tính - Layout tối ưu */}
+                                                <Grid item xs={12} sm={6}>
                                                     <label style={labelStyle}>
                                                         Ngày sinh
                                                         {employee.ngaySinh && (
@@ -860,19 +890,42 @@ function AddNhanVienForm() {
                                                         />
                                                     </LocalizationProvider>
                                                 </Grid>
-                                                {/* Giới tính */}
+                                                {/* Giới tính - Sử dụng Radio */}
                                                 <Grid item xs={12} sm={6}>
                                                     <label style={labelStyle}>Giới tính</label>
-                                                    <TextField
-                                                        select
-                                                        {...buildTextFieldProps("gioiTinh", {})}
-                                                    >
-                                                        <MenuItem value="MALE">Nam</MenuItem>
-                                                        <MenuItem value="FEMALE">Nữ</MenuItem>
-                                                    </TextField>
+                                                    <Box sx={{ 
+                                                        mt: 1,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'flex-start', // Căn trái để ngang hàng với TextField
+                                                        minHeight: '40px', // Để ngang hàng với TextField
+                                                        pl: 1 // Padding left để căn giữa hơn
+                                                    }}>
+                                                        <StyledRadioGroup
+                                                            name="gioiTinh"
+                                                            value={employee.gioiTinh}
+                                                            onChange={handleChange}
+                                                            row
+                                                        >
+                                                            <FormControlLabel 
+                                                                value="MALE" 
+                                                                control={<Radio />} 
+                                                                label="Nam" 
+                                                            />
+                                                            <FormControlLabel 
+                                                                value="FEMALE" 
+                                                                control={<Radio />} 
+                                                                label="Nữ" 
+                                                            />
+                                                        </StyledRadioGroup>
+                                                    </Box>
                                                 </Grid>
-                                                {/* Vai trò */}
-                                                <Grid item xs={12} sm={6}>
+                                                {/* Vai trò - Ẩn và mặc định là nhân viên */}
+                                                {/* 
+                                                Vai trò được ẩn và mặc định là "EMPLOYEE" (Nhân viên)
+                                                Để bật lại, chỉ cần thay đổi sx={{ display: 'none' }} thành sx={{ display: 'block' }}
+                                                */}
+                                                <Grid item xs={12} sm={6} sx={{ display: 'none' }}>
                                                     <label style={labelStyle}>Vai trò</label>
                                                     <TextField
                                                         select
@@ -945,7 +998,7 @@ function AddNhanVienForm() {
                                                             }
                                                         }}
                                                     >
-                                                        Reset
+                                                        Đặt lại
                                                     </Button>
                                                     {/* Button cancel */}
                                                     <Button
@@ -970,7 +1023,7 @@ function AddNhanVienForm() {
                                                             }
                                                         }}
                                                     >
-                                                        Hủy bỏ
+                                                        Quay về trang
                                                     </Button>
                                                     {/* Button submit */}
                                                     <Button

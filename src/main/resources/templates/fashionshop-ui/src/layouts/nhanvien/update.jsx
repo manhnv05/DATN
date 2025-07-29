@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
     Card, Box, Typography, Grid, TextField, Button, FormControl,
-    Avatar, CircularProgress, Divider, Select, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, InputAdornment
+    Avatar, CircularProgress, Divider, Select, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, InputAdornment,
+    RadioGroup, Radio, FormControlLabel, FormLabel
 } from "@mui/material";
 import { Upload, CheckCircle } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -38,6 +39,34 @@ const AvatarUploadButton = styled(Button)({
     background: "#fff", color: "#1565c0", border: "1.5px solid #90caf9",
     boxShadow: "0 2px 8px #e3f0fa", mt: 0.5,
     "&:hover": { background: "#e3f0fa", borderColor: "#42a5f5", color: "#1769aa" },
+});
+
+// Styled component cho Radio Group
+const StyledRadioGroup = styled(RadioGroup)({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 2,
+    '& .MuiFormControlLabel-root': {
+        margin: 0,
+        marginRight: 3,
+        '& .MuiRadio-root': {
+            color: '#90caf9',
+            padding: '6px',
+            '&.Mui-checked': {
+                color: '#1976d2',
+            },
+            '&:hover': {
+                background: 'rgba(25, 118, 210, 0.04)',
+                borderRadius: '50%',
+            },
+        },
+        '& .MuiFormControlLabel-label': {
+            fontSize: 14,
+            fontWeight: 500,
+            color: '#333',
+            marginLeft: '4px',
+        },
+    },
 });
 const SectionTitle = styled(Typography)({
     fontWeight: 900, color: "#1769aa", fontSize: 26, letterSpacing: 1.3,
@@ -850,38 +879,76 @@ function UpdateNhanVien() {
                                                         />
                                                     </LocalizationProvider>
                                                 </Grid>
-                                                {/* Giới tính */}
+                                                {/* Giới tính - Sử dụng Radio */}
                                                 <Grid item xs={12} sm={6}>
                                                     <label style={labelStyle}>Giới tính</label>
-                                                    <TextField
-                                                        select
-                                                        {...buildTextFieldProps("gioiTinh", {})}
-                                                    >
-                                                        <MenuItem value="MALE">Nam</MenuItem>
-                                                        <MenuItem value="FEMALE">Nữ</MenuItem>
-                                                    </TextField>
+                                                    <Box sx={{ 
+                                                        mt: 1,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'flex-start',
+                                                        minHeight: '40px',
+                                                        pl: 1
+                                                    }}>
+                                                        <StyledRadioGroup
+                                                            name="gioiTinh"
+                                                            value={employee.gioiTinh}
+                                                            onChange={handleChange}
+                                                            row
+                                                        >
+                                                            <FormControlLabel 
+                                                                value="MALE" 
+                                                                control={<Radio />} 
+                                                                label="Nam" 
+                                                            />
+                                                            <FormControlLabel 
+                                                                value="FEMALE" 
+                                                                control={<Radio />} 
+                                                                label="Nữ" 
+                                                            />
+                                                        </StyledRadioGroup>
+                                                    </Box>
                                                 </Grid>
-                                                {/* Vai trò */}
-                                                <Grid item xs={12} sm={6}>
+                                                {/* Vai trò - Ẩn và mặc định là nhân viên */}
+                                                <Grid item xs={12} sm={6} sx={{ display: 'none' }}>
                                                     <label style={labelStyle}>Vai trò</label>
                                                     <TextField
                                                         select
                                                         {...buildTextFieldProps("vaiTro", {})}
+                                                        value="EMPLOYEE"
                                                     >
-                                                        <MenuItem value="ADMIN">Quản Lí</MenuItem>
                                                         <MenuItem value="EMPLOYEE">Nhân viên</MenuItem>
                                                     </TextField>
                                                 </Grid>
-                                                {/* Trạng thái */}
+                                                {/* Trạng thái - Sử dụng Radio */}
                                                 <Grid item xs={12} sm={6}>
                                                     <label style={labelStyle}>Trạng thái</label>
-                                                    <TextField
-                                                        select
-                                                        {...buildTextFieldProps("trangThai", {})}
-                                                    >
-                                                        <MenuItem value="ACTIVE">Đang làm việc </MenuItem>
-                                                        <MenuItem value="INACTIVE">Nghỉ việc</MenuItem>
-                                                    </TextField>
+                                                    <Box sx={{ 
+                                                        mt: 1,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'flex-start',
+                                                        minHeight: '40px',
+                                                        pl: 1
+                                                    }}>
+                                                        <StyledRadioGroup
+                                                            name="trangThai"
+                                                            value={employee.trangThai}
+                                                            onChange={handleChange}
+                                                            row
+                                                        >
+                                                            <FormControlLabel 
+                                                                value="ACTIVE" 
+                                                                control={<Radio />} 
+                                                                label="Đang làm việc" 
+                                                            />
+                                                            <FormControlLabel 
+                                                                value="INACTIVE" 
+                                                                control={<Radio />} 
+                                                                label="Nghỉ việc" 
+                                                            />
+                                                        </StyledRadioGroup>
+                                                    </Box>
                                                 </Grid>
                                                 {/* Container chứa : Tỉnh/Thành phố + Quận/Huyện + Phường/Xã */}
                                                 <Grid item xs={12}>
@@ -931,7 +998,7 @@ function UpdateNhanVien() {
                                                         disabled={loading}
                                                         sx={{ fontWeight: 700, borderRadius: 3, minWidth: 120, background: "#fff", border: "2px solid #2196f3", color: "#2196f3", "&:hover": { background: "#e3f2fd", borderColor: "#1976d2", color: "#1976d2" }, "&:disabled": { background: "#f5f5f5", borderColor: "#bdbdbd", color: "#bdbdbd" } }}
                                                     >
-                                                        Reset
+                                                        Đặt lại
                                                     </Button>
                                                     {/* Button cancel */}
                                                     <Button
@@ -941,7 +1008,7 @@ function UpdateNhanVien() {
                                                         disabled={loading}
                                                         sx={{ fontWeight: 700, borderRadius: 3, minWidth: 120, background: "#fff", border: "2px solid #757575", color: "#757575", "&:hover": { background: "#f5f5f5", borderColor: "#424242", color: "#424242" }, "&:disabled": { background: "#f5f5f5", borderColor: "#bdbdbd", color: "#bdbdbd" } }}
                                                     >
-                                                        Hủy bỏ
+                                                        Quay về trang
                                                     </Button>
                                                     {/* Button update */}
                                                     <Button
