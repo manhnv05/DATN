@@ -3,6 +3,7 @@ import {
     Card, Box, Typography, Grid, TextField, Button, FormControl,
     Avatar, CircularProgress, Divider, MenuItem, Dialog,
     DialogTitle, DialogContent, DialogActions, DialogContentText,
+    RadioGroup, Radio, FormControlLabel, FormLabel
 } from "@mui/material";
 import { Upload, CheckCircle } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -35,6 +36,34 @@ const AvatarUploadButton = styled(Button)({
     background: "#fff", color: "#1565c0", border: "1.5px solid #90caf9",
     boxShadow: "0 2px 8px #e3f0fa", mt: 0.5,
     "&:hover": { background: "#e3f0fa", borderColor: "#42a5f5", color: "#1769aa" },
+});
+
+// Styled component cho Radio Group
+const StyledRadioGroup = styled(RadioGroup)({
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 2,
+    '& .MuiFormControlLabel-root': {
+        margin: 0,
+        marginRight: 3,
+        '& .MuiRadio-root': {
+            color: '#90caf9',
+            padding: '6px',
+            '&.Mui-checked': {
+                color: '#1976d2',
+            },
+            '&:hover': {
+                background: 'rgba(25, 118, 210, 0.04)',
+                borderRadius: '50%',
+            },
+        },
+        '& .MuiFormControlLabel-label': {
+            fontSize: 14,
+            fontWeight: 500,
+            color: '#333',
+            marginLeft: '4px',
+        },
+    },
 });
 const SectionTitle = styled(Typography)({
     fontWeight: 900, color: "#1769aa", fontSize: 26, letterSpacing: 1.3,
@@ -659,27 +688,61 @@ function UpdateKhachHang() {
                                                             </Grid>
                                                             <Grid item xs={12} sm={6}>
                                                                 <label style={labelStyle}>Giới tính khách hàng</label>
-                                                                <FormControl fullWidth size="small" sx={{ ...getFieldSx(focusField, "gioiTinh", errorField) }}>
-                                                                    <TextField
-                                                                        select
-                                                                        {...buildTextFieldProps("gioiTinh", {})}
+                                                                <Box sx={{ 
+                                                                    mt: 1,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'flex-start',
+                                                                    minHeight: '40px',
+                                                                    pl: 1
+                                                                }}>
+                                                                    <StyledRadioGroup
+                                                                        name="gioiTinh"
+                                                                        value={customer.gioiTinh}
+                                                                        onChange={handleChange}
+                                                                        row
                                                                     >
-                                                                        <MenuItem value="MALE">Nam</MenuItem>
-                                                                        <MenuItem value="FEMALE">Nữ</MenuItem>
-                                                                    </TextField>
-                                                                </FormControl>
+                                                                        <FormControlLabel 
+                                                                            value="MALE" 
+                                                                            control={<Radio />} 
+                                                                            label="Nam" 
+                                                                        />
+                                                                        <FormControlLabel 
+                                                                            value="FEMALE" 
+                                                                            control={<Radio />} 
+                                                                            label="Nữ" 
+                                                                        />
+                                                                    </StyledRadioGroup>
+                                                                </Box>
                                                             </Grid>
                                                             <Grid item xs={12} sm={6}>
                                                                 <label style={labelStyle}>Trạng thái khách hàng</label>
-                                                                <FormControl fullWidth size="small" sx={{ ...getFieldSx(focusField, "trangThai", errorField) }}>
-                                                                    <TextField
-                                                                        select
-                                                                        {...buildTextFieldProps("trangThai", {})}
+                                                                <Box sx={{ 
+                                                                    mt: 1,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'flex-start',
+                                                                    minHeight: '40px',
+                                                                    pl: 1
+                                                                }}>
+                                                                    <StyledRadioGroup
+                                                                        name="trangThai"
+                                                                        value={customer.trangThai}
+                                                                        onChange={handleChange}
+                                                                        row
                                                                     >
-                                                                        <MenuItem value="ACTIVE">Hoạt động</MenuItem>
-                                                                        <MenuItem value="INACTIVE">Không hoạt động</MenuItem>
-                                                                    </TextField>
-                                                                </FormControl>
+                                                                        <FormControlLabel 
+                                                                            value="ACTIVE" 
+                                                                            control={<Radio />} 
+                                                                            label="Hoạt động" 
+                                                                        />
+                                                                        <FormControlLabel 
+                                                                            value="INACTIVE" 
+                                                                            control={<Radio />} 
+                                                                            label="Không hoạt động" 
+                                                                        />
+                                                                    </StyledRadioGroup>
+                                                                </Box>
                                                             </Grid>
                                                         </Grid>
                                                     </Box>
@@ -697,7 +760,7 @@ function UpdateKhachHang() {
                                                         disabled={loading}
                                                         sx={{ fontWeight: 700, borderRadius: 3, minWidth: 120, background: "#fff", border: "2px solid #2196f3", color: "#2196f3", "&:hover": { background: "#e3f2fd", borderColor: "#1976d2", color: "#1976d2" }, "&:disabled": { background: "#f5f5f5", borderColor: "#bdbdbd", color: "#bdbdbd" } }}
                                                     >
-                                                        Reset
+                                                        Đặt lại
                                                     </Button>
                                                     <Button
                                                         variant="outlined"
@@ -706,7 +769,7 @@ function UpdateKhachHang() {
                                                         disabled={loading}
                                                         sx={{ fontWeight: 700, borderRadius: 3, minWidth: 120, background: "#fff", border: "2px solid #757575", color: "#757575", "&:hover": { background: "#f5f5f5", borderColor: "#424242", color: "#424242" }, "&:disabled": { background: "#f5f5f5", borderColor: "#bdbdbd", color: "#bdbdbd" } }}
                                                     >
-                                                        Hủy bỏ
+                                                        Quay về trang
                                                     </Button>
                                                     <Button
                                                         type="button"

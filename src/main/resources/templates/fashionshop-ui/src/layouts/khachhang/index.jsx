@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, IconButton, Button, Input, InputAdornment, Select, MenuItem, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Box, Avatar, Slider, Popover, Typography } from "@mui/material";
+import { Card, IconButton, Button, Input, InputAdornment, Select, MenuItem, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Box, Avatar, Slider, Typography } from "@mui/material";
 import { FaPlus, FaEye, FaFileExcel, FaFilePdf, FaEdit } from "react-icons/fa";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Icon from "@mui/material/Icon";
@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import AddressDialog from "./AddressDialog";
+import PropTypes from "prop-types";
 
 const API_BASE_URL = "http://localhost:8080/khachHang";
 
@@ -98,13 +99,14 @@ function KhachHangTable() {
   const [minAge, setMinAge] = useState("");
   const [maxAge, setMaxAge] = useState("");
   const [ageRange, setAgeRange] = useState([18, 100]);
-  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   // Là dialog quản lý địa chỉ
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  // State để quản lý việc hiển thị/ẩn phần lọc
+  const [showFilterSection, setShowFilterSection] = useState(false);
 
   const handleFilterChange = (setter) => (value) => {
     setter(value);
@@ -168,7 +170,77 @@ function KhachHangTable() {
     setSortBy("id");
     setSortDir("desc");
     setPageNo(1);
-    setFilterAnchorEl(null);
+  };
+
+  // Hàm toggle hiển thị phần lọc
+  const toggleFilterSection = () => {
+    setShowFilterSection(!showFilterSection);
+  };
+
+  // Styled components cho form lọc - Compact version
+  const labelStyle = { fontWeight: 600, color: "#1769aa", mb: 0.5, fontSize: 13, display: "block" };
+
+  const getFieldSx = (focusField, name, errorField) => ({
+    bgcolor: focusField === name ? "#e3f0fa" : "#fafdff",
+    borderRadius: 1.5,
+    boxShadow: focusField === name ? "0 0 0 2px #90caf9" : "none",
+    transition: "all 0.2s",
+    border: errorField === name ? "1px solid #d32f2f" : "none",
+  });
+
+  // Component FilterSelect - Compact version
+  function FilterSelect({ label, name, value, options, onChange, disabled, error }) {
+    const [focus, setFocus] = useState(false);
+    return (
+      <Box>
+        <label style={labelStyle}>{label}</label>
+        <FormControl
+          fullWidth
+          size="small"
+          sx={{
+            ...getFieldSx(focus ? name : "", name, error ? name : ""),
+          }}
+          disabled={disabled}
+        >
+          <Select
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            onFocus={() => {
+              setFocus(true);
+            }}
+            onBlur={() => setFocus(false)}
+            displayEmpty
+            sx={{
+              fontSize: 13,
+              "& .MuiSelect-select": {
+                padding: "6px 12px",
+              }
+            }}
+          >
+            {options.map(opt => (
+              <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 13 }}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+    );
+  }
+
+  // PropTypes cho FilterSelect
+  FilterSelect.propTypes = {
+    label: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    options: PropTypes.arrayOf(PropTypes.shape({
+      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      label: PropTypes.string,
+    })).isRequired,
+    onChange: PropTypes.func.isRequired,
+    disabled: PropTypes.bool,
+    error: PropTypes.bool,
   };
 
   const columns = [
@@ -376,150 +448,39 @@ function KhachHangTable() {
             <SoftBox flex={1} display="flex" alignItems="center" gap={2} maxWidth={600}>
               <Input
                 fullWidth
-                placeholder="Tìm kiếm theo tên khách hàng"
+                placeholder="Tìm theo tên khách hàng"
                 value={filterCustomerName}
                 onChange={(e) => handleFilterChange(setFilterCustomerName)(e.target.value)}
                 startAdornment={<InputAdornment position="start"><Icon fontSize="small" sx={{ color: "#868686" }}>search</Icon></InputAdornment>}
                 sx={{ background: "#f5f6fa", borderRadius: 2, p: 0.5, color: "#222" }}
               />
-              <Input
+              {/* Ẩn trường lọc số điện thoại - có thể bật lại sau */}
+              {/* <Input
                 fullWidth
                 placeholder="Nhập SĐT"
                 value={filterPhoneNumber}
                 onChange={(e) => handleFilterChange(setFilterPhoneNumber)(e.target.value)}
                 sx={{ background: "#f5f6fa", borderRadius: 2, p: 0.5, color: "#222", minWidth: 120 }}
                 inputProps={{ maxLength: 10 }}
-              />
+              /> */}
               <IconButton
-                onClick={(e) => setFilterAnchorEl(e.currentTarget)}
-                sx={{ color: "#49a3f1", border: "1px solid #49a3f1", borderRadius: 2 }}
+                onClick={toggleFilterSection}
+                sx={{ 
+                  color: showFilterSection ? "#fff" : "#49a3f1", 
+                  border: "1px solid #49a3f1", 
+                  borderRadius: 2,
+                  background: showFilterSection ? "#49a3f1" : "transparent",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    background: showFilterSection ? "#1769aa" : "rgba(73, 163, 241, 0.1)",
+                    transform: "scale(1.05)",
+                  }
+                }}
+                title={showFilterSection ? "Ẩn bộ lọc" : "Hiển thị bộ lọc"}
               >
                 <Icon>filter_list</Icon>
               </IconButton>
             </SoftBox>
-            {/* Popover for advanced filters */}
-            <Popover
-              open={Boolean(filterAnchorEl)}
-              anchorEl={filterAnchorEl}
-              onClose={() => setFilterAnchorEl(null)}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-              PaperProps={{ sx: { p: 2, minWidth: 280, borderRadius: 3, background: "#f5f6fa" } }}
-            >
-              <SoftBox display="flex" flexDirection="column" gap={2}>
-                {/* Age range */}
-                <div>
-                  <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Khoảng tuổi</span>
-                  <Slider
-                    value={ageRange}
-                    onChange={handleAgeRangeChange}
-                    valueLabelDisplay="auto"
-                    min={18}
-                    max={100}
-                    sx={{
-                      mt: 1,
-                      color: "#1976d2",
-                      "& .MuiSlider-thumb": { bgcolor: "#1976d2" },
-                      "& .MuiSlider-track": { bgcolor: "#1976d2" },
-                      "& .MuiSlider-rail": { bgcolor: "#bdbdbd" },
-                    }}
-                  />
-                  <div style={{ fontSize: 13, color: "#888", marginTop: -8 }}>
-                    {ageRange[0]} tuổi - {ageRange[1]} tuổi
-                  </div>
-                </div>
-                {/* Gender filter */}
-                <FormControl fullWidth>
-                  <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Giới tính</span>
-                  <Select
-                    value={filterGender}
-                    onChange={(e) => handleFilterChange(setFilterGender)(e.target.value)}
-                    size="small"
-                    displayEmpty
-                    sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
-                  >
-                    {GENDER_OPTIONS.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
-                  </Select>
-                </FormControl>
-                {/* Status filter */}
-                <FormControl fullWidth>
-                  <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Trạng thái</span>
-                  <Select
-                    value={filterStatus}
-                    onChange={(e) => handleFilterChange(setFilterStatus)(e.target.value)}
-                    size="small"
-                    displayEmpty
-                    sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
-                  >
-                    <MenuItem value="Tất cả">Tất cả</MenuItem>
-                    <MenuItem value="ACTIVE">Đang hoạt động</MenuItem>
-                    <MenuItem value="INACTIVE">Ngừng hoạt động</MenuItem>
-                  </Select>
-                </FormControl>
-                {/* Sort options */}
-                <SoftBox display="flex" gap={2}>
-                  <FormControl fullWidth>
-                    <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Sắp xếp</span>
-                    <Select
-                      value={sortBy}
-                      onChange={(e) => handleFilterChange(setSortBy)(e.target.value)}
-                      size="small"
-                      sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
-                    >
-                      <MenuItem value="id">Mã KH</MenuItem>
-                      <MenuItem value="hoVaTen">Tên khách hàng</MenuItem>
-                      <MenuItem value="ngaySinh">Ngày sinh</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <FormControl fullWidth>
-                    <span style={{ fontSize: 13, color: "#888", fontWeight: 500 }}>Thứ tự</span>
-                    <Select
-                      value={sortDir}
-                      onChange={(e) => handleFilterChange(setSortDir)(e.target.value)}
-                      size="small"
-                      sx={{ mt: 0.5, borderRadius: 2, background: "#f5f6fa" }}
-                    >
-                      <MenuItem value="desc">Giảm dần</MenuItem>
-                      <MenuItem value="asc">Tăng dần</MenuItem>
-                    </Select>
-                  </FormControl>
-                </SoftBox>
-                {/* Filter controls */}
-                <SoftBox display="flex" gap={1} mt={1}>
-                  <Button
-                    variant="contained"
-                    color="info"
-                    sx={{
-                      background: "#49a3f1",
-                      color: "#fff",
-                      fontWeight: 500,
-                      borderRadius: 2,
-                      textTransform: "none",
-                      boxShadow: "none",
-                      flex: 1,
-                      "&:hover": { background: "#1769aa" },
-                    }}
-                    onClick={() => setFilterAnchorEl(null)}
-                  >
-                    Ẩn lọc
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="info"
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      color: "#49a3f1",
-                      borderColor: "#49a3f1",
-                      fontWeight: 500,
-                      flex: 1,
-                    }}
-                    onClick={handleResetFilters}
-                  >
-                    Đặt lại
-                  </Button>
-                </SoftBox>
-              </SoftBox>
-            </Popover>
             {/* Action buttons */}
             <SoftBox display="flex" alignItems="center" gap={1}>
               <Button
@@ -576,6 +537,163 @@ function KhachHangTable() {
             </SoftBox>
           </SoftBox>
         </Card>
+
+        {/* Filter Section - Compact and User-Friendly */}
+        {showFilterSection && (
+          <Card 
+            sx={{ 
+              p: { xs: 2, md: 2.5 }, 
+              mb: 2, 
+              background: "#f8fafc", 
+              border: "1px solid #e5e7eb",
+              animation: "slideDown 0.3s ease-out",
+              "@keyframes slideDown": {
+                "0%": {
+                  opacity: 0,
+                  transform: "translateY(-10px)",
+                },
+                "100%": {
+                  opacity: 1,
+                  transform: "translateY(0)",
+                },
+              },
+            }}
+          >
+            <SoftBox>
+              {/* Header with close button */}
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Icon sx={{ color: "#1769aa", fontSize: 20 }}>filter_list</Icon>
+                  <Typography variant="h6" fontWeight={600} fontSize={16} color="#1769aa">
+                    Bộ lọc
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={toggleFilterSection}
+                  size="small"
+                  sx={{ 
+                    color: "#666",
+                    "&:hover": { background: "rgba(102, 102, 102, 0.1)" }
+                  }}
+                >
+                  <Icon fontSize="small">close</Icon>
+                </IconButton>
+              </Box>
+              
+              <Box component="form" autoComplete="off">
+                {/* Main filters in 2 rows */}
+                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }} gap={2} mb={2}>
+                  {/* Row 1: Gender, Status, Sort */}
+                  <FilterSelect
+                    label="Giới tính"
+                    name="gender"
+                    value={filterGender}
+                    options={GENDER_OPTIONS}
+                    onChange={(e) => handleFilterChange(setFilterGender)(e.target.value)}
+                    disabled={false}
+                    error={false}
+                  />
+                  
+                  <FilterSelect
+                    label="Trạng thái"
+                    name="status"
+                    value={filterStatus}
+                    options={[
+                      { value: "Tất cả", label: "Tất cả" },
+                      { value: "ACTIVE", label: "Đang hoạt động" },
+                      { value: "INACTIVE", label: "Ngừng hoạt động" },
+                    ]}
+                    onChange={(e) => handleFilterChange(setFilterStatus)(e.target.value)}
+                    disabled={false}
+                    error={false}
+                  />
+                  
+                  <FilterSelect
+                    label="Sắp xếp"
+                    name="sortBy"
+                    value={sortBy}
+                    options={[
+                      { value: "id", label: "Mã KH" },
+                      { value: "hoVaTen", label: "Tên khách hàng" },
+                      { value: "ngaySinh", label: "Ngày sinh" },
+                    ]}
+                    onChange={(e) => handleFilterChange(setSortBy)(e.target.value)}
+                    disabled={false}
+                    error={false}
+                  />
+                </Box>
+
+                {/* Row 2: Age range and Sort direction */}
+                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '2fr 1fr' }} gap={2} mb={2}>
+                  {/* Age range slider */}
+                  <Box>
+                    <label style={{ ...labelStyle, marginBottom: '8px' }}>Khoảng tuổi: {ageRange[0]} - {ageRange[1]} tuổi</label>
+                    <Slider
+                      value={ageRange}
+                      onChange={handleAgeRangeChange}
+                      valueLabelDisplay="off"
+                      min={18}
+                      max={100}
+                      sx={{
+                        color: "#1976d2",
+                        "& .MuiSlider-thumb": { 
+                          bgcolor: "#1976d2",
+                          width: 16,
+                          height: 16,
+                        },
+                        "& .MuiSlider-track": { bgcolor: "#1976d2" },
+                        "& .MuiSlider-rail": { bgcolor: "#bdbdbd" },
+                      }}
+                    />
+                  </Box>
+
+                  {/* Sort direction */}
+                  <FilterSelect
+                    label="Thứ tự"
+                    name="sortDir"
+                    value={sortDir}
+                    options={[
+                      { value: "desc", label: "Giảm dần" },
+                      { value: "asc", label: "Tăng dần" },
+                    ]}
+                    onChange={(e) => handleFilterChange(setSortDir)(e.target.value)}
+                    disabled={false}
+                    error={false}
+                  />
+                </Box>
+
+                {/* Footer with actions and results */}
+                <Box display="flex" gap={2} justifyContent="space-between" alignItems="center" pt={1} borderTop="1px solid #e5e7eb">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Icon fontSize="small">clear</Icon>}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      color: "#666",
+                      borderColor: "#ccc",
+                      fontWeight: 500,
+                      fontSize: 13,
+                      "&:hover": { 
+                        borderColor: "#999", 
+                        background: "rgba(102, 102, 102, 0.05)",
+                        color: "#333" 
+                      },
+                    }}
+                    onClick={handleResetFilters}
+                  >
+                    Xóa bộ lọc
+                  </Button>
+                  
+                  <Typography variant="body2" color="#666" fontWeight={500} fontSize={13}>
+                    Tìm thấy <strong>{pagination.totalElements || 0}</strong> khách hàng
+                  </Typography>
+                </Box>
+              </Box>
+            </SoftBox>
+          </Card>
+        )}
         {/* Table and pagination */}
         <Card sx={{ p: { xs: 2, md: 3 }, mb: 2 }}>
           <SoftBox>{error ? <div className="alert alert-danger">{error}</div> : <Table columns={columns} rows={rows} loading={loading} />}</SoftBox>
