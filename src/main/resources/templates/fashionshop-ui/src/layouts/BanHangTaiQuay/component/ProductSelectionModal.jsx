@@ -34,7 +34,7 @@ import SoftBox from "components/SoftBox";
 import SoftTypography from "components/SoftTypography";
 
 // URL API của bạn
-const API_URL = "http://localhost:8080/chiTietSanPham/ban-hang-tai-quay";
+const API_URL = "http://localhost:8080/chiTietSanPham/allctspgiamgia";
 const BASE_IMAGE_URL = "http://localhost:8080/";
 
 // Hàm format tiền tệ
@@ -69,16 +69,12 @@ const [products, setProducts] = useState([]);
     setError(null);
     try {
       const response = await axios.get(API_URL);
-      
-      // TỐI ƯU HÓA 1: Tạo uniqueId ngay sau khi fetch dữ liệu, chỉ một lần duy nhất.
       const fetchedProducts = response.data.map(p => ({
         ...p,
-        // Tạo một ID duy nhất và ổn định cho mỗi chi tiết sản phẩm.
         uniqueId: `${p.maSanPham || ''}-${p.kichThuoc || ''}-${p.mauSac || ''}-${p.id || Math.random()}`
       }));
       console.log("LOG 2 (ProductSelectionModal): Dữ liệu sản phẩm đã được tải:", fetchedProducts);
       setProducts(fetchedProducts);
-
       if (fetchedProducts.length > 0) {
         const allPrices = fetchedProducts.map(p => p.gia).filter(price => typeof price === 'number' && !isNaN(price));
         if (allPrices.length > 0) {
@@ -88,7 +84,6 @@ const [products, setProducts] = useState([]);
           setPriceRange([minP, maxP]);
         }
       }
-
     } catch (err) {
       console.error("Lỗi khi tải sản phẩm:", err);
       setError("Không thể tải sản phẩm. Vui lòng thử lại sau.");
@@ -96,7 +91,6 @@ const [products, setProducts] = useState([]);
       setLoading(false);
     }
   }, []);
-
   // useEffect để tải dữ liệu khi modal mở
   useEffect(() => {
     if (open) {
@@ -388,6 +382,7 @@ const [products, setProducts] = useState([]);
                                     <TableCell sx={{ minWidth: '80px' , fontWeight: 'bold'}}>Cổ áo</TableCell>
                                     <TableCell sx={{ minWidth: '80px' , fontWeight: 'bold'}}>Tay áo</TableCell>
                                     <TableCell sx={{ minWidth: '120px' , fontWeight: 'bold'}}>Giá</TableCell>
+                                               <TableCell sx={{ minWidth: '80px' , fontWeight: 'bold'}}>Số lượng</TableCell>
                                     <TableCell sx={{ width: '80px', minWidth: '80px', fontWeight: 'bold' }}>Thao tác</TableCell>
                                 </TableRow>
                          
@@ -425,6 +420,7 @@ const [products, setProducts] = useState([]);
                                                     {formatCurrency(product.gia)}
                                                 </SoftTypography>
                                             </TableCell>
+                                                   <TableCell>{product.soLuongTonKho || 'N/A'}</TableCell>
                                             <TableCell>
                                                 <Button
                                                     variant="contained"

@@ -45,9 +45,9 @@ useEffect(() => {
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value, 10);
     if (isNaN(value) || value < 1) {
-      setQuantity(1); // Mặc định là 1 nếu không hợp lệ hoặc nhỏ hơn 1
+      setQuantity(1); 
     } else if (value > product.soLuongTonKho) {
-      setQuantity(product.soLuongTonKho); // Giới hạn ở số lượng tồn kho
+      setQuantity(product.soLuongTonKho); 
     } else {
       setQuantity(value);
     }

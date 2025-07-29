@@ -80,7 +80,7 @@ public class ChiTietSanPhamService {
     }
 
     public List<ChiTietSanPhamDotGIamGIaDTO> getChiTietSanPhamCoDGG() {
-        List<ChiTietSanPham> chiTietSanPhamList = chiTietSanPhamRepository.findAll();
+        List<ChiTietSanPham> chiTietSanPhamList = chiTietSanPhamRepository.getChiTietSanPhamTrangThai();
         List<ChiTietSanPhamDotGIamGIaDTO> chiTietSanPhamDotGIamGIaDTOS = new ArrayList<ChiTietSanPhamDotGIamGIaDTO>();
         for (ChiTietSanPham c : chiTietSanPhamList) {
             ChiTietSanPhamDotGIamGIaDTO ctsp = new ChiTietSanPhamDotGIamGIaDTO();

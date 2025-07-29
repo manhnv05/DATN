@@ -397,7 +397,7 @@ const OrderDetailPage = () => {
                     )}
                   </SoftButton>
                 )}
-                {!isCancelButtonDisabled && (
+                {!isCancelButtonDisabled && orderData?.type !== "Tại quầy" && (
                   <SoftButton
                    
                     onClick={handleOpenCancelModal}
@@ -475,7 +475,7 @@ const OrderDetailPage = () => {
               </SoftTypography>
 
               <OrderInfo order={orderData} />
-              {canUpdateInfo && (
+              {!isCancelButtonDisabled && orderData?.type !== "Tại quầy" && (
                 <SoftBox display="flex" justifyContent="flex-end" mt={3}>
                   <SoftButton
                     variant="outlined"

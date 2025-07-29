@@ -14,6 +14,7 @@ import {
   TextField,
   Avatar,
   Checkbox,
+   Badge,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,6 +24,7 @@ import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import PaidIcon from "@mui/icons-material/Paid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
+
 
 // Import các component chung
 import SoftBox from "components/SoftBox";
@@ -59,7 +61,7 @@ const CustomTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const MAX_ORDERS = 5;
+const MAX_ORDERS = 10;
 
 function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,completedOrderId }) {
   useEffect(() => {
@@ -315,7 +317,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
       }
     }
   };
-
+  
   return (
     <>
       <Card>
@@ -359,15 +361,16 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
                   key={order.id}
                   value={order.id}
                   label={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Typography variant="body2">{order.name}</Typography>
-                       
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+                      <Typography variant="body2">{order.name}  </Typography>
+                       <Badge badgeContent={order.products.length} color="error" />
                         <IconButton
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCloseOrderTab(order.id);
                           }}
+                            sx={{ marginLeft: "auto" }}
                         >
                           <CloseIcon fontSize="small" />
                         </IconButton>
@@ -481,7 +484,10 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
 
                     {/* Danh sách sản phẩm */}
                     <Box sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
+                      
                       {currentOrder.products.map((product) => (
+
+                    
                         <Box
                           key={product.uniqueId}
                           sx={{
@@ -533,48 +539,69 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
                               </Typography>
                             </Box>
                           </Box>
+  
+{/* Cột 3: Số lượng */}
+<Box sx={{ width: "15%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+  
+  {/* ✨ Box cha này sẽ đảm bảo các phần tử bên trong xếp theo cột (dọc) */}
+  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-                          {/* Cột 3: Số lượng */}
-                          <Box sx={{ width: "15%", display: "flex", justifyContent: "center" }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                border: "1px solid #ccc",
-                                borderRadius: "999px",
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  handleUpdateQuantity(product.uniqueId, product.quantity - 1)
-                                }
-                                sx={{ color: "text.secondary" }}
-                              >
-                                <RemoveIcon fontSize="small" />
-                              </IconButton>
-                              <Typography
-                                variant="body1"
-                                sx={{
-                                  px: 1.5,
-                                  fontWeight: "medium",
-                                  borderLeft: "1px solid #ccc",
-                                  borderRight: "1px solid #ccc",
-                                }}
-                              >
-                                {product.quantity}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  handleUpdateQuantity(product.uniqueId, product.quantity + 1)
-                                }
-                                sx={{ color: "text.secondary" }}
-                              >
-                                <AddIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </Box>
+    {/* Box chứa bộ ba nút-input-nút */}
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      {/* Nút Trừ */}
+      <IconButton
+        size="small"
+        onClick={() => handleUpdateQuantity(product.uniqueId, product.quantity - 1)}
+        disabled={product.quantity <= 1}
+        sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}
+      >
+        <RemoveIcon fontSize="small" />
+      </IconButton>
+
+      {/* Ô Nhập Số Lượng */}
+      <TextField
+        type="number"
+        value={product.quantity}
+        onChange={(e) => {
+          const value = parseInt(e.target.value, 10);
+          if (e.target.value === "") {
+            handleUpdateQuantity(product.uniqueId, 0);
+          } else if (isNaN(value) || value < 1) {
+            handleUpdateQuantity(product.uniqueId, 1);
+          } else if (value > product.soLuongTonKho) {
+            handleUpdateQuantity(product.uniqueId, product.soLuongTonKho);
+          } else {
+            handleUpdateQuantity(product.uniqueId, value);
+          }
+        }}
+        inputProps={{
+          style: { textAlign: "center" },
+          min: 1,
+          max: product.soLuongTonKho,
+        }}
+        sx={{ width: "70px", mx: 1 }}
+      />
+
+      {/* Nút Cộng */}
+      <IconButton
+        size="small"
+        onClick={() => handleUpdateQuantity(product.uniqueId, product.quantity + 1)}
+        disabled={product.quantity >= product.soLuongTonKho}
+        sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}
+      >
+        <AddIcon fontSize="small" />
+      </IconButton>
+    </Box>
+
+    {/* Thông báo này giờ sẽ luôn nằm ở dòng dưới */}
+    {product.quantity === product.soLuongTonKho && product.soLuongTonKho > 0 && (
+      <Typography variant="caption" color="error" sx={{ mt: 0.5, fontWeight: "medium" }}>
+        Đã đạt giới hạn kho
+      </Typography>
+    )}
+  </Box>
+
+</Box>
 
                           {/* Cột 4: Thành tiền */}
                           <Box sx={{ width: "15%", textAlign: "right" }}>
