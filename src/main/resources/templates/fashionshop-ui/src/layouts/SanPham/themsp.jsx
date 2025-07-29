@@ -175,10 +175,7 @@ function ProductForm() {
     const [selectedImages, setSelectedImages] = useState({});
     const [tempImages, setTempImages] = useState([]);
     const [imageOptions, setImageOptions] = useState([]);
-    const [showAttributes, setShowAttributes] = useState(false);
     const [addLoading, setAddLoading] = useState(false);
-    const [addError, setAddError] = useState("");
-    const [addSuccess, setAddSuccess] = useState("");
     const [productVariants, setProductVariants] = useState([]);
     const [createdSanPhamId, setCreatedSanPhamId] = useState(null);
     const [checkedRows, setCheckedRows] = useState({});
@@ -195,6 +192,7 @@ function ProductForm() {
     const autoFocusRef = useRef(null);
     const [newProductCountry, setNewProductCountry] = useState("");
     const [addProductValidate, setAddProductValidate] = useState({});
+    const [isCheckedAllGlobal, setIsCheckedAllGlobal] = useState(false);
 
     useEffect(() => {
         if (showAddProductModal && autoFocusRef.current) {
@@ -464,65 +462,50 @@ function ProductForm() {
         });
     };
 
-    const handleCheckAllRows = (colorIdx, checked) => {
-        setCheckedRows((prev) => {
-            if (checked) {
-                return {
-                    ...prev,
-                    [colorIdx]: productVariants[colorIdx]
-                        ? productVariants[colorIdx].products.map((_, idx) => idx)
-                        : [],
-                };
-            } else {
-                return { ...prev, [colorIdx]: [] };
-            }
-        });
-        if (!checked) {
-            setQuickWeight((prev) => ({ ...prev, [colorIdx]: "" }));
-            setQuickQty((prev) => ({ ...prev, [colorIdx]: "" }));
-            setQuickPrice((prev) => ({ ...prev, [colorIdx]: "" }));
+    const handleCheckAllRowsGlobal = (checked) => {
+        setIsCheckedAllGlobal(checked);
+        if (checked) {
+            const checkedAllRows = {};
+            productVariants.forEach((variant, colorIdx) => {
+                checkedAllRows[colorIdx] = variant.products.map((_, prodIdx) => prodIdx);
+            });
+            setCheckedRows(checkedAllRows);
+        } else {
+            setCheckedRows({});
+            setQuickWeight({});
+            setQuickQty({});
+            setQuickPrice({});
         }
     };
 
-    const handleQuickFill = (colorIdx, type, value) => {
-        if (type === "weight") setQuickWeight((prev) => ({ ...prev, [colorIdx]: value }));
-        if (type === "qty") setQuickQty((prev) => ({ ...prev, [colorIdx]: value }));
-        if (type === "price") setQuickPrice((prev) => ({ ...prev, [colorIdx]: value }));
+    useEffect(() => {
+        if (isCheckedAllGlobal) {
+            setProductVariants(prev =>
+                prev.map(variant => ({
+                    ...variant,
+                    products: variant.products.map(prod => ({
+                        ...prod,
+                        weight: quickWeight.global,
+                        qty: quickQty.global,
+                        price: quickPrice.global
+                    }))
+                }))
+            );
+        }
+    }, [quickWeight.global, quickQty.global, quickPrice.global, isCheckedAllGlobal]);
 
-        setProductVariants((prev) => {
-            const newArr = [...prev];
-            if (!newArr[colorIdx]) return prev;
-            newArr[colorIdx] = {
-                ...newArr[colorIdx],
-                products: newArr[colorIdx].products.map((p, idx) =>
-                    (checkedRows[colorIdx] || []).includes(idx)
-                        ? type === "price"
-                            ? { ...p, [type]: parseCurrencyVND(value) }
-                            : { ...p, [type]: value }
-                        : p
-                ),
-            };
-            return newArr;
-        });
-    };
 
-    const safeNumber = (val) => {
-        if (!val) return 0;
-        const n = Number(val);
-        return Number.isNaN(n) ? 0 : n;
-    };
 
     const openImageModal = (colorId) => {
-        setModalColor(colorId);
+        setModalColor("all");
         setShowImageModal(true);
-        setTempImages(selectedImages[colorId] || []);
+        setTempImages(Object.values(selectedImages).flat());
     };
+
     const closeImageModal = () => setShowImageModal(false);
     const handleSaveImages = () => {
-        setSelectedImages(prev => ({
-            ...prev,
-            [modalColor]: [...tempImages],
-        }));
+        // Lưu ảnh chọn dùng chung cho tất cả sản phẩm chi tiết các màu
+        setSelectedImages({ all: [...tempImages] });
         closeImageModal();
     };
     const toggleTempImage = (imgId) => {
@@ -629,13 +612,6 @@ function ProductForm() {
         if (Object.keys(errors).length > 0) {
             setAddError(Object.values(errors)[0]);
             toast.error(Object.values(errors)[0]);
-            setAddLoading(false);
-            return;
-        }
-
-        if (!createdSanPhamId) {
-            setAddError("Bạn phải thêm sản phẩm trước khi thêm chi tiết sản phẩm!");
-            toast.error("Bạn phải thêm sản phẩm trước khi thêm chi tiết sản phẩm!");
             setAddLoading(false);
             return;
         }
@@ -1085,13 +1061,11 @@ function ProductForm() {
                                                 {`Màu: ${getLabelById(colorOptions, variant.colorId)}`}
                                             </SoftBox>
                                             <FormControl sx={{ verticalAlign: "middle" }}>
-                                                <Tooltip title={allChecked ? "Bỏ chọn tất cả" : "Chọn tất cả"}>
+                                                <Tooltip title={isCheckedAllGlobal ? "Bỏ chọn tất cả" : "Chọn tất cả"}>
                                                     <input
                                                         type="checkbox"
-                                                        checked={allChecked}
-                                                        onChange={() =>
-                                                            handleCheckAllRows(colorIdx, !allChecked)
-                                                        }
+                                                        checked={isCheckedAllGlobal}
+                                                        onChange={() => handleCheckAllRowsGlobal(!isCheckedAllGlobal)}
                                                         style={{
                                                             transform: "scale(1.3)",
                                                             marginRight: 5,
@@ -1099,11 +1073,9 @@ function ProductForm() {
                                                         }}
                                                     />
                                                 </Tooltip>
-                                                <span style={{ fontWeight: 400, fontSize: 14 }}>
-                                                    Chọn tất cả
-                                                </span>
+                                                <span style={{ fontWeight: 400, fontSize: 14 }}>Chọn tất cả</span>
                                             </FormControl>
-                                            {allChecked && (
+                                            {isCheckedAllGlobal && colorIdx === 0 && (
                                                 <Box
                                                     display="flex"
                                                     alignItems="center"
@@ -1117,15 +1089,15 @@ function ProductForm() {
                                                     }}
                                                 >
                                                     <FormControl sx={{ minWidth: 120, mr: 2 }}>
-                                                        <label htmlFor={`quick-weight-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                        <label htmlFor="quick-global-weight" style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
                                                             Trọng lượng (g)
                                                         </label>
                                                         <Input
-                                                            id={`quick-weight-${colorIdx}`}
+                                                            id="quick-global-weight"
                                                             type="text"
-                                                            value={quickWeight[colorIdx] ?? ""}
+                                                            value={quickWeight.global ?? ""}
                                                             onChange={e =>
-                                                                handleQuickFill(colorIdx, "weight", e.target.value)
+                                                                setQuickWeight(prev => ({ ...prev, global: e.target.value }))
                                                             }
                                                             size="small"
                                                             sx={{ width: 110, background: "#fff" }}
@@ -1133,15 +1105,15 @@ function ProductForm() {
                                                         />
                                                     </FormControl>
                                                     <FormControl sx={{ minWidth: 120, mr: 2 }}>
-                                                        <label htmlFor={`quick-qty-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                        <label htmlFor="quick-global-qty" style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
                                                             Số lượng
                                                         </label>
                                                         <Input
-                                                            id={`quick-qty-${colorIdx}`}
+                                                            id="quick-global-qty"
                                                             type="text"
-                                                            value={quickQty[colorIdx] ?? ""}
+                                                            value={quickQty.global ?? ""}
                                                             onChange={e =>
-                                                                handleQuickFill(colorIdx, "qty", e.target.value)
+                                                                setQuickQty(prev => ({ ...prev, global: e.target.value }))
                                                             }
                                                             size="small"
                                                             sx={{ width: 110, background: "#fff" }}
@@ -1149,15 +1121,15 @@ function ProductForm() {
                                                         />
                                                     </FormControl>
                                                     <FormControl sx={{ minWidth: 120 }}>
-                                                        <label htmlFor={`quick-price-${colorIdx}`} style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
+                                                        <label htmlFor="quick-global-price" style={{ fontWeight: 400, fontSize: 13, marginBottom: 4, display: "block" }}>
                                                             Giá (₫)
                                                         </label>
                                                         <Input
-                                                            id={`quick-price-${colorIdx}`}
+                                                            id="quick-global-price"
                                                             type="text"
-                                                            value={formatCurrencyVND(quickPrice[colorIdx])}
+                                                            value={formatCurrencyVND(quickPrice.global)}
                                                             onChange={e =>
-                                                                handleQuickFill(colorIdx, "price", e.target.value)
+                                                                setQuickPrice(prev => ({ ...prev, global: parseCurrencyVND(e.target.value) }))
                                                             }
                                                             size="small"
                                                             sx={{ width: 110, background: "#fff" }}
@@ -1281,18 +1253,39 @@ function ProductForm() {
                                                     </FormControl>
                                                 ),
                                                 image: (
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        sx={{ minWidth: 60 }}
-                                                        onClick={() =>
-                                                            openImageModal(
-                                                                variant.colorId
-                                                            )
-                                                        }
-                                                    >
-                                                        <Icon fontSize="small">image</Icon> Ảnh
-                                                    </Button>
+                                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                        {Object.values(selectedImages)
+                                                            .flat()
+                                                            .map((imgId, idx) => {
+                                                                const imgObj = imageOptions.find((i) => i.value === imgId);
+                                                                if (!imgObj) return null;
+                                                                return (
+                                                                    <img
+                                                                        key={imgId + "-" + idx}
+                                                                        src={imgObj.url}
+                                                                        alt={imgObj.label}
+                                                                        width={38}
+                                                                        height={38}
+                                                                        style={{
+                                                                            borderRadius: 5,
+                                                                            border: "1px solid #e3e9f0",
+                                                                            objectFit: "cover",
+                                                                            background: "#fafbfc",
+                                                                            marginRight: 4,
+                                                                            boxShadow: "0 2px 8px rgba(25,118,210,0.07)"
+                                                                        }}
+                                                                    />
+                                                                );
+                                                            })}
+                                                        <Button
+                                                            variant="outlined"
+                                                            size="small"
+                                                            sx={{ minWidth: 54, ml: 1 }}
+                                                            onClick={() => openImageModal("all")}
+                                                        >
+                                                            <Icon fontSize="small">image</Icon>
+                                                        </Button>
+                                                    </Box>
                                                 ),
                                                 action: (
                                                     <Tooltip title="Xóa dòng này">

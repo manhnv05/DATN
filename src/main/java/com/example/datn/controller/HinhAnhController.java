@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Validated
@@ -22,10 +23,6 @@ public class HinhAnhController {
     @Autowired
     private HinhAnhService hinhAnhService;
 
-    /**
-     * Thêm mới hình ảnh - dùng FormData với đúng tên trường snake_case
-     * ma_anh, duong_dan_anh, anh_mac_dinh, mo_ta, trang_thai, id_san_pham_chi_tiet
-     */
     @PostMapping
     public ResponseEntity<?> save(
             @RequestParam("ma_anh") String maAnh,
@@ -39,17 +36,12 @@ public class HinhAnhController {
         return ResponseEntity.ok(id);
     }
 
-    // Xóa hình ảnh theo ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@Valid @NotNull @PathVariable("id") Integer id) {
         hinhAnhService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Cập nhật hình ảnh - dùng JSON body (HinhAnhDTO)
-     * Lưu ý: FE gửi các trường camelCase, không phải FormData.
-     */
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @Valid @NotNull @PathVariable("id") Integer id,
@@ -67,13 +59,11 @@ public class HinhAnhController {
         return ResponseEntity.noContent().build();
     }
 
-    // Lấy chi tiết hình ảnh theo ID
     @GetMapping("/{id}")
     public ResponseEntity<HinhAnhDTO> getById(@Valid @NotNull @PathVariable("id") Integer id) {
         return ResponseEntity.ok(hinhAnhService.getById(id));
     }
 
-    // Danh sách hình ảnh có phân trang và lọc (query param - dùng camelCase)
     @GetMapping
     public Page<HinhAnhDTO> query(
             @RequestParam(required = false) Integer id,
@@ -99,18 +89,36 @@ public class HinhAnhController {
         return hinhAnhService.query(vO);
     }
 
-    // Lấy toàn bộ hình ảnh (không phân trang)
     @GetMapping("/all")
     public List<HinhAnhDTO> getAll() {
         return hinhAnhService.findAll();
     }
 
-//    @PutMapping("/{id}/upload")
-//    public ResponseEntity<?> updateImage(
-//            @Valid @NotNull @PathVariable("id") Integer id,
-//            @RequestParam("file") MultipartFile file
-//    ) {
-//        String url = hinhAnhService.updateImage(id, file);
-//        return ResponseEntity.ok(url);
-//    }
+    @GetMapping("/by-product-detail/{idSanPhamChiTiet}")
+    public List<HinhAnhDTO> getByProductDetail(@PathVariable Integer idSanPhamChiTiet) {
+        return hinhAnhService.findByIdSanPhamChiTiet(idSanPhamChiTiet);
+    }
+
+    @GetMapping("/find-by-id/{id}")
+    public ResponseEntity<HinhAnhDTO> getByIdHinhAnh(@PathVariable("id") Integer id) {
+        HinhAnhDTO hinhAnhDTO = hinhAnhService.findByIdHinhAnh(id);
+        return ResponseEntity.ok(hinhAnhDTO);
+    }
+
+    @PostMapping("/multi")
+    public ResponseEntity<?> saveMulti(
+            @RequestParam("ma_anh") String maAnh,
+            @RequestParam(value = "duong_dan_anh") MultipartFile[] duongDanAnh,
+            @RequestParam("anh_mac_dinh") Integer anhMacDinh,
+            @RequestParam("mo_ta") String moTa,
+            @RequestParam("trang_thai") Integer trangThai,
+            @RequestParam(value = "id_san_pham_chi_tiet", required = false) Integer idSanPhamChiTiet
+    ) {
+        List<Integer> ids = new ArrayList<>();
+        for (MultipartFile file : duongDanAnh) {
+            Integer id = hinhAnhService.save(maAnh, anhMacDinh, moTa, trangThai, file, idSanPhamChiTiet);
+            ids.add(id);
+        }
+        return ResponseEntity.ok(ids);
+    }
 }

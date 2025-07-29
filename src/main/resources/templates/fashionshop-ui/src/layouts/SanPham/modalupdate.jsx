@@ -153,6 +153,23 @@ function ProductDetailUpdateModal({
     }, [open]);
 
     useEffect(() => {
+        if (!open || !detail?.id) return;
+        fetch(apiUrl(`/hinhAnh/by-product-detail/${detail.id}`))
+            .then(response => response.json())
+            .then(images => {
+                const urls = [];
+                (images || []).forEach(img => {
+                    if (img.duongDanAnh && !urls.includes(img.duongDanAnh)) {
+                        urls.push(img.duongDanAnh);
+                    }
+                });
+                setImagePreview(urls);
+                setImageFiles([]);
+            })
+            .catch(() => setImagePreview([]));
+    }, [open, detail?.id]);
+
+    useEffect(() => {
         if (!isLoadingOptions && detail) {
             setForm({
                 idThuongHieu: detail?.idThuongHieu !== undefined ? String(detail?.idThuongHieu) : "",
@@ -165,10 +182,8 @@ function ProductDetailUpdateModal({
                 soLuong: detail?.soLuong || "",
                 trongLuong: detail?.trongLuong || "",
                 trangThai: detail?.trangThai === 1 ? 1 : 0,
-                images: detail?.images || [],
+                images: [],
             });
-            setImagePreview(detail?.images || []);
-            setImageFiles([]);
         }
     }, [detail, isLoadingOptions]);
 
@@ -176,8 +191,8 @@ function ProductDetailUpdateModal({
         setForm(previous => ({ ...previous, [key]: value }));
     }
 
-    function handleGiaChange(e) {
-        const input = e.target.value;
+    function handleGiaChange(event) {
+        const input = event.target.value;
         const numericValue = parseCurrencyVND(input);
         setForm(previous => ({
             ...previous,
@@ -214,7 +229,6 @@ function ProductDetailUpdateModal({
             toast.error("Vui lòng chọn chất liệu");
             return false;
         }
-        // Giá hiển thị là dạng 2.000, phải chuyển lại về số khi kiểm tra
         const giaNumber = Number(parseCurrencyVND(form.gia));
         if (!form.gia || isNaN(giaNumber) || giaNumber <= 0) {
             toast.error("Vui lòng nhập giá lớn hơn 0");
@@ -272,8 +286,8 @@ function ProductDetailUpdateModal({
             if (!response.ok) {
                 const error = await response.json();
                 setFormError(error.message || "Cập nhật thất bại");
-                toast.error(error.message || "Cập nhật thất bại");
                 setIsSubmitting(false);
+                toast.error(error.message || "Cập nhật thất bại");
                 return;
             }
             toast.success("Cập nhật thành công!");
@@ -284,12 +298,12 @@ function ProductDetailUpdateModal({
             }
         } catch (error) {
             setFormError("Có lỗi hệ thống");
-            toast.error("Có lỗi hệ thống");
             setIsSubmitting(false);
+            toast.error("Có lỗi hệ thống");
         }
     }
 
-    function handleDownloadQR() {
+    function handleDownloadQRCode() {
         const canvas = qrRef.current.querySelector("canvas");
         if (canvas) {
             const url = canvas.toDataURL("image/png");
@@ -507,7 +521,7 @@ function ProductDetailUpdateModal({
                                     </Box>
                                     <Tooltip title="Tải ảnh QR về">
                                         <IconButton
-                                            onClick={handleDownloadQR}
+                                            onClick={handleDownloadQRCode}
                                             color="info"
                                             sx={{
                                                 ml: 1,

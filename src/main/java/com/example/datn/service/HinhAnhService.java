@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,11 +30,8 @@ public class HinhAnhService {
     private ChiTietSanPhamRepository chiTietSanPhamRepository;
 
     @Autowired
-    private CloudinaryService cloudinaryService; // Thêm CloudinaryService
+    private CloudinaryService cloudinaryService;
 
-    /**
-     * Lưu ảnh lên Cloudinary, nhận thêm idSanPhamChiTiet và gán vào entity
-     */
     public Integer save(
             String maAnh,
             Integer anhMacDinh,
@@ -48,7 +46,6 @@ public class HinhAnhService {
         bean.setMoTa(moTa);
         bean.setTrangThai(trangThai);
 
-        // Upload file lên Cloudinary, lấy URL về lưu vào duongDanAnh
         if (duongDanAnh != null && !duongDanAnh.isEmpty()) {
             try {
                 String url = cloudinaryService.uploadImage(duongDanAnh);
@@ -72,9 +69,6 @@ public class HinhAnhService {
         hinhAnhRepository.deleteById(id);
     }
 
-    /**
-     * Cập nhật hình ảnh
-     */
     public void update(
             Integer id,
             String maAnh,
@@ -155,13 +149,25 @@ public class HinhAnhService {
     }
 
     private HinhAnh requireOne(Integer id) {
-        return hinhAnhRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Resource not found: " + id));
+        Optional<HinhAnh> optional = hinhAnhRepository.findById(id);
+        if (optional.isPresent()) {
+            return optional.get();
+        } else {
+            throw new NoSuchElementException("Resource not found: " + id);
+        }
     }
 
     public List<HinhAnhDTO> findAll() {
         return hinhAnhRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    public List<HinhAnhDTO> findByIdSanPhamChiTiet(Integer idSanPhamChiTiet) {
+        List<HinhAnh> images = hinhAnhRepository.findByChiTietSanPham_Id(idSanPhamChiTiet);
+        return images.stream().map(this::toDTO).collect(Collectors.toList());
+    }
 
+    public HinhAnhDTO findByIdHinhAnh(Integer idHinhAnh) {
+        HinhAnh hinhAnh = hinhAnhRepository.findById(idHinhAnh).orElseThrow(() -> new NoSuchElementException("Resource not found: " + idHinhAnh));
+        return toDTO(hinhAnh);
+    }
 }
