@@ -348,7 +348,8 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
         <Tabs value={filterStatus} onChange={handleStatusTabChange}>
           {[
             { key: "", label: "Tất cả" },
-            { key: "CHO_XAC_NHAN", label: "Chờ xác nhận" },
+            { key: "CHO_XAC_NHAN", label: "Chờ xác nhận"},
+            { key: "DA_XAC_NHAN", label: "Đã xác nhận"},
             { key: "CHO_GIAO_HANG", label: "Chờ giao hàng" },
             { key: "DANG_VAN_CHUYEN", label: "Đang vận chuyển" },
             { key: "HOAN_THANH", label: "Hoàn thành" },
