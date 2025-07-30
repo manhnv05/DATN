@@ -257,10 +257,10 @@ public class HoaDonServiceImpl implements HoaDonService {
 
             table2.addCell(createLeftCell("Giảm giá:", fontLeft));
             if(hoaDon.getPhieuGiamGia() != null) {
-                if(hoaDon.getPhieuGiamGia().getSoTienGiam().compareTo(BigDecimal.ZERO) != 0) {
+                try {
                     table2.addCell(createRightCell(hoaDon.getPhieuGiamGia().getSoTienGiam() + " VND", fontRight));
                 }
-                else {
+                catch (Exception e){
                     table2.addCell(createRightCell(hoaDon.getPhieuGiamGia().getPhamTramGiamGia() + " %", fontRight));
                 }
             }

@@ -16,7 +16,7 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
     @Query("""
     SELECT hdct FROM HoaDonChiTiet hdct
     WHERE FUNCTION('DATE', hdct.hoaDon.ngayTao) = CURRENT_DATE
-    AND hdct.hoaDon.trangThai = 4
+    AND hdct.hoaDon.trangThai = 5
     """)
     List<HoaDonChiTiet> getThongKeHomNay();
 
@@ -24,7 +24,7 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
     SELECT hdct FROM HoaDonChiTiet hdct
     WHERE FUNCTION('WEEK', hdct.hoaDon.ngayTao) = FUNCTION('WEEK', CURRENT_DATE)
     AND FUNCTION('YEAR', hdct.hoaDon.ngayTao) = FUNCTION('YEAR', CURRENT_DATE)
-    AND hdct.hoaDon.trangThai = 4
+    AND hdct.hoaDon.trangThai = 5
     """)
     List<HoaDonChiTiet> getThongKeTuanNay();
 
@@ -32,14 +32,14 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
     SELECT hdct FROM HoaDonChiTiet hdct
     WHERE MONTH(hdct.hoaDon.ngayTao) = MONTH(CURRENT_DATE)
     AND YEAR(hdct.hoaDon.ngayTao) = YEAR(CURRENT_DATE)
-    AND hdct.hoaDon.trangThai = 4
+    AND hdct.hoaDon.trangThai = 5
     """)
     List<HoaDonChiTiet> getThongKeThangNay();
 
     @Query("""
     SELECT hdct FROM HoaDonChiTiet hdct
     WHERE YEAR(hdct.hoaDon.ngayTao) = YEAR(CURRENT_DATE)
-    AND hdct.hoaDon.trangThai = 4
+    AND hdct.hoaDon.trangThai = 5
     """)
     List<HoaDonChiTiet> getThongKeNamNay();
 
@@ -47,7 +47,7 @@ public interface ThongKeSanPhamRepository extends JpaRepository<HoaDonChiTiet, I
     SELECT hdct FROM HoaDonChiTiet hdct
     WHERE (:#{#search.tuNgay} IS NULL OR hdct.hoaDon.ngayTao >= :#{#search.tuNgay})
       AND (:#{#search.denNgay} IS NULL OR hdct.hoaDon.ngayTao <= :#{#search.denNgay})
-      AND hdct.hoaDon.trangThai = 4
+      AND hdct.hoaDon.trangThai = 5
     """)
     List<HoaDonChiTiet> getAllByQuery(@RequestParam("search") ThongKeVoSearch search);
 }

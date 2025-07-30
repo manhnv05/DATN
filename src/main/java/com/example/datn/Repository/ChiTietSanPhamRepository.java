@@ -22,12 +22,6 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
 
     @Query("SELECT c.maSanPhamChiTiet FROM ChiTietSanPham c")
     List<String> findAllMaChiTietSanPham();
-    @Query("""
-    SELECT ctsp FROM ChiTietSanPham ctsp
-        WHERE (ctsp.soLuong > 0 AND ctsp.trangThai = 1)
-        ORDER BY ctsp.id desc
-""")
-    List<ChiTietSanPham> getChiTietSanPhamTrangThai();
     @Query(value = """
 
   SELECT
