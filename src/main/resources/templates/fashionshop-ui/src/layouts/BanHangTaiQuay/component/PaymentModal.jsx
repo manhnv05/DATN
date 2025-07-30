@@ -84,7 +84,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
 
   // Xử lý khi thêm một lần thanh toán mới
   const handleAddPayment = () => {
-   console.log('[DEBUG 2] State "amount" ngay khi bấm Thêm:', amount);
+ 
     const paymentAmount = Number(String(amount).replace(/\./g, ""));
 
     if (!paymentAmount || paymentAmount <= 0) {
@@ -112,7 +112,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
       idHinhThucThanhToan: paymentMethod === "cash" ? 1 : 2,
       idHoaDon: hoaDonId,
       maGiaoDich: paymentMethod === "transfer" ? transactionCode : null,
-      soTienThanhToan: paymentAmount,
+      soTienThanhToan: totalAmount,
       trangThaiThanhToan: 1,
     };
     console.log('[DEBUG 3] Object chuẩn bị thêm vào bảng:', newPayment)

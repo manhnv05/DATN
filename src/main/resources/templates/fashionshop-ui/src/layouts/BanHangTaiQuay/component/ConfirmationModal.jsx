@@ -35,7 +35,7 @@ function ConfirmationModal({ open, onClose, onConfirm, product, quantity, setQua
     if (open && product && product.soLuongTonKho !== undefined) {
       // Đảm bảo số lượng không vượt quá tồn kho và tối thiểu là 1
       if (quantity <= 0 && product.soLuongTonKho > 0) {
-        setQuantity(1); // Mặc định là 1 nếu số lượng hiện tại không hợp lệ nhưng còn hàng
+        // setQuantity(1); // Mặc định là 1 nếu số lượng hiện tại không hợp lệ nhưng còn hàng
       } else if (quantity > product.soLuongTonKho) {
         setQuantity(product.soLuongTonKho); // Giới hạn số lượng bằng tồn kho
       }
@@ -68,7 +68,7 @@ function ConfirmationModal({ open, onClose, onConfirm, product, quantity, setQua
         }
       );
 
-      // BƯỚC 2: NẾU API THÀNH CÔNG, GỌI HÀM onConfirm TỪ CHA ĐỂ CẬP NHẬT GIỎ HÀNG
+  
       onConfirm({ ...product, quantity });
 
       // BƯỚC 3: ĐÓNG MODAL
@@ -133,9 +133,30 @@ function ConfirmationModal({ open, onClose, onConfirm, product, quantity, setQua
               {product.soLuongTonKho ?? "N/A"}
             </SoftTypography>
           </Typography>
-          <SoftTypography variant="h4" color="error" fontWeight="bold" my={2} textAlign="center">
-            {formatCurrency(product.gia)}
-          </SoftTypography>
+           <Box textAlign="center" my={2}>
+            {product.phanTramGiam > 0 && product.giaTienSauKhiGiam < product.gia ? (
+              <>
+                {/* Giá gốc bị gạch ngang */}
+                <SoftTypography
+                  variant="h6"
+                  color="text.secondary"
+                  fontWeight="regular"
+                  sx={{ textDecoration: "line-through" }}
+                >
+                  {formatCurrency(product.gia)}
+                </SoftTypography>
+                {/* Giá sau khi giảm */}
+                <SoftTypography variant="h4" color="error" fontWeight="bold">
+                  {formatCurrency(product.giaTienSauKhiGiam)}
+                </SoftTypography>
+              </>
+            ) : (
+              // Nếu không giảm giá, chỉ hiển thị giá gốc
+              <SoftTypography variant="h4" color="info" fontWeight="bold">
+                {formatCurrency(product.gia)}
+              </SoftTypography>
+            )}
+          </Box>
 
           {/* PHẦN NHẬP SỐ LƯỢNG */}
           <Box display="flex" alignItems="center" justifyContent="center" mt={2}>

@@ -3,6 +3,7 @@ package com.example.datn.Service;
 
 import com.example.datn.DTO.*;
 import com.example.datn.DTO.HoaDonPdfResult;
+import com.example.datn.Entity.ChiTietSanPham;
 import com.example.datn.Entity.HoaDon;
 import com.example.datn.VO.*;
 import com.example.datn.enums.TrangThai;
@@ -46,5 +47,6 @@ public interface HoaDonService {
     HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
    void capNhatSoLuongSanPhamTrongKho(HoaDon hoaDon, boolean isDeducting);
    TongTienHoaDonDto getThongTinGiamGiaByHoaDonId(Integer idHoaDon);
+   int tinhGiaCuoiCung(ChiTietSanPham spct);
 
 }
