@@ -442,7 +442,7 @@ useEffect(() => {
       phieuGiamGia: appliedVoucher,
       tongTienGiam: discountValue,
     };
-
+      console.log("Dữ liệu thanh toán mới:", latestPaymentData);
     try {
       // Đợi cho đến khi việc lưu đơn hàng hoàn tất
       await onSaveOrder(latestPaymentData);
