@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import axios from "axios";
 
 // Import các component dùng chung
 import SoftBox from "components/SoftBox";
@@ -27,31 +28,60 @@ const formatCurrency = (amount) => {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 };
 
-
 function ConfirmationModal({ open, onClose, onConfirm, product, quantity, setQuantity }) {
-  if (!product) return null;
-useEffect(() => {
-  if (open && product && product.soLuongTonKho !== undefined) {
-    // Đảm bảo số lượng không vượt quá tồn kho và tối thiểu là 1
-    if (quantity <= 0 && product.soLuongTonKho > 0) {
-      setQuantity(1); // Mặc định là 1 nếu số lượng hiện tại không hợp lệ nhưng còn hàng
-    } else if (quantity > product.soLuongTonKho) {
-      setQuantity(product.soLuongTonKho); // Giới hạn số lượng bằng tồn kho
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && product && product.soLuongTonKho !== undefined) {
+      // Đảm bảo số lượng không vượt quá tồn kho và tối thiểu là 1
+      if (quantity <= 0 && product.soLuongTonKho > 0) {
+        setQuantity(1); // Mặc định là 1 nếu số lượng hiện tại không hợp lệ nhưng còn hàng
+      } else if (quantity > product.soLuongTonKho) {
+        setQuantity(product.soLuongTonKho); // Giới hạn số lượng bằng tồn kho
+      }
     }
-  }
-}, [open, product, quantity, setQuantity]);
+  }, [open, product, quantity, setQuantity]);
   const handleIncrement = () => setQuantity((prev) => prev + 1);
   const handleDecrement = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value, 10);
     if (isNaN(value) || value < 1) {
-      setQuantity(1); 
+      setQuantity(1);
     } else if (value > product.soLuongTonKho) {
-      setQuantity(product.soLuongTonKho); 
+      setQuantity(product.soLuongTonKho);
     } else {
       setQuantity(value);
     }
   };
+    if (!product) return null;
+  const handleConfirmClick = async () => {
+    setIsLoading(true);
+    try {
+      // BƯỚC 1: GỌI API ĐỂ GIẢM SỐ LƯỢNG TRONG KHO
+      await axios.put(
+        `http://localhost:8080/api/hoa-don/giam-so-luong-san-pham/${product.idChiTietSanPham}`,
+        null,
+        {
+          params: {
+            soLuong: quantity,
+          },
+        }
+      );
+
+      // BƯỚC 2: NẾU API THÀNH CÔNG, GỌI HÀM onConfirm TỪ CHA ĐỂ CẬP NHẬT GIỎ HÀNG
+      onConfirm({ ...product, quantity });
+
+      // BƯỚC 3: ĐÓNG MODAL
+      onClose();
+    } catch (error) {
+      console.error("Lỗi khi trừ số lượng tồn kho:", error);
+      alert(`Lỗi: ${error.response?.data?.message || "Không thể thêm sản phẩm."}`);
+    } finally {
+      // Dù thành công hay thất bại, luôn dừng trạng thái loading
+      setIsLoading(false);
+    }
+  };
+
   const isConfirmButtonDisabled = quantity > product.soLuongTonKho || quantity < 1;
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -146,7 +176,7 @@ useEffect(() => {
       {/* PHẦN NÚT HÀNH ĐỘNG */}
       <DialogActions sx={{ p: 2, bgcolor: "grey.100", borderTop: 1, borderColor: "divider" }}>
         <Button
-          onClick={onConfirm}
+          onClick={handleConfirmClick}
           variant="contained"
           color="info"
           size="large"

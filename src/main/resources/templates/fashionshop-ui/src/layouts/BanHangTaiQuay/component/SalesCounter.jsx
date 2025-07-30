@@ -199,7 +199,6 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
 
   useEffect(() => {
     if (onProductsChange) {
-      // Gửi toàn bộ danh sách sản phẩm của đơn hàng hiện tại lên component cha
       onProductsChange(currentOrder?.products || []);
     }
   }, [currentOrder, onProductsChange]);
@@ -229,11 +228,46 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
     setIsProductModalOpen(false);
   };
 
-  const handleUpdateQuantity = (productId, newQuantity) => {
-    if (newQuantity <= 0) {
-      handleRemoveProduct(productId);
-      return;
-    }
+ // src/layouts/sales/components/SalesCounter.jsx
+
+const handleUpdateQuantity = async (productId, newQuantity) => {
+  // Nếu số lượng mới bằng 0 hoặc ít hơn, hãy xử lý việc xóa sản phẩm.
+  // Bạn cũng nên đảm bảo `handleRemoveProduct` gọi API để hoàn trả toàn bộ số lượng về kho.
+  if (newQuantity <= 0) {
+    handleRemoveProduct(productId);
+    return;
+  }
+
+  // Tìm sản phẩm hiện tại trong state để lấy số lượng cũ
+  const currentOrder = orders.find(o => o.id === selectedTab);
+  if (!currentOrder) return;
+  const productToUpdate = currentOrder.products.find(p => p.uniqueId === productId);
+  if (!productToUpdate) return;
+
+  const oldQuantity = productToUpdate.quantity;
+  const quantityChange = newQuantity - oldQuantity; // Tính toán sự thay đổi
+
+  // Nếu không có gì thay đổi thì không làm gì cả
+  if (quantityChange === 0) return;
+
+  // Xác định xem nên tăng hay giảm số lượng trong kho
+  const isIncreasingInCart = quantityChange > 0; // Số lượng trong giỏ hàng đang tăng lên?
+  
+  // Dựa vào API bạn cung cấp, chúng ta sẽ có 2 endpoint
+  const endpoint = isIncreasingInCart 
+    ? `/giam-so-luong-san-pham/${productToUpdate.idChiTietSanPham}` // Giảm tồn kho
+    : `/tang-so-luong-san-pham/${productToUpdate.idChiTietSanPham}`; // Tăng (hoàn trả) tồn kho
+
+  try {
+    // BƯỚC 1: GỌI API
+    // Gửi yêu cầu PUT với `soLuong` là giá trị thay đổi (luôn là số dương)
+    await axios.put(`http://localhost:8080/api/hoa-don${endpoint}`, null, { // Truyền null cho body nếu không cần
+      params: {
+        soLuong: Math.abs(quantityChange)
+      }
+    });
+
+    // BƯỚC 2: NẾU API THÀNH CÔNG, CẬP NHẬT GIAO DIỆN
     setOrders((prevOrders) =>
       prevOrders.map((order) =>
         order.id === selectedTab
@@ -246,20 +280,48 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
           : order
       )
     );
-  };
 
-  const handleRemoveProduct = (productId) => {
+  } catch (error) {
+    // BƯỚC 3: XỬ LÝ LỖI TỪ API
+    console.error("Lỗi khi cập nhật số lượng sản phẩm:", error);
+    // Thông báo cho người dùng, ví dụ: "Số lượng tồn kho không đủ"
+    alert(`Lỗi: ${error.response?.data?.message || "Không thể cập nhật số lượng."}`);
+  }
+};
+
+ const handleRemoveProduct = async (productId) => {
+  // BƯỚC 1: TÌM SẢN PHẨM SẮP BỊ XÓA TRONG STATE HIỆN TẠI
+  const currentOrder = orders.find((o) => o.id === selectedTab);
+  if (!currentOrder) return; // Không tìm thấy đơn hàng hiện tại
+
+  const productToRemove = currentOrder.products.find((p) => p.uniqueId === productId);
+  if (!productToRemove) return;
+  try {
+    await axios.put(
+      `http://localhost:8080/api/hoa-don/tang-so-luong-san-pham/${productToRemove.idChiTietSanPham}`,
+      null,
+      {
+        params: {
+          soLuong: productToRemove.quantity, 
+        },
+      }
+    );
     setOrders((prevOrders) =>
       prevOrders.map((order) =>
         order.id === selectedTab
           ? {
               ...order,
+             
               products: order.products.filter((p) => p.uniqueId !== productId),
             }
           : order
       )
     );
-  };
+  } catch (error) {
+    console.error("Lỗi khi hoàn trả sản phẩm về kho:", error);
+    alert(`Lỗi: ${error.response?.data?.message || "Không thể xóa sản phẩm."}`);
+  }
+};
 
   const handleToggleProductSelection = (productId) => {
     setOrders((prevOrders) =>
@@ -296,27 +358,55 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
     ? currentOrder.products.some((p) => p.isSelected) && !isAllSelected
     : false;
 
- const handleCloseOrderTab = (idToClose) => {
-    const orderToCloseIndex = orders.findIndex((order) => order.id === idToClose);
-    if (orderToCloseIndex === -1) return;
+const handleCloseOrderTab = async (idToClose) => {
+  // BƯỚC 1: TÌM ĐƠN HÀNG SẼ ĐÓNG
+  const orderToClose = orders.find((order) => order.id === idToClose);
+  if (!orderToClose) return; // Không tìm thấy đơn hàng
 
-    // Lọc bỏ tab cần đóng
+  try {
+    // BƯỚC 2: NẾU ĐƠN HÀNG CÓ SẢN PHẨM, GỌI API ĐỂ HOÀN TRẢ TỒN KHO
+    if (orderToClose.products.length > 0) {
+      // Tạo một mảng chứa các promise gọi API cho mỗi sản phẩm
+      const returnProductPromises = orderToClose.products.map((product) =>
+        axios.put(
+          `http://localhost:8080/api/hoa-don/tang-so-luong-san-pham/${product.idChiTietSanPham}`,
+          null,
+          {
+            params: {
+              soLuong: product.quantity,
+            },
+          }
+        )
+      );
+
+      // Chờ cho tất cả các API hoàn thành
+      await Promise.all(returnProductPromises);
+    }
+
+    // BƯỚC 3: NẾU API THÀNH CÔNG (HOẶC ĐƠN HÀNG RỖNG), TIẾN HÀNH ĐÓNG TAB
     const newOrders = orders.filter((order) => order.id !== idToClose);
     setOrders(newOrders);
 
-    // Xử lý việc chuyển tab sau khi đóng
+    // Xử lý việc chuyển tab đang được chọn
     if (selectedTab === idToClose) {
       if (newOrders.length === 0) {
-        // Nếu không còn tab nào, không chọn tab nào cả
+        // Nếu không còn tab nào, có thể tạo một đơn hàng mới hoặc để trống
         setSelectedTab(null);
-        // Có thể gọi handleCreateOrder() ở đây nếu bạn muốn luôn có ít nhất 1 tab
-      //  handleCreateOrder(); 
+        // handleCreateOrder(); // Bỏ comment dòng này nếu bạn muốn tự động tạo đơn mới
       } else {
-        // Chọn tab đầu tiên làm tab mặc định sau khi đóng
+        // Chọn tab đầu tiên làm tab mặc định
         setSelectedTab(newOrders[0].id);
       }
     }
-  };
+  } catch (error) {
+    // BƯỚC 4: XỬ LÝ LỖI NẾU CÓ BẤT KỲ API NÀO THẤT BẠI
+    console.error("Lỗi khi hoàn trả sản phẩm khi đóng tab:", error);
+    alert(
+      `Có lỗi xảy ra khi đóng đơn hàng. Sản phẩm chưa được hoàn trả về kho. Vui lòng thử lại.`
+    );
+    // Quan trọng: Không đóng tab nếu có lỗi để đảm bảo dữ liệu nhất quán
+  }
+};
   
   return (
     <>

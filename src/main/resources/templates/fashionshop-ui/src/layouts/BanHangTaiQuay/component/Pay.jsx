@@ -675,18 +675,10 @@ const isDisabled = totalAmount <= 0;
                 onChange={(e) => setVoucherCode(e.target.value)}
                 helperText={
                   appliedVoucher
-                    ? `Đang áp dụng mã: ${appliedVoucher.maPhieuGiamGia}`
+                    ? `Đang áp dụng mã giảm giá tốt nhất : ${appliedVoucher.maPhieuGiamGia}`
                     : "Nhập mã giảm giá (nếu có)"
                 }
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <SoftButton variant="text" color="info" onClick={handleApplyVoucher}>
-                        ÁP DỤNG
-                      </SoftButton>
-                    </InputAdornment>
-                  ),
-                }}
+                
               />
 
               <SoftBox display="flex" flexDirection="column" gap={2}>

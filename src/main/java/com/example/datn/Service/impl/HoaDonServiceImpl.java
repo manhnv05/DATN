@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -361,20 +362,20 @@ public class HoaDonServiceImpl implements HoaDonService {
             throw new AppException(ErrorCode.NO_STATUS_CHANGE);
         }
 
-
-        if (!trangThaiMoi.canTransitionFrom(trangThaiCu)) {
-            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
-        }
-        if (trangThaiMoi == TrangThai.CHO_GIAO_HANG && trangThaiCu == TrangThai.CHO_XAC_NHAN) {
-            // Khi xác nhận đơn và chuẩn bị giao -> TRỪ KHO
-            capNhatSoLuongSanPhamTrongKho(hoaDon, true);
-        } else if (trangThaiMoi == TrangThai.HUY) {
-            // Khi hủy đơn -> CỘNG TRẢ KHO
-            // Chỉ cộng trả lại nếu trạng thái trước đó là đã trừ kho (ví dụ: đang chờ giao)
-            if (trangThaiCu == TrangThai.CHO_XAC_NHAN || trangThaiCu == TrangThai.CHO_GIAO_HANG || trangThaiCu == TrangThai.DANG_VAN_CHUYEN) {
-                capNhatSoLuongSanPhamTrongKho(hoaDon, false); // false = cộng lại
-            }
-        }
+//
+//        if (!trangThaiMoi.canTransitionTo(trangThaiCu)) {
+//            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
+//        }
+//        if (trangThaiMoi == TrangThai.CHO_GIAO_HANG && trangThaiCu == TrangThai.CHO_XAC_NHAN) {
+//            // Khi xác nhận đơn và chuẩn bị giao -> TRỪ KHO
+//            capNhatSoLuongSanPhamTrongKho(hoaDon, true);
+//        } else if (trangThaiMoi == TrangThai.HUY) {
+//            // Khi hủy đơn -> CỘNG TRẢ KHO
+//            // Chỉ cộng trả lại nếu trạng thái trước đó là đã trừ kho (ví dụ: đang chờ giao)
+//            if (trangThaiCu == TrangThai.CHO_XAC_NHAN || trangThaiCu == TrangThai.CHO_GIAO_HANG || trangThaiCu == TrangThai.DANG_VAN_CHUYEN) {
+//                capNhatSoLuongSanPhamTrongKho(hoaDon, false); // false = cộng lại
+//            }
+//        }
 
         // Nên lấy người thực hiện từ ngữ cảnh bảo mật (ví dụ: Spring Security) thay vì giả lập
         String nguoiThucHienThayDoi = nguoiThucHien != null ? nguoiThucHien : hoaDon.getNhanVien().getHoVaTen();
@@ -504,33 +505,42 @@ public class HoaDonServiceImpl implements HoaDonService {
         return counts.stream()
                 .collect(Collectors.toMap(CountTrangThaiHoaDon::getTrangThai, CountTrangThaiHoaDon::getSoLuong));
     }
-
+    private String normalize(String input) {
+        if (input == null) return "";
+        return Normalizer.normalize(input, Normalizer.Form.NFC).trim().toLowerCase(new Locale("vi", "VN"));
+    }
     @Override
     public CapNhatTrangThaiDTO chuyenTrangThaiTiepTheo(Integer idHoaDon, String ghiChu, String nguoiThucHien) {
         HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-
+        List<TrangThai> listTrangThai;
+        String loaiHoaDon = normalize(hoaDon.getLoaiHoaDon());
+        if (loaiHoaDon.contains("tại quầy")) {
+            listTrangThai = Arrays.asList(
+                    TrangThai.TAO_DON_HANG,
+                    TrangThai.DA_XAC_NHAN,
+                    TrangThai.CHO_GIAO_HANG,
+                    TrangThai.DANG_VAN_CHUYEN,
+                    TrangThai.HOAN_THANH
+            );
+        } else {
+            listTrangThai = Arrays.asList(
+                    TrangThai.TAO_DON_HANG,
+                    TrangThai.CHO_XAC_NHAN,
+                    TrangThai.CHO_GIAO_HANG,
+                    TrangThai.DANG_VAN_CHUYEN,
+                    TrangThai.HOAN_THANH
+            );
+        }
         TrangThai trangThaiCu = hoaDon.getTrangThai();
-
-        // Định nghĩa trình tự các trạng thái
-        List<TrangThai> listTrangThai = Arrays.asList(
-                TrangThai.TAO_DON_HANG,
-                TrangThai.CHO_XAC_NHAN,
-                TrangThai.CHO_GIAO_HANG,
-                TrangThai.DANG_VAN_CHUYEN,
-                TrangThai.HOAN_THANH
-        );
-
         int currentIndex = listTrangThai.indexOf(trangThaiCu);
 
-        // Nếu trạng thái hiện tại không nằm trong chuỗi tuần tự hoặc đã là cuối chuỗi
         if (currentIndex == -1 || currentIndex >= listTrangThai.size() - 1) {
-            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION); // Hoặc một mã lỗi phù hợp hơn
+            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
 
         TrangThai trangThaiMoi = listTrangThai.get(currentIndex + 1);
 
-        // Gọi lại phương thức cập nhật trạng thái chung
         return capNhatTrangThaiHoaDon(idHoaDon, trangThaiMoi, ghiChu, nguoiThucHien);
     }
 
@@ -541,18 +551,18 @@ public class HoaDonServiceImpl implements HoaDonService {
 
         TrangThai trangThaiCu = hoaDon.getTrangThai();
 
-        // Kiểm tra nếu hóa đơn đã bị hủy rồi
-        if (trangThaiCu == TrangThai.HUY) { // Giả sử bạn có một enum DA_HUY
-            throw new AppException(ErrorCode.ORDER_HAS_BEEN_CANCELLED); // Mã lỗi mới
+
+        if (trangThaiCu == TrangThai.HUY) {
+            throw new AppException(ErrorCode.ORDER_HAS_BEEN_CANCELLED);
         }
 
-        // Đảm bảo trạng thái hủy có thể chuyển từ trạng thái hiện tại
-        // Rất có thể DA_HUY sẽ được phép chuyển từ nhiều trạng thái khác nhau.
-        if (!TrangThai.HUY.canTransitionFrom(trangThaiCu)) {
-            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION); // Mã lỗi mới
+
+
+        if (!TrangThai.HUY.canTransitionTo(trangThaiCu)) {
+            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
 
-        // Gọi lại phương thức cập nhật trạng thái chung để thực hiện việc hủy
+
         return capNhatTrangThaiHoaDon(idHoaDon, TrangThai.HUY, ghiChu, nguoiThucHien);
     }
 
@@ -608,6 +618,44 @@ public class HoaDonServiceImpl implements HoaDonService {
         return listHoaDonChiTiet.stream()
                 .map(this::mapViewToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public String tangSoLuongSanPhamChiTiet(Integer idSanPhamChiTiet, Integer soLuong) {
+        if (idSanPhamChiTiet == null || idSanPhamChiTiet <= 0) {
+            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.findById(idSanPhamChiTiet)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (soLuong == null || soLuong <= 0) {
+            throw new AppException(ErrorCode.INVALID_QUANTITY);
+        }
+
+        int soLuongHienTai = chiTietSanPham.getSoLuong();
+        chiTietSanPham.setSoLuong(soLuongHienTai + soLuong);
+        chiTietSanPhamRepository.save(chiTietSanPham);
+
+        return "Cập nhật số lượng sản phẩm thành công";
+    }
+
+    @Override
+    public String giamSoLuongSanPhamChiTiet(Integer idSanPhamChiTiet, Integer soLuong) {
+        if (idSanPhamChiTiet == null || idSanPhamChiTiet <= 0) {
+            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.findById(idSanPhamChiTiet)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (soLuong == null || soLuong <= 0) {
+            throw new AppException(ErrorCode.INVALID_QUANTITY);
+        }
+
+        int soLuongHienTai = chiTietSanPham.getSoLuong();
+        chiTietSanPham.setSoLuong(soLuongHienTai - soLuong);
+        chiTietSanPhamRepository.save(chiTietSanPham);
+
+        return "Cập nhật số lượng sản phẩm thành công";
     }
 
     @Override
@@ -754,7 +802,7 @@ public class HoaDonServiceImpl implements HoaDonService {
                 capNhatSoLuongSanPhamTrongKho(hoaDon, true);
             }
             else {
-                hoaDon.setTrangThai(TrangThai.CHO_XAC_NHAN);
+                hoaDon.setTrangThai(TrangThai.DA_XAC_NHAN);
             }
             hoaDon.setNgayGiaoDuKien(LocalDate.now().atStartOfDay().plusDays(3));
         }

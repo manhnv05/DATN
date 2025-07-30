@@ -15,6 +15,7 @@ import cho_giao_hang from '../../../assets/images/cho_giao_hang.png';
 import dang_giao_hang from '../../../assets/images/dang_giao_hang.png';
 import hoan_thanh from '../../../assets/images/hoan_thanh.png';
 import Huy from '../../../assets/images/Huy.png';
+import da_xac_nhan from '../../../assets/images/DaXacNhan.png';
 import { toast} from "react-toastify";
 
 
@@ -42,14 +43,19 @@ const OrderHistory = ({ orderId }) => {
   const mapStatusToDisplay = useCallback((apiStatus, apiDate) => {
     let displayStatus = '';
     let className = '';
-    switch (apiStatus) {
+     const trimmedStatus = apiStatus ? apiStatus.trim() : '';
+    switch (trimmedStatus) { // Sử dụng biến đã được trim
       case 'Tạo đơn hàng': displayStatus = 'Tạo đơn hàng'; className = 'TAO_DON_HANG'; break;
       case 'Chờ xác nhận': displayStatus = 'Chờ xác nhận'; className = 'CHO_XAC_NHAN'; break;
+    case 'Đã xác nhận':
+        displayStatus = 'Đã xác nhận'; // Gán giá trị không có khoảng trắng
+        className = 'DA_XAC_NHAN';      // Gán đúng className
+        break;
       case 'Chờ giao hàng': displayStatus = 'Chờ giao hàng'; className = 'CHO_GIAO_HANG'; break;
       case 'Đang vận chuyển': displayStatus = 'Đang vận chuyển'; className = 'DANG_VAN_CHUYEN'; break;
       case 'Hoàn thành': displayStatus = 'Hoàn thành'; className = 'HOAN_THANH'; break;
       case 'Hủy': displayStatus = 'Hủy'; className = 'HUY'; break;
-      default: displayStatus = apiStatus; className = 'unknown';
+      default: displayStatus = apiStatus; className = 'DA_XAC_NHAN';
     }
     return { status: displayStatus, date: apiDate, formattedDate: formatDateTime(apiDate), className: className };
   }, [formatDateTime]);
@@ -58,6 +64,7 @@ const OrderHistory = ({ orderId }) => {
     const imgStyle = { width: '100%', height: '100%', objectFit: 'contain' };
     switch (className) {
       case 'TAO_DON_HANG': return <img src={tao_hoa_don_img} alt="Tạo đơn" style={imgStyle} />;
+       case 'DA_XAC_NHAN': return <img src={da_xac_nhan} alt="Đã xác nhận" style={imgStyle} />;
       case 'CHO_XAC_NHAN': return <img src={cho_xac_nhan} alt="Chờ xác nhận" style={imgStyle} />;
       case 'CHO_GIAO_HANG': return <img src={cho_giao_hang} alt="Chờ giao hàng" style={imgStyle} />;
       case 'DANG_VAN_CHUYEN': return <img src={dang_giao_hang} alt="Đang giao" style={imgStyle} />;
@@ -78,9 +85,11 @@ const OrderHistory = ({ orderId }) => {
       const response = await fetch(`http://localhost:8080/api/hoa-don/lich-su/${orderId}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
+      console.log("Dữ liệu lịch sử từ API:", data);
       const transformedData = [...data]
           .sort((a, b) => new Date(a.thoiGian) - new Date(b.thoiGian))
           .map(item => mapStatusToDisplay(item.trangThaiHoaDon, item.thoiGian));
+           console.log("Dữ liệu đã biến đổi để render:", transformedData);
       setHistoryData(transformedData);
     } catch (err) {
       setError(err);
