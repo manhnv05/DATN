@@ -391,21 +391,43 @@ const [products, setProducts] = useState([]);
                                     filteredProducts.map((product) => (
                                         // Sử dụng `uniqueId` đã được tạo sẵn
                                        <TableRow key={product.idChiTietSanPham} hover>
-                                          <TableCell sx={{ width: '80px', padding: '8px' }}> {/* Cố định chiều rộng và thêm padding */}
+                                         <TableCell sx={{ width: '80px', padding: '8px' }}>
+  {/* Box container để định vị nhãn giảm giá */}
+  <Box sx={{ position: 'relative', width: 50, height: 50 }}>
+    {/* Ảnh sản phẩm */}
     <Box
-      component="img" // BẮT BUỘC: để render ra thẻ <img>
-      alt={product.tenSanPham} // Dùng làm văn bản thay thế khi ảnh lỗi
-      src={product.duongDanAnh ? `${BASE_IMAGE_URL}${product.duongDanAnh}` : "https://via.placeholder.com/50x50?text=N/A"} // Nguồn ảnh
-      
-      // BẮT BUỘC: Giới hạn kích thước của ảnh để không làm vỡ layout
+      component="img"
+      alt={product.tenSanPham}
+      src={product.duongDanAnh ? `${BASE_IMAGE_URL}${product.duongDanAnh}` : "https://via.placeholder.com/50x50?text=N/A"}
       sx={{
-        width: 50,          // Rộng 50px
-        height: 50,         // Cao 50px
-        objectFit: 'cover', // Hiển thị ảnh vừa vặn, không bị méo
-        borderRadius: '4px' // Bo góc cho đẹp
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        borderRadius: '4px'
       }}
     />
-  </TableCell>
+    {/* Nhãn giảm giá (chỉ hiển thị khi phanTramGiam > 0) */}
+    {product.phanTramGiam > 0 && (
+      <SoftTypography
+        variant="caption"
+        color="white"
+        fontWeight="bold"
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          backgroundColor: 'success.main', // Màu xanh lá cây từ theme
+          padding: '2px 5px',
+          borderRadius: '4px',
+          fontSize: '0.7rem',
+          lineHeight: 1.2
+        }}
+      >
+        {product.phanTramGiam}% OFF
+      </SoftTypography>
+    )}
+  </Box>
+</TableCell>
                                             <TableCell>{product.tenSanPham || 'N/A'}</TableCell>
                                             <TableCell>{product.maSanPham || 'N/A'}</TableCell>
                                             <TableCell>{product.danhMuc || 'N/A'}</TableCell>
@@ -415,11 +437,36 @@ const [products, setProducts] = useState([]);
                                             <TableCell>{product.kichThuoc || 'N/A'}</TableCell>
                                             <TableCell>{product.coAo || 'N/A'}</TableCell>
                                             <TableCell>{product.tayAo || 'N/A'}</TableCell>
-                                            <TableCell>
-                                                <SoftTypography variant="body2" color="error" fontWeight="bold">
-                                                    {formatCurrency(product.gia)}
-                                                </SoftTypography>
-                                            </TableCell>
+                                           <TableCell>
+  {/* Kiểm tra nếu có giảm giá */}
+  {(product.phanTramGiam > 0 && product.giaTienSauKhiGiam < product.gia) ? (
+    <Box>
+      {/* Giá gốc bị gạch ngang */}
+      <SoftTypography
+        component="span" // Dùng span để không xuống dòng
+        variant="body2"
+        color="text"
+        sx={{ textDecoration: 'line-through', fontSize: '0.85rem' }}
+      >
+        {formatCurrency(product.gia)}
+      </SoftTypography>
+      {/* Giá sau khi giảm */}
+      <SoftTypography
+        variant="body2"
+        color="error"
+        fontWeight="bold"
+        sx={{ display: 'block' }} // Hiển thị trên một dòng mới
+      >
+        {formatCurrency(product.giaTienSauKhiGiam)}
+      </SoftTypography>
+    </Box>
+  ) : (
+    // Nếu không giảm giá, chỉ hiển thị giá gốc
+    <SoftTypography variant="body2" fontWeight="bold">
+      {formatCurrency(product.gia)}
+    </SoftTypography>
+  )}
+</TableCell>
                                                    <TableCell>{product.soLuongTonKho || 'N/A'}</TableCell>
                                             <TableCell>
                                                 <Button
