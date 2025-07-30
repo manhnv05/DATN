@@ -206,15 +206,42 @@ public class HoaDonServiceImpl implements HoaDonService {
             document.add(new Paragraph(" ", font));
 
             // Thông tin hóa đơn
-            document.add(new Paragraph("Mã HĐ: " + hoaDon.getMaHoaDon(), font));
-            document.add(new Paragraph("Ngày tạo: " + hoaDon.getNgayTao(), font));
-            if(hoaDon.getKhachHang() != null) {
-                document.add(new Paragraph("Khách hàng: " + hoaDon.getKhachHang().getTenKhachHang(), font));
+// Bảng 2 cột: Trái là thông tin khách hàng, phải là thông tin đơn hàng
+            PdfPTable bangThongTin = new PdfPTable(2);
+            bangThongTin.setWidthPercentage(100);
+            bangThongTin.setWidths(new int[]{1, 1}); // Chia đều 2 cột
+
+            PdfPCell oThongTinKhach = new PdfPCell();
+            oThongTinKhach.setBorder(Rectangle.NO_BORDER);
+            StringBuilder noiDungKhachHang = new StringBuilder();
+
+            if (hoaDon.getKhachHang() != null) {
+                noiDungKhachHang.append("Khách hàng: ").append(hoaDon.getKhachHang().getTenKhachHang()).append("\n");
+                noiDungKhachHang.append("SĐT: ").append(hoaDon.getKhachHang().getSdt()).append("\n");
+                noiDungKhachHang.append("Email: ").append(hoaDon.getKhachHang().getEmail()).append("\n");
+                noiDungKhachHang.append("Địa chỉ: ").append(hoaDon.getDiaChi()).append("\n");
+            } else {
+                noiDungKhachHang.append("Khách hàng: \n");
+                noiDungKhachHang.append("SĐT: \n");
+                noiDungKhachHang.append("Email: \n");
+                noiDungKhachHang.append("Địa chỉ: \n");
             }
-            else {
-                document.add(new Paragraph("Khách hàng: " , font));
-            }
-            document.add(new Paragraph("Tổng tiền: " + hoaDon.getTongTien() + " VND", font));
+
+            oThongTinKhach.addElement(new Paragraph(noiDungKhachHang.toString(), font));
+
+            PdfPCell oThongTinHoaDon = new PdfPCell();
+            oThongTinHoaDon.setBorder(Rectangle.NO_BORDER);
+            StringBuilder noiDungHoaDon = new StringBuilder();
+
+            noiDungHoaDon.append("Mã HĐ: ").append(hoaDon.getMaHoaDon()).append("\n");
+            noiDungHoaDon.append("Ngày tạo: ").append(hoaDon.getNgayTao()).append("\n");
+            noiDungHoaDon.append("Tổng tiền: ").append(hoaDon.getTongTien()).append(" VND");
+
+            oThongTinHoaDon.addElement(new Paragraph(noiDungHoaDon.toString(), font));
+
+            bangThongTin.addCell(oThongTinKhach);
+            bangThongTin.addCell(oThongTinHoaDon);
+            document.add(bangThongTin);
             document.add(new Paragraph(" ", font));
 
             // Bảng chi tiết
@@ -224,7 +251,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             document.add(titleDSSP);
             document.add(new Paragraph(" ", font));
             // Header bảng
-            Stream.of("Sản phẩm", "Số lượng", "Thành tiền")
+            Stream.of("Sản phẩm", "Số lượng" , "Thành tiền")
                     .forEach(headerTitle -> {
                         PdfPCell header = new PdfPCell();
                         header.setPhrase(new Phrase(headerTitle, font));
@@ -235,7 +262,7 @@ public class HoaDonServiceImpl implements HoaDonService {
 
             // Dòng dữ liệu
             for (HoaDonChiTiet cthd : hoaDon.getHoaDonChiTietList()) {
-                table.addCell(new Phrase(cthd.getSanPhamChiTiet().getSanPham().getTenSanPham(), font));
+                table.addCell(new Phrase(cthd.getSanPhamChiTiet().getSanPham().getTenSanPham() + "-" + cthd.getSanPhamChiTiet().getKichThuoc().getTenKichCo() + "-" + cthd.getSanPhamChiTiet().getMauSac().getTenMauSac() , font));
                 table.addCell(new Phrase(String.valueOf(cthd.getSoLuong()), font));
                 table.addCell(new Phrase(String.valueOf(cthd.getThanhTien()), font));
             }
@@ -245,30 +272,25 @@ public class HoaDonServiceImpl implements HoaDonService {
 
             // Tạo cột trái
             Font fontLeft = new Font(baseFont, 12);
-            PdfPCell leftCell = new PdfPCell(new Phrase("Tổng tiền hàng:", fontLeft));
-            leftCell.setBorder(Rectangle.NO_BORDER);
-            table2.addCell(leftCell);
+            PdfPCell leftCell2 = new PdfPCell(new Phrase("Tổng tiền hàng:", fontLeft));
+            leftCell2.setBorder(Rectangle.NO_BORDER);
+            table2.addCell(leftCell2);
 
             Font fontRight = new Font(baseFont, 12, Font.BOLD);
-            PdfPCell rightCell = new PdfPCell(new Phrase(hoaDon.getTongTien() + " VNĐ", fontRight));
-            rightCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
-            rightCell.setBorder(Rectangle.NO_BORDER);
-            table2.addCell(rightCell);
+            PdfPCell rightCell2 = new PdfPCell(new Phrase(hoaDon.getTongTien() + " VNĐ", fontRight));
+            rightCell2.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            rightCell2.setBorder(Rectangle.NO_BORDER);
+            table2.addCell(rightCell2);
 
             table2.addCell(createLeftCell("Giảm giá:", fontLeft));
             if(hoaDon.getPhieuGiamGia() != null) {
-                try {
-                    table2.addCell(createRightCell(hoaDon.getPhieuGiamGia().getSoTienGiam() + " VND", fontRight));
-                }
-                catch (Exception e){
-                    table2.addCell(createRightCell(hoaDon.getPhieuGiamGia().getPhamTramGiamGia() + " %", fontRight));
-                }
+                table2.addCell(createRightCell(hoaDon.getTongTienBanDau() - hoaDon.getTongTien() + " VND", fontRight));
             }
             else {
                 table2.addCell(createRightCell("0 VNĐ", fontRight));
             }
             table2.addCell(createLeftCell("Phí giao hàng:", fontLeft));
-            table2.addCell(createRightCell("15000 VND", fontRight));
+            table2.addCell(createRightCell(hoaDon.getPhiVanChuyen() + " VND", fontRight));
             table2.addCell(createLeftCell("Tổng tiền cần thanh toán:", fontLeft));
             table2.addCell(createRightCell(hoaDon.getTongTien() + " VND", fontRight));
 
@@ -767,14 +789,16 @@ public class HoaDonServiceImpl implements HoaDonService {
 
 
                 if( pgg.getPhamTramGiamGia() != null){
-                    soTienGiam = BigDecimal.valueOf(tongTienBanDau)
+                    soTienGiam = BigDecimal.valueOf(tongTienBanDau).subtract(BigDecimal.valueOf(tongTienBanDau)
                             .multiply(pgg.getPhamTramGiamGia())
-                            .divide(BigDecimal.valueOf(100));
+                            .divide(BigDecimal.valueOf(100)));
+
                 }
                 else {
                     soTienGiam = BigDecimal.valueOf(tongTienBanDau).subtract(pgg.getSoTienGiam());
                 }
                 hoaDon.setTongTien(soTienGiam.intValue());
+
             }
         } else {
             hoaDon.setPhieuGiamGia(null);
