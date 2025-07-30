@@ -36,6 +36,7 @@ const statusMap = {
   HOAN_THANH: "Hoàn thành",
   CHO_XAC_NHAN: "Chờ xác nhận",
   DANG_GIAO: "Đang giao",
+  DA_XAC_NHAN: "Đã xác nhận",
   HUY: "Đã hủy",
   CHO_THANH_TOAN: "Chờ thanh toán",
   DA_THANH_TOAN: "Đã thanh toán",
@@ -243,9 +244,9 @@ const OrderDetailPage = () => {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       toast.success("Đã chuyển trạng thái thành công!");
-      // 2. KIỂM TRA: Nếu trạng thái gốc là "Chờ xác nhận" thì mở modal in
-    if (originalStatus === "CHO_XAC_NHAN") {
-      handleOpenModal(); // hoặc setIsModalOpen(true)
+      
+    if (originalStatus === "DA_XAC_NHAN") {
+      handleOpenModal(); 
     }
       await fetchOrderDetail(); // Tải lại dữ liệu hóa đơn để cập nhật giao diện
     } catch (err) {
@@ -269,7 +270,7 @@ const OrderDetailPage = () => {
   const isCancelButtonDisabled =
     orderData && (orderData.status === "Hoàn thành" || orderData.status === "Đã hủy");
   const canUpdateInfo =
-    orderData && (orderData.status === "Tạo đơn hàng" || orderData.status === "Chờ xác nhận");
+    orderData && (orderData.status === "Tạo đơn hàng" || orderData.status === "Chờ xác nhận"|| orderData.status === "Đã xác nhận");
 
   const initialUpdateData = orderData
     ? {
@@ -397,7 +398,7 @@ const OrderDetailPage = () => {
                     )}
                   </SoftButton>
                 )}
-                {!isCancelButtonDisabled && (
+                {!isCancelButtonDisabled && orderData?.type !== "Tại quầy" && (
                   <SoftButton
                    
                     onClick={handleOpenCancelModal}
@@ -475,7 +476,7 @@ const OrderDetailPage = () => {
               </SoftTypography>
 
               <OrderInfo order={orderData} />
-              {canUpdateInfo && (
+              {!isCancelButtonDisabled && orderData?.type !== "Tại quầy" && (
                 <SoftBox display="flex" justifyContent="flex-end" mt={3}>
                   <SoftButton
                     variant="outlined"

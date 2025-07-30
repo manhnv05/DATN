@@ -176,17 +176,17 @@ function OrderTable({ filterValues, currentPage, pageSize, setCurrentPage, setPa
           case "TAO_DON_HANG":
             text = "Tạo đơn hàng";
             colorStyles = {
-              color: "#198754",
+            color: "#198754",
               backgroundColor: "#d1e7dd",
               borderColor: "#198754",
             };
             break;
-          case "CHO_GIAO_HANG":
-            text = "Chờ giao hàng";
+          case "DA_XAC_NHAN":
+            text = "Đã xác nhận";
             colorStyles = {
-              color: "#ffc107",
-              backgroundColor: "#fff3cd",
-              borderColor: "#ffc107",
+               color: "#198754",
+              backgroundColor: "#d1e7dd",
+              borderColor: "#198754",
             };
             break;
           case "DANG_VAN_CHUYEN":

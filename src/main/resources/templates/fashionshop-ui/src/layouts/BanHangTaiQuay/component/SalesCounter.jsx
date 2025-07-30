@@ -14,6 +14,7 @@ import {
   TextField,
   Avatar,
   Checkbox,
+   Badge,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,6 +24,7 @@ import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import PaidIcon from "@mui/icons-material/Paid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
+
 
 // Import các component chung
 import SoftBox from "components/SoftBox";
@@ -59,7 +61,7 @@ const CustomTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const MAX_ORDERS = 5;
+const MAX_ORDERS = 10;
 
 function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,completedOrderId }) {
   useEffect(() => {
@@ -197,7 +199,6 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
 
   useEffect(() => {
     if (onProductsChange) {
-      // Gửi toàn bộ danh sách sản phẩm của đơn hàng hiện tại lên component cha
       onProductsChange(currentOrder?.products || []);
     }
   }, [currentOrder, onProductsChange]);
@@ -227,11 +228,46 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
     setIsProductModalOpen(false);
   };
 
-  const handleUpdateQuantity = (productId, newQuantity) => {
-    if (newQuantity <= 0) {
-      handleRemoveProduct(productId);
-      return;
-    }
+ // src/layouts/sales/components/SalesCounter.jsx
+
+const handleUpdateQuantity = async (productId, newQuantity) => {
+  // Nếu số lượng mới bằng 0 hoặc ít hơn, hãy xử lý việc xóa sản phẩm.
+  // Bạn cũng nên đảm bảo `handleRemoveProduct` gọi API để hoàn trả toàn bộ số lượng về kho.
+  if (newQuantity <= 0) {
+    handleRemoveProduct(productId);
+    return;
+  }
+
+  // Tìm sản phẩm hiện tại trong state để lấy số lượng cũ
+  const currentOrder = orders.find(o => o.id === selectedTab);
+  if (!currentOrder) return;
+  const productToUpdate = currentOrder.products.find(p => p.uniqueId === productId);
+  if (!productToUpdate) return;
+
+  const oldQuantity = productToUpdate.quantity;
+  const quantityChange = newQuantity - oldQuantity; // Tính toán sự thay đổi
+
+  // Nếu không có gì thay đổi thì không làm gì cả
+  if (quantityChange === 0) return;
+
+  // Xác định xem nên tăng hay giảm số lượng trong kho
+  const isIncreasingInCart = quantityChange > 0; // Số lượng trong giỏ hàng đang tăng lên?
+  
+  // Dựa vào API bạn cung cấp, chúng ta sẽ có 2 endpoint
+  const endpoint = isIncreasingInCart 
+    ? `/giam-so-luong-san-pham/${productToUpdate.idChiTietSanPham}` // Giảm tồn kho
+    : `/tang-so-luong-san-pham/${productToUpdate.idChiTietSanPham}`; // Tăng (hoàn trả) tồn kho
+
+  try {
+    // BƯỚC 1: GỌI API
+    // Gửi yêu cầu PUT với `soLuong` là giá trị thay đổi (luôn là số dương)
+    await axios.put(`http://localhost:8080/api/hoa-don${endpoint}`, null, { // Truyền null cho body nếu không cần
+      params: {
+        soLuong: Math.abs(quantityChange)
+      }
+    });
+
+    // BƯỚC 2: NẾU API THÀNH CÔNG, CẬP NHẬT GIAO DIỆN
     setOrders((prevOrders) =>
       prevOrders.map((order) =>
         order.id === selectedTab
@@ -244,20 +280,48 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
           : order
       )
     );
-  };
 
-  const handleRemoveProduct = (productId) => {
+  } catch (error) {
+    // BƯỚC 3: XỬ LÝ LỖI TỪ API
+    console.error("Lỗi khi cập nhật số lượng sản phẩm:", error);
+    // Thông báo cho người dùng, ví dụ: "Số lượng tồn kho không đủ"
+    alert(`Lỗi: ${error.response?.data?.message || "Không thể cập nhật số lượng."}`);
+  }
+};
+
+ const handleRemoveProduct = async (productId) => {
+  // BƯỚC 1: TÌM SẢN PHẨM SẮP BỊ XÓA TRONG STATE HIỆN TẠI
+  const currentOrder = orders.find((o) => o.id === selectedTab);
+  if (!currentOrder) return; // Không tìm thấy đơn hàng hiện tại
+
+  const productToRemove = currentOrder.products.find((p) => p.uniqueId === productId);
+  if (!productToRemove) return;
+  try {
+    await axios.put(
+      `http://localhost:8080/api/hoa-don/tang-so-luong-san-pham/${productToRemove.idChiTietSanPham}`,
+      null,
+      {
+        params: {
+          soLuong: productToRemove.quantity, 
+        },
+      }
+    );
     setOrders((prevOrders) =>
       prevOrders.map((order) =>
         order.id === selectedTab
           ? {
               ...order,
+             
               products: order.products.filter((p) => p.uniqueId !== productId),
             }
           : order
       )
     );
-  };
+  } catch (error) {
+    console.error("Lỗi khi hoàn trả sản phẩm về kho:", error);
+    alert(`Lỗi: ${error.response?.data?.message || "Không thể xóa sản phẩm."}`);
+  }
+};
 
   const handleToggleProductSelection = (productId) => {
     setOrders((prevOrders) =>
@@ -294,28 +358,56 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
     ? currentOrder.products.some((p) => p.isSelected) && !isAllSelected
     : false;
 
- const handleCloseOrderTab = (idToClose) => {
-    const orderToCloseIndex = orders.findIndex((order) => order.id === idToClose);
-    if (orderToCloseIndex === -1) return;
+const handleCloseOrderTab = async (idToClose) => {
+  // BƯỚC 1: TÌM ĐƠN HÀNG SẼ ĐÓNG
+  const orderToClose = orders.find((order) => order.id === idToClose);
+  if (!orderToClose) return; // Không tìm thấy đơn hàng
 
-    // Lọc bỏ tab cần đóng
+  try {
+    // BƯỚC 2: NẾU ĐƠN HÀNG CÓ SẢN PHẨM, GỌI API ĐỂ HOÀN TRẢ TỒN KHO
+    if (orderToClose.products.length > 0) {
+      // Tạo một mảng chứa các promise gọi API cho mỗi sản phẩm
+      const returnProductPromises = orderToClose.products.map((product) =>
+        axios.put(
+          `http://localhost:8080/api/hoa-don/tang-so-luong-san-pham/${product.idChiTietSanPham}`,
+          null,
+          {
+            params: {
+              soLuong: product.quantity,
+            },
+          }
+        )
+      );
+
+      // Chờ cho tất cả các API hoàn thành
+      await Promise.all(returnProductPromises);
+    }
+
+    // BƯỚC 3: NẾU API THÀNH CÔNG (HOẶC ĐƠN HÀNG RỖNG), TIẾN HÀNH ĐÓNG TAB
     const newOrders = orders.filter((order) => order.id !== idToClose);
     setOrders(newOrders);
 
-    // Xử lý việc chuyển tab sau khi đóng
+    // Xử lý việc chuyển tab đang được chọn
     if (selectedTab === idToClose) {
       if (newOrders.length === 0) {
-        // Nếu không còn tab nào, không chọn tab nào cả
+        // Nếu không còn tab nào, có thể tạo một đơn hàng mới hoặc để trống
         setSelectedTab(null);
-        // Có thể gọi handleCreateOrder() ở đây nếu bạn muốn luôn có ít nhất 1 tab
-      //  handleCreateOrder(); 
+        // handleCreateOrder(); // Bỏ comment dòng này nếu bạn muốn tự động tạo đơn mới
       } else {
-        // Chọn tab đầu tiên làm tab mặc định sau khi đóng
+        // Chọn tab đầu tiên làm tab mặc định
         setSelectedTab(newOrders[0].id);
       }
     }
-  };
-
+  } catch (error) {
+    // BƯỚC 4: XỬ LÝ LỖI NẾU CÓ BẤT KỲ API NÀO THẤT BẠI
+    console.error("Lỗi khi hoàn trả sản phẩm khi đóng tab:", error);
+    alert(
+      `Có lỗi xảy ra khi đóng đơn hàng. Sản phẩm chưa được hoàn trả về kho. Vui lòng thử lại.`
+    );
+    // Quan trọng: Không đóng tab nếu có lỗi để đảm bảo dữ liệu nhất quán
+  }
+};
+  
   return (
     <>
       <Card>
@@ -359,15 +451,16 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
                   key={order.id}
                   value={order.id}
                   label={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Typography variant="body2">{order.name}</Typography>
-                       
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+                      <Typography variant="body2">{order.name}  </Typography>
+                       <Badge badgeContent={order.products.length} color="error" />
                         <IconButton
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCloseOrderTab(order.id);
                           }}
+                            sx={{ marginLeft: "auto" }}
                         >
                           <CloseIcon fontSize="small" />
                         </IconButton>
@@ -481,7 +574,10 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
 
                     {/* Danh sách sản phẩm */}
                     <Box sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
+                      
                       {currentOrder.products.map((product) => (
+
+                    
                         <Box
                           key={product.uniqueId}
                           sx={{
@@ -533,48 +629,69 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange,onProductsChange ,compl
                               </Typography>
                             </Box>
                           </Box>
+  
+{/* Cột 3: Số lượng */}
+<Box sx={{ width: "15%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+  
+  {/* ✨ Box cha này sẽ đảm bảo các phần tử bên trong xếp theo cột (dọc) */}
+  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-                          {/* Cột 3: Số lượng */}
-                          <Box sx={{ width: "15%", display: "flex", justifyContent: "center" }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                border: "1px solid #ccc",
-                                borderRadius: "999px",
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  handleUpdateQuantity(product.uniqueId, product.quantity - 1)
-                                }
-                                sx={{ color: "text.secondary" }}
-                              >
-                                <RemoveIcon fontSize="small" />
-                              </IconButton>
-                              <Typography
-                                variant="body1"
-                                sx={{
-                                  px: 1.5,
-                                  fontWeight: "medium",
-                                  borderLeft: "1px solid #ccc",
-                                  borderRight: "1px solid #ccc",
-                                }}
-                              >
-                                {product.quantity}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  handleUpdateQuantity(product.uniqueId, product.quantity + 1)
-                                }
-                                sx={{ color: "text.secondary" }}
-                              >
-                                <AddIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </Box>
+    {/* Box chứa bộ ba nút-input-nút */}
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      {/* Nút Trừ */}
+      <IconButton
+        size="small"
+        onClick={() => handleUpdateQuantity(product.uniqueId, product.quantity - 1)}
+        disabled={product.quantity <= 1}
+        sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}
+      >
+        <RemoveIcon fontSize="small" />
+      </IconButton>
+
+      {/* Ô Nhập Số Lượng */}
+      <TextField
+        type="number"
+        value={product.quantity}
+        onChange={(e) => {
+          const value = parseInt(e.target.value, 10);
+          if (e.target.value === "") {
+            handleUpdateQuantity(product.uniqueId, 0);
+          } else if (isNaN(value) || value < 1) {
+            handleUpdateQuantity(product.uniqueId, 1);
+          } else if (value > product.soLuongTonKho) {
+            handleUpdateQuantity(product.uniqueId, product.soLuongTonKho);
+          } else {
+            handleUpdateQuantity(product.uniqueId, value);
+          }
+        }}
+        inputProps={{
+          style: { textAlign: "center" },
+          min: 1,
+          max: product.soLuongTonKho,
+        }}
+        sx={{ width: "70px", mx: 1 }}
+      />
+
+      {/* Nút Cộng */}
+      <IconButton
+        size="small"
+        onClick={() => handleUpdateQuantity(product.uniqueId, product.quantity + 1)}
+        disabled={product.quantity >= product.soLuongTonKho}
+        sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}
+      >
+        <AddIcon fontSize="small" />
+      </IconButton>
+    </Box>
+
+    {/* Thông báo này giờ sẽ luôn nằm ở dòng dưới */}
+    {product.quantity === product.soLuongTonKho && product.soLuongTonKho > 0 && (
+      <Typography variant="caption" color="error" sx={{ mt: 0.5, fontWeight: "medium" }}>
+        Đã đạt giới hạn kho
+      </Typography>
+    )}
+  </Box>
+
+</Box>
 
                           {/* Cột 4: Thành tiền */}
                           <Box sx={{ width: "15%", textAlign: "right" }}>

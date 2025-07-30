@@ -8,31 +8,31 @@ const getStatusBadgeClassName = (status) => {
   switch (status) {
     case 'Hoàn thành': return 'bg-success';
     case 'Đang vận chuyển': return 'bg-warning';
+    case 'Đã xác nhận': return 'bg-success';
     case 'Chờ giao hàng': return 'bg-warning';
     case 'Chờ xác nhận': return 'bg-warning';
     case 'Tạo đơn hàng': return 'bg-success';
     case 'Hủy': return 'bg-danger';
-    default: return 'bg-danger';
+    default: return 'bg-success';
   }
 };
 
 
-// Hàm helper để định nghĩa màu cho loại đơn hàng (sử dụng Bootstrap badge classes)
+
 const getOrderTypeBadgeClassName = (type) => {
     const lowerCaseType = type ? type.toLowerCase() : '';
-    if (lowerCaseType === 'online' || lowerCaseType === 'trực tuyến') { // Chấp nhận cả "online" và "trực tuyến"
+    if (lowerCaseType === 'online' || lowerCaseType === 'trực tuyến') {
         return 'bg-primary'; // Bootstrap light blue
     }
-    if (lowerCaseType === 'at_counter' || lowerCaseType === 'tại quầy') { // Chấp nhận cả "at_counter" và "tại quầy"
-        return 'bg-success'; // Bootstrap gray
+    if (lowerCaseType === 'at_counter' || lowerCaseType === 'tại quầy') { 
+        return 'bg-success'; 
     }
-    return 'bg-secondary'; // Default
+    return 'bg-secondary'; 
 };
 
-
 const OrderInfo = ({ order }) => {
-    // Hàm formatDateTime của bạn (đã thêm lại ampm)
-    
+   
+    console.log("OrderInfo order:", order.status);
     const formatDateTime = useCallback((isoString) => {
         if (!isoString) return 'Chưa cập nhật';
         const date = new Date(isoString);
@@ -40,22 +40,20 @@ const OrderInfo = ({ order }) => {
         const minutes = date.getMinutes();
         const seconds = date.getSeconds();
         const day = date.getDate();
-        const month = date.getMonth() + 1; // Tháng bắt đầu từ 0
+        const month = date.getMonth() + 1; 
         const year = date.getFullYear();
-
-    
         const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
 
         const pad = (num) => num.toString().padStart(2, '0');
 
-        // Đã thêm lại ampm vào chuỗi trả về
+        
         return `${pad(formattedHours)}:${pad(minutes)}:${pad(seconds)}  ${pad(day)}/${pad(month)}/${year}`;
-    }, []); // <-- Dependency array rỗng (pad sẽ được định nghĩa riêng hoặc là external)
+    }, []); 
 
-    // Đảm bảo hàm pad được định nghĩa ở đây hoặc bên ngoài component
+
     const pad = useCallback((num) => num.toString().padStart(2, '0'), []);
     return (
-        <div className="card mb-4"> {/* Sử dụng card Bootstrap */}
+        <div className="card mb-4"> 
             <div className="card-body">
                 <div className="row mb-3">
                     <div className="col-md-6 col-12 mb-2">
@@ -80,7 +78,7 @@ const OrderInfo = ({ order }) => {
 
                
 
-                {/* NHÓM 3: THÔNG TIN  NGƯỜI NHẬN HÀNG */}
+              
              <h6 className="mb-3 fs-6 fw-bold" style={{ color: "#6ea8fe" }}>
   Thông tin người nhận
 </h6>
@@ -93,7 +91,7 @@ const OrderInfo = ({ order }) => {
                     </div>
                     <div className="col-6">
                         <strong>Loại:</strong>{' '}
-  <span className={`${styles.softBadge} ${styles[getOrderTypeBadgeClassName(order.type)]}`}>
+                <span className={`${styles.softBadge} ${styles[getOrderTypeBadgeClassName(order.type)]}`}>
              
               {order.type && (order.type.toLowerCase() === 'online' || order.type.toLowerCase() === 'trực tuyến')
                 ? 'Trực tuyến'
@@ -109,8 +107,8 @@ const OrderInfo = ({ order }) => {
 
               
 
-            </div> {/* Kết thúc card-body */}
-        </div> // Kết thúc card
+            </div> 
+        </div> 
     );
 };
 OrderInfo.propTypes = {
@@ -119,7 +117,7 @@ OrderInfo.propTypes = {
       PropTypes.string,
       PropTypes.number,
     ]).isRequired,
-    ngayTao: PropTypes.string.isRequired, // ISO date string
+    ngayTao: PropTypes.string.isRequired,
     StaffName: PropTypes.string,
     status: PropTypes.string.isRequired,
     receiverName: PropTypes.string.isRequired,

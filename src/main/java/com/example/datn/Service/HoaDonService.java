@@ -41,7 +41,8 @@ public interface HoaDonService {
 
 
     List<HoaDonChiTietDTO> findChiTietHoaDon(@Param("idHoaDon") Integer idHoaDon);
-
+    String tangSoLuongSanPhamChiTiet(Integer idSanPhamChiTiet, Integer soLuong);
+    String giamSoLuongSanPhamChiTiet(Integer idSanPhamChiTiet, Integer soLuong);
     HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO hoaDonRequestUpdateVO);
    void capNhatSoLuongSanPhamTrongKho(HoaDon hoaDon, boolean isDeducting);
    TongTienHoaDonDto getThongTinGiamGiaByHoaDonId(Integer idHoaDon);

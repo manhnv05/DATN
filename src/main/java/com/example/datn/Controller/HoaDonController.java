@@ -210,4 +210,28 @@ public ResponseEntity<byte[]> exportPdf(@PathVariable String id) {
     public ResponseEntity<ApiResponse<HoaDonDTO>> updateHoadon(@RequestBody HoaDonRequestUpdateVO hoaDonRequestUpdateVO) {
         return ResponseHelper.success("", hoaDonService.updateHoaDon(hoaDonRequestUpdateVO));
     }
+    @PutMapping("/tang-so-luong-san-pham/{idSanPhamChiTiet}")
+    public ResponseEntity<ApiResponse<String>> tangSoLuongSanPhamChiTiet(
+            @PathVariable Integer idSanPhamChiTiet,
+            @RequestParam Integer soLuong) {
+        String result = hoaDonService.tangSoLuongSanPhamChiTiet(idSanPhamChiTiet, soLuong);
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1000)
+                .message("Tăng số lượng sản phẩm chi tiết thành công")
+                .data(result)
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
+    @PutMapping("/giam-so-luong-san-pham/{idSanPhamChiTiet}")
+    public ResponseEntity<ApiResponse<String>> giamSoLuongSanPhamChiTiet(
+            @PathVariable Integer idSanPhamChiTiet,
+            @RequestParam Integer soLuong) {
+        String result = hoaDonService.giamSoLuongSanPhamChiTiet(idSanPhamChiTiet, soLuong);
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1000)
+                .message("Giam số lượng sản phẩm chi tiết thành công")
+                .data(result)
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
 }
