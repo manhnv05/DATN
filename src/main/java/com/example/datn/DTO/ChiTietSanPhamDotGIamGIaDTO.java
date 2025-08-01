@@ -24,6 +24,7 @@ public class ChiTietSanPhamDotGIamGIaDTO {
     private String coAo;
     private String tayAo;
     private Integer giaTienSauKhiGiam;
-    private int gia;
-    private int phanTramGiam;
+    private Integer gia;
+    private Integer phanTramGiam;
+    private Integer  idDotGiamGia;
 }

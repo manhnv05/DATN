@@ -1,6 +1,7 @@
 package com.example.datn.Repository;
 
 import com.example.datn.Entity.ChiTietDotGiamGia;
+import com.example.datn.Entity.DotGiamGia;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -21,11 +22,11 @@ public interface ChiTietDotGiamGiaRepository extends JpaRepository<ChiTietDotGia
     void deleteByDotGiamGiaId(Integer idDotGiamGia);
 
     @Query("""
-    SELECT p.dotGiamGia.phanTramGiamGia FROM ChiTietDotGiamGia p
-        WHERE(
-            p.chiTietSanPham.id = :idctsp
-            AND p.dotGiamGia.trangThai = 1
-            )
-    """)
-    List<Integer> getDotGiamGiaByIdChiTietSanPham(@Param("idctsp") int idChiTietSanPham);
+    SELECT p.dotGiamGia FROM ChiTietDotGiamGia p
+    WHERE
+        p.chiTietSanPham.id = :idctsp
+        AND p.dotGiamGia.trangThai = 1
+""")
+    List<DotGiamGia> getDotGiamGiaByIdChiTietSanPham(@Param("idctsp") int idChiTietSanPham);
+
 }

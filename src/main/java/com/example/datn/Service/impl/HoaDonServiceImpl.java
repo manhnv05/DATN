@@ -1,5 +1,5 @@
 package com.example.datn.Service.impl;
-
+import java.math.BigDecimal;
 import com.example.datn.DTO.*;
 import com.example.datn.VO.*;
 import com.example.datn.mapper.HoaDonChiTietMapper;
@@ -702,141 +702,105 @@ public class HoaDonServiceImpl implements HoaDonService {
     @Override
     @Transactional
     public HoaDonDTO updateHoaDon(HoaDonRequestUpdateVO request) {
-        // 1. Tìm hóa đơn hoặc ném lỗi nếu không tìm thấy
+        // 1. Tìm hóa đơn trong DB hoặc ném lỗi nếu không tìm thấy
         HoaDon hoaDon = hoaDonRepository.findById(request.getIdHoaDon())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+        // 2. [LOGIC MỚI] Xóa và tạo lại danh sách chi tiết hóa đơn từ request
         if (request.getDanhSachSanPham() != null) {
-            Map<Integer, Integer> newProductsMap = request.getDanhSachSanPham().stream()
-                    .collect(Collectors.toMap(
-                            HoaDonRequestUpdateVO.SanPhamCapNhatVO::getId,
-                            HoaDonRequestUpdateVO.SanPhamCapNhatVO::getSoLuong,
-                            (existingValue, newValue) -> newValue
-                    ));
+            // Xóa toàn bộ chi tiết hóa đơn cũ để đảm bảo không bị trùng lặp hay sai giá
+            hoaDon.getHoaDonChiTietList().clear();
 
-            Iterator<HoaDonChiTiet> iterator = hoaDon.getHoaDonChiTietList().iterator();
-            while (iterator.hasNext()) {
-                HoaDonChiTiet detail = iterator.next();
-                Integer sanPhamChiTietId = detail.getSanPhamChiTiet().getId();
+            // Lặp qua danh sách sản phẩm từ request để tạo lại chi tiết hóa đơn
+            for (HoaDonRequestUpdateVO.SanPhamCapNhatVO sanPhamMoi : request.getDanhSachSanPham()) {
+                ChiTietSanPham spct = chiTietSanPhamRepository.findById(sanPhamMoi.getId())
+                        .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
-                if (newProductsMap.containsKey(sanPhamChiTietId)) {
-                    Integer newQuantity = newProductsMap.get(sanPhamChiTietId);
-                    if (newQuantity != null && newQuantity > 0) {
-                        int giaCuoiCung = tinhGiaCuoiCung(detail.getSanPhamChiTiet());
-                        detail.setGia(giaCuoiCung);
-                        detail.setSoLuong(newQuantity);
-                        detail.setThanhTien(giaCuoiCung * newQuantity);
-                    } else {
-                        iterator.remove();
-                    }
-                    newProductsMap.remove(sanPhamChiTietId);
-                } else {
-                    iterator.remove();
-                }
+                HoaDonChiTiet chiTietMoi = new HoaDonChiTiet();
+                chiTietMoi.setHoaDon(hoaDon);
+                chiTietMoi.setSanPhamChiTiet(spct);
+                chiTietMoi.setSoLuong(sanPhamMoi.getSoLuong());
+
+                // Quan trọng: Set giá từ request, KHÔNG tính toán lại!
+                chiTietMoi.setGia(sanPhamMoi.getDonGia().intValue());
+
+                // Tính thành tiền dựa trên giá từ request
+                BigDecimal thanhTien = BigDecimal.valueOf(sanPhamMoi.getDonGia())
+                        .multiply(BigDecimal.valueOf(sanPhamMoi.getSoLuong()));
+                int tienInt = thanhTien.intValue();
+                chiTietMoi.setThanhTien(tienInt);
+
+                // Thêm chi tiết mới vào hóa đơn
+                hoaDon.getHoaDonChiTietList().add(chiTietMoi);
             }
-
-
-            newProductsMap.forEach((sanPhamChiTietId, soLuong) -> {
-                if (soLuong > 0) {
-                    ChiTietSanPham spct = chiTietSanPhamRepository.findById(sanPhamChiTietId)
-                            .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-                    int giaCuoiCung = tinhGiaCuoiCung(spct);
-                    HoaDonChiTiet newDetail = new HoaDonChiTiet();
-                    newDetail.setHoaDon(hoaDon);
-                    newDetail.setSanPhamChiTiet(spct);
-                    newDetail.setSoLuong(soLuong);
-                    newDetail.setGia(giaCuoiCung);
-                    newDetail.setThanhTien(giaCuoiCung * soLuong);
-                    hoaDon.getHoaDonChiTietList().add(newDetail);
-                }
-            });
-            // =======================================================
         }
 
-        // 4. Cập nhật thông tin chung của hóa đơn
+        // 3. Cập nhật các thông tin chung của hóa đơn từ request
         HoaDonUpdateMapper.INSTANCE.updateHoaDon(hoaDon, request);
 
-        if (request.getNhanVien()!= null && !request.getNhanVien().isEmpty()) {
+        // Cập nhật Nhân viên
+        if (request.getNhanVien() != null && !request.getNhanVien().isEmpty()) {
             NhanVien nhanVien = nhanVienRepository.findById(Integer.parseInt(request.getNhanVien()))
                     .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
             hoaDon.setNhanVien(nhanVien);
         } else {
+            // Mặc định cho một nhân viên nào đó nếu cần
             NhanVien nhanVien = nhanVienRepository.findById(1).orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
             hoaDon.setNhanVien(nhanVien);
         }
 
-        Integer idKhachHang = null;
-        String idKhachHangStr = request.getKhachHang();
-
-// Thêm bước kiểm tra quan trọng này
-        if (idKhachHangStr != null && !idKhachHangStr.trim().isEmpty()) {
+        // Cập nhật Khách hàng (xử lý an toàn cho khách lẻ)
+        if (request.getKhachHang() != null && !request.getKhachHang().trim().isEmpty()) {
             try {
-                idKhachHang = Integer.parseInt(idKhachHangStr);
+                Integer idKhachHang = Integer.parseInt(request.getKhachHang());
+                KhachHang khachHang = khachHangRepository.findById(idKhachHang).orElse(null);
+                hoaDon.setKhachHang(khachHang);
             } catch (NumberFormatException e) {
-                // Có thể ghi log ở đây để biết nếu ai đó gửi ID không phải là số
-                System.err.println("ID khách hàng không hợp lệ: " + idKhachHangStr);
+                hoaDon.setKhachHang(null); // Gán là khách lẻ nếu ID không hợp lệ
             }
-        }
-
-// Bây giờ, bạn có thể sử dụng biến 'idKhachHang' một cách an toàn.
-// Nếu không có ID hoặc ID không hợp lệ, nó sẽ là null.
-        if (idKhachHang != null) {
-            KhachHang khachHang = khachHangRepository.findById(idKhachHang).orElse(null);
-            hoaDon.setKhachHang(khachHang);
         } else {
-            // Xử lý cho trường hợp không có khách hàng (khách vãng lai)
-            hoaDon.setKhachHang(null);
+            hoaDon.setKhachHang(null); // Khách lẻ
         }
 
-        // 5. Tính toán lại toàn bộ giá trị hóa đơn
-        // Tính tổng tiền gốc từ danh sách sản phẩm đã được cập nhật
+        // 4. Tính toán lại giá trị hóa đơn
         int tongTienBanDau = hoaDon.getHoaDonChiTietList().stream()
                 .mapToInt(HoaDonChiTiet::getThanhTien)
                 .sum();
         hoaDon.setTongTienBanDau(tongTienBanDau);
-        hoaDon.setTongTien(tongTienBanDau); // Gán tạm
+        hoaDon.setTongTien(tongTienBanDau); // Gán tạm, sẽ cập nhật lại sau khi có giảm giá
 
-        // Áp dụng phiếu giảm giá
+        // 5. Áp dụng phiếu giảm giá (sử dụng BigDecimal để chính xác)
         if (StringUtils.isNotEmpty(request.getPhieuGiamGia())) {
             PhieuGiamGia pgg = phieuGiamGiaRepository.findById(Integer.valueOf(request.getPhieuGiamGia())).orElse(null);
             hoaDon.setPhieuGiamGia(pgg);
             if (pgg != null) {
-                System.out.println("--- DEBUGGING DISCOUNT CALCULATION ---");
-                System.out.println("Tổng tiền ban đầu để tính giảm giá: " + tongTienBanDau);
-                System.out.println("Voucher % (từ DB): " + pgg.getPhamTramGiamGia());
-                System.out.println("Voucher tiền cố định (từ DB): " + pgg.getSoTienGiam());
-                System.out.println("Voucher giảm tối đa (từ DB): " + pgg.getGiamToiDa());
-                BigDecimal soTienGiam = BigDecimal.ZERO;
+                BigDecimal tongTienGocBD = BigDecimal.valueOf(tongTienBanDau);
+                BigDecimal soTienDuocGiam = BigDecimal.ZERO;
 
-
-                if( pgg.getPhamTramGiamGia() != null){
-
-                    soTienGiam = BigDecimal.valueOf(tongTienBanDau).subtract(BigDecimal.valueOf(tongTienBanDau)
-                            .multiply(pgg.getPhamTramGiamGia())
-                            .divide(BigDecimal.valueOf(100)));
-                    if (soTienGiam.compareTo(pgg.getGiamToiDa()) >= 0) {
-                        soTienGiam = BigDecimal.valueOf(tongTienBanDau).subtract(pgg.getGiamToiDa());
+                if (pgg.getPhamTramGiamGia() != null && pgg.getPhamTramGiamGia().compareTo(BigDecimal.ZERO) > 0) {
+                    // Giảm theo phần trăm
+                    soTienDuocGiam = tongTienGocBD.multiply(pgg.getPhamTramGiamGia()).divide(BigDecimal.valueOf(100));
+                    if (pgg.getGiamToiDa() != null && soTienDuocGiam.compareTo(pgg.getGiamToiDa()) > 0) {
+                        soTienDuocGiam = pgg.getGiamToiDa();
                     }
-
+                } else if (pgg.getSoTienGiam() != null) {
+                    // Giảm theo số tiền cố định
+                    soTienDuocGiam = pgg.getSoTienGiam();
                 }
-                else {
 
-                    soTienGiam = BigDecimal.valueOf(tongTienBanDau).subtract(pgg.getSoTienGiam());
-                    if (soTienGiam.compareTo(pgg.getGiamToiDa()) >= 0) {
-                        soTienGiam = BigDecimal.valueOf(tongTienBanDau).subtract(pgg.getGiamToiDa());
-                    }
-                }
-                hoaDon.setTongTien(soTienGiam.intValue());
-
+                BigDecimal tongTienCuoiCung = tongTienGocBD.subtract(soTienDuocGiam);
+                hoaDon.setTongTien(tongTienCuoiCung.intValue());
             }
         } else {
             hoaDon.setPhieuGiamGia(null);
         }
 
+        // 6. Tính tổng hóa đơn cuối cùng (bao gồm phí vận chuyển)
+        // Giả sử mapper đã set `phiVanChuyen` vào `hoaDon`
+        Integer phiVanChuyen = (hoaDon.getPhiVanChuyen() != null) ? hoaDon.getPhiVanChuyen() : 0;
+        hoaDon.setTongHoaDon(hoaDon.getTongTien() + phiVanChuyen);
 
-        hoaDon.setTongHoaDon(hoaDon.getTongTien() + hoaDon.getPhiVanChuyen());
-
-       
+        // 7. Cập nhật trạng thái hóa đơn dựa trên thanh toán và loại đơn
         Integer tongTienDaTraRaw = chiTietThanhToanRepository.sumSoTienThanhToanByIdHoaDon(hoaDon.getId());
         int tongTienDaTra = (tongTienDaTraRaw != null) ? tongTienDaTraRaw : 0;
 
@@ -845,54 +809,50 @@ public class HoaDonServiceImpl implements HoaDonService {
         if (!laDonGiaoHang) { // Đơn tại quầy
             if (tongTienDaTra >= hoaDon.getTongTien()) {
                 hoaDon.setTrangThai(TrangThai.HOAN_THANH);
-
             } else {
+                // Với đơn tại quầy, nếu bấm lưu/thanh toán thì phải trả đủ tiền
+                // Bạn có thể giữ hoặc bỏ Exception này tùy nghiệp vụ
                 throw new AppException(ErrorCode.NOT_YET_PAID);
             }
         } else { // Đơn giao hàng
+            // Với đơn giao hàng, có thể chưa thanh toán hết (COD)
             if (tongTienDaTra >= hoaDon.getTongTien()) {
                 hoaDon.setTrangThai(TrangThai.HOAN_THANH);
-
+            } else {
+                hoaDon.setTrangThai(TrangThai.DA_XAC_NHAN); // hoặc trạng thái phù hợp khác
             }
-            else {
-                hoaDon.setTrangThai(TrangThai.DA_XAC_NHAN);
-            }
-            hoaDon.setNgayGiaoDuKien(LocalDate.now().atStartOfDay().plusDays(3));
+            hoaDon.setNgayGiaoDuKien(LocalDate.now().plusDays(3).atStartOfDay());
         }
 
-
+        // 8. Lưu hóa đơn vào DB
         HoaDon hoaDonDaLuu = hoaDonRepository.save(hoaDon);
 
-        String nguoiThucHienCapNhat =  "Hệ thống";
-
-
+        // 9. Ghi nhận lịch sử hoạt động
+        String nguoiThucHienCapNhat = "Hệ thống"; // Hoặc lấy từ security context
         String noiDungLichSu;
         switch (hoaDonDaLuu.getTrangThai()) {
             case HOAN_THANH:
                 noiDungLichSu = "Hóa đơn đã được thanh toán và hoàn thành.";
                 break;
-            case CHO_XAC_NHAN:
-                noiDungLichSu = "Đơn hàng đã được tạo và đang chờ xác nhận.";
+            case DA_XAC_NHAN:
+                noiDungLichSu = "Đơn hàng đã được xác nhận và đang chờ giao.";
                 break;
             case HUY:
                 noiDungLichSu = "Hóa đơn đã bị hủy.";
                 break;
-            // Bạn có thể thêm các case khác cho các trạng thái khác
             default:
-                // Tin nhắn mặc định nếu không rơi vào các case trên
                 noiDungLichSu = "Hóa đơn được cập nhật trạng thái thành: " + hoaDonDaLuu.getTrangThai().name();
                 break;
         }
-
-        // Gọi service để ghi nhận lịch sử vào database
         lichSuHoaDonService.ghiNhanLichSuHoaDon(
                 hoaDonDaLuu,
                 noiDungLichSu,
                 nguoiThucHienCapNhat,
-                request.getGhiChu(), // Lấy ghi chú từ request gửi lên
+                request.getGhiChu(),
                 hoaDonDaLuu.getTrangThai()
         );
 
+        // 10. Trả về DTO cho client
         return HoaDonUpdateMapper.INSTANCE.toResponseDTO(hoaDonDaLuu);
     }
 

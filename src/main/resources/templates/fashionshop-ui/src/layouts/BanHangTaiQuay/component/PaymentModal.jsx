@@ -112,10 +112,10 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
       idHinhThucThanhToan: paymentMethod === "cash" ? 1 : 2,
       idHoaDon: hoaDonId,
       maGiaoDich: paymentMethod === "transfer" ? transactionCode : null,
-      soTienThanhToan: totalAmount,
+       soTienThanhToan: paymentAmount, 
       trangThaiThanhToan: 1,
     };
-    console.log('[DEBUG 3] Object chuẩn bị thêm vào bảng:', newPayment)
+   
     setNewPayments([...newPayments, newPayment]);
     setAmount("");
     setTransactionCode("");
@@ -124,7 +124,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
   // Xử lý khi xác nhận thanh toán
   const handleConfirm = () => {
     if (amountOwed > 0) {
-      alert(`Còn thiếu ${formatCurrency(amountOwed)}. Vui lòng thanh toán đủ.`);
+      toast.error(`Còn thiếu ${formatCurrency(amountOwed)}. Vui lòng thanh toán đủ.`);
       return;
     }
     // Chỉ gửi về cho component cha những thanh toán MỚI
@@ -173,15 +173,44 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Box display="flex" gap={2} mb={2}>
             <Button
-              variant={paymentMethod === "transfer" ? "contained" : "outlined"}
-              color="secondary"
+           variant="outlined"
+           
+                    size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      fontSize: "1rem",
+                      color: "#49a3f1",
+                      borderColor: "#49a3f1",
+                      boxShadow: "none",
+                      "&:hover": {
+                        borderColor: "#1769aa",
+                        background: "#f0f6fd",
+                        color: "#1769aa",
+                      },
+                    }}
               onClick={() => setPaymentMethod("transfer")}
             >
               Chuyển khoản
             </Button>
             <Button
-              variant={paymentMethod === "cash" ? "contained" : "outlined"}
-              color="success"
+               variant="outlined"
+               size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                       fontWeight: 600,
+                      fontSize: "1rem",
+                      color: "#49a3f1",
+                      borderColor: "#49a3f1",
+                      boxShadow: "none",
+                      "&:hover": {
+                        borderColor: "#1769aa",
+                        background: "#f0f6fd",
+                        color: "#1769aa",
+                      },
+                    }}
               onClick={() => setPaymentMethod("cash")}
             >
               Tiền mặt
@@ -193,7 +222,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
  value={amount}
  onChange={(value) => {
           
-                  console.log('[DEBUG 1] Giá trị thô nhận được từ Input:', value);
+                 
                   setAmount(value);
                 }}
  sx={{ flexGrow: 1 }}
@@ -275,13 +304,9 @@ InputProps={{ inputComponent: NumberFormatCustom }}
               )}
               {/* Hàng hiển thị tiền thừa */}
               <TableRow>
-                <TableCell colSpan={3} align="right">
-                  <Typography fontWeight="bold">Tiền thừa trả khách</Typography>
-                </TableCell>
+               
                 <TableCell align="right">
-                  <Typography fontWeight="bold" color="success.main">
-                    {formatCurrency(amountOwed < 0 ? -amountOwed : 0)}
-                  </Typography>
+                
                 </TableCell>
               </TableRow>
             </TableBody>
@@ -295,6 +320,9 @@ InputProps={{ inputComponent: NumberFormatCustom }}
           size="large"
           onClick={handleConfirm}
           fullWidth
+          sx={{
+                      borderRadius: 2,
+                      textTransform: "none"}}
         >
           Xác nhận
         </SoftButton>

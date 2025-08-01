@@ -1,6 +1,6 @@
 // src/layouts/sales/SalesDashboardPage.jsx
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo ,useEffect } from "react";
 // Import các component layout chuẩn
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
@@ -21,7 +21,7 @@ function SalesDashboardPage() {
 
   const handleInvoiceIdChange = useCallback((invoiceId) => {
     setSelectedInvoiceId((prevId) => (prevId !== invoiceId ? invoiceId : prevId));
-    console.log((prevId) => (prevId !== invoiceId ? invoiceId : prevId));
+    
   }, []);
 
   const handleProductsChange = useCallback((products) => {
@@ -39,19 +39,23 @@ function SalesDashboardPage() {
 
   const handleSaveOrder = useCallback(
     async (latestPaymentData) => {
-   
-
       if (!selectedInvoiceId || !latestPaymentData) {
-        alert("Vui lòng kiểm tra lại thông tin hóa đơn và thanh toán.");
+        toast.error("Vui lòng kiểm tra lại thông tin hóa đơn và thanh toán.");
         return;
       }
 
       try {
         // Chuẩn bị các phần chung của payload
-        const danhSachSanPham = currentProducts.map((p) => ({
-          id: p.idChiTietSanPham,
-          soLuong: p.quantity,
-        }));
+        const danhSachSanPham = currentProducts.map((p) => {
+          // Xác định giá cuối cùng để gửi đi
+          const finalPrice = p.giaTienSauKhiGiam > 0 ? p.giaTienSauKhiGiam : p.gia;
+
+          return {
+            id: p.idChiTietSanPham,
+            soLuong: p.quantity,
+            donGia: finalPrice, // Sử dụng giá cuối cùng đã được tính toán
+          };
+        });
         const phieuGiamGiaId = latestPaymentData.phieuGiamGia
           ? String(latestPaymentData.phieuGiamGia.id)
           : null;
@@ -97,14 +101,15 @@ function SalesDashboardPage() {
         await axios.put("http://localhost:8080/api/hoa-don/update_hoadon", finalPayload);
 
         toast.success("Xác nhận thành công");
-         setCompletedOrderId(selectedInvoiceId);
+        setCompletedOrderId(selectedInvoiceId);
       } catch (error) {
         console.error("Đã có lỗi xảy ra:", error);
-      toast.error("Xác nhận thất bại");
+        toast.error("Xác nhận thất bại");
       }
     },
     [selectedInvoiceId, currentProducts]
   );
+   
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -115,7 +120,7 @@ function SalesDashboardPage() {
               onProductsChange={handleProductsChange}
               onInvoiceIdChange={handleInvoiceIdChange}
               onTotalChange={handleTotalChange}
-               completedOrderId={completedOrderId} 
+              completedOrderId={completedOrderId}
             />
           </Grid>
 

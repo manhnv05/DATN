@@ -33,6 +33,7 @@ import SoftTypography from "components/SoftTypography";
 // Import modal (điều chỉnh đường dẫn nếu cần)
 import ProductSelectionModal from "./ProductSelectionModal";
 import PropTypes from "prop-types";
+import { toast } from "react-toastify";
 
 const formatCurrency = (amount) => {
   if (typeof amount !== "number" || isNaN(amount)) {
@@ -64,22 +65,22 @@ const MAX_ORDERS = 10;
 
 function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, completedOrderId }) {
   useEffect(() => {
-  // Nếu có tín hiệu (completedOrderId có giá trị và khác null)
-  if (completedOrderId) {
-    // Tìm order trong state `orders` tương ứng với ID hóa đơn đã hoàn thành từ backend
-    const orderToClose = orders.find((o) => o.idHoaDonBackend === completedOrderId);
+    // Nếu có tín hiệu (completedOrderId có giá trị và khác null)
+    if (completedOrderId) {
+      // Tìm order trong state `orders` tương ứng với ID hóa đơn đã hoàn thành từ backend
+      const orderToClose = orders.find((o) => o.idHoaDonBackend === completedOrderId);
 
-    // Nếu tìm thấy order, gọi hàm đóng tab với tùy chọn KHÔNG hoàn trả hàng
-    if (orderToClose) {
-      handleCloseOrderTab(orderToClose.id, { returnStock: false }); // <-- THAY ĐỔI Ở ĐÂY
+      // Nếu tìm thấy order, gọi hàm đóng tab với tùy chọn KHÔNG hoàn trả hàng
+      if (orderToClose) {
+        handleCloseOrderTab(orderToClose.id, { returnStock: false }); // <-- THAY ĐỔI Ở ĐÂY
+      }
     }
-  }
-  // useEffect này sẽ chạy mỗi khi `completedOrderId` thay đổi
-}, [completedOrderId]);
+    // useEffect này sẽ chạy mỗi khi `completedOrderId` thay đổi
+  }, [completedOrderId]);
 
   const [orders, setOrders] = useState(() => {
     try {
-      const savedOrders = sessionStorage.getItem("salesOrders");
+      const savedOrders = localStorage.getItem("salesOrders");
       return savedOrders ? JSON.parse(savedOrders) : [];
     } catch (error) {
       console.error("Lỗi khi đọc orders từ sessionStorage:", error);
@@ -103,10 +104,9 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
   const totalAmount = useMemo(() => {
     if (!currentOrder) return 0;
     return currentOrder.products
-      .filter((product) => product.isSelected) // Chỉ tính các sản phẩm được chọn
+      .filter((product) => product.isSelected)
       .reduce((total, product) => {
-        // Sử dụng giá sau khi giảm nếu có, nếu không thì dùng giá gốc
-        const finalPrice = product.giaTienSauKhiGiam ?? product.gia;
+        const finalPrice = product.giaTienSauKhiGiam > 0 ? product.giaTienSauKhiGiam : product.gia;
         return total + finalPrice * product.quantity;
       }, 0);
   }, [currentOrder]);
@@ -187,11 +187,11 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
 
   useEffect(() => {
     try {
-      sessionStorage.setItem("salesOrders", JSON.stringify(orders));
+      localStorage.setItem("salesOrders", JSON.stringify(orders));
       if (selectedTab) {
-        sessionStorage.setItem("selectedSalesTab", selectedTab);
+        localStorage.setItem("selectedSalesTab", selectedTab);
       } else {
-        sessionStorage.removeItem("selectedSalesTab");
+        localStorage.removeItem("selectedSalesTab");
       }
     } catch (error) {
       console.error("Lỗi khi lưu dữ liệu vào sessionStorage:", error);
@@ -204,25 +204,66 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
     }
   }, [currentOrder, onProductsChange]);
   const handleProductSelected = (productToAdd) => {
+     console.log("productToAdd:", productToAdd); 
+    const sanitizedProduct = {
+      ...productToAdd,
+      uniqueId: `${productToAdd.idChiTietSanPham}-${Date.now()}`, // Luôn tạo uniqueId
+      gia: parseFloat(productToAdd.gia) || 0,
+      giaTienSauKhiGiam: productToAdd.giaTienSauKhiGiam
+        ? parseFloat(productToAdd.giaTienSauKhiGiam)
+        : null,
+      quantity: parseInt(productToAdd.quantity, 10) || 1,
+      isSelected: true,
+    };
+    
     setOrders((prevOrders) =>
       prevOrders.map((order) => {
         if (order.id === selectedTab) {
-          const existingProduct = order.products.find(
-            (p) => p.idChiTietSanPham === productToAdd.idChiTietSanPham
-          );
-          let updatedProducts;
-
-          if (existingProduct) {
-            updatedProducts = order.products.map((p) =>
-              p.idChiTietSanPham === productToAdd.idChiTietSanPham
-                ? { ...p, quantity: p.quantity + productToAdd.quantity }
-                : p
+          // Tìm sản phẩm đã có trong giỏ hàng
+          const existingProduct = [...order.products] // Sao chép mảng để không thay đổi mảng gốc
+            .reverse() // Đảo ngược mảng
+            .find(
+              (p) => p.idChiTietSanPham === sanitizedProduct.idChiTietSanPham && !p.isPriceLocked
             );
+            
+          let updatedProducts;
+          if (!existingProduct) {
+            // TRƯỜNG HỢP 1: Sản phẩm chưa từng có trong giỏ -> Thêm mới bình thường
+            updatedProducts = [...order.products, sanitizedProduct];
           } else {
-            updatedProducts = [...order.products, { ...productToAdd, isSelected: true }];
+            const existingPrice =
+              existingProduct.giaTienSauKhiGiam > 0
+                ? existingProduct.giaTienSauKhiGiam
+                : existingProduct.gia;
+            const newPrice =
+              sanitizedProduct.giaTienSauKhiGiam > 0
+                ? sanitizedProduct.giaTienSauKhiGiam
+                : sanitizedProduct.gia;
+                 const campaignsAreSame = existingProduct.idDotGiamGia === sanitizedProduct.idDotGiamGia;
+            if (existingPrice === newPrice&& campaignsAreSame) {
+              // GIÁ KHÔNG ĐỔI -> Tăng số lượng của sản phẩm đã có
+              updatedProducts = order.products.map((p) =>
+                p.idChiTietSanPham === sanitizedProduct.idChiTietSanPham
+                  ? { ...p, quantity: p.quantity + sanitizedProduct.quantity }
+                  : p
+              );
+            } else {
+              // GIÁ THAY ĐỔI -> Thêm như một dòng mới và lưu lại giá cũ để hiển thị
+              const newProductWithPriceChange = {
+                ...sanitizedProduct,
+                giaTruocKhiDoi: existingPrice, // <-- Thêm thuộc tính mới
+              };
+              const productsWithLockedOld = order.products.map((p) =>
+                p.uniqueId === existingProduct.uniqueId
+                  ? { ...p, isPriceLocked: true } // <-- ĐÁNH DẤU SẢN PHẨM CŨ
+                  : p
+              );
+              updatedProducts = [...productsWithLockedOld, newProductWithPriceChange];
+            }
           }
           return { ...order, products: updatedProducts };
         }
+
         return order;
       })
     );
@@ -359,54 +400,113 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
     ? currentOrder.products.some((p) => p.isSelected) && !isAllSelected
     : false;
 
- const handleCloseOrderTab = async (idToClose, options = {}) => {
-  // Gán giá trị mặc định cho returnStock
-  const { returnStock = true } = options;
+  const handleCloseOrderTab = async (idToClose, options = {}) => {
+    // Gán giá trị mặc định cho returnStock
+    const { returnStock = true } = options;
 
-  const orderToClose = orders.find((order) => order.id === idToClose);
-  if (!orderToClose) return;
+    const orderToClose = orders.find((order) => order.id === idToClose);
+    if (!orderToClose) return;
 
-  try {
-    // CHỈ GỌI API KHI returnStock LÀ TRUE
-    if (returnStock && orderToClose.products.length > 0) {
-      console.log(`Đang hoàn trả sản phẩm cho đơn hàng ID: ${orderToClose.name}`);
-      const returnProductPromises = orderToClose.products.map((product) =>
-        axios.put(
-          `http://localhost:8080/api/hoa-don/tang-so-luong-san-pham/${product.idChiTietSanPham}`,
-          null,
-          {
-            params: {
-              soLuong: product.quantity,
-            },
-          }
-        )
-      );
-      await Promise.all(returnProductPromises);
-    } else {
-        console.log(`Đóng tab cho đơn hàng đã hoàn tất ID: ${orderToClose.name}. Không hoàn trả sản phẩm.`);
-    }
-
-    // Phần logic còn lại để đóng tab không thay đổi
-    const newOrders = orders.filter((order) => order.id !== idToClose);
-    setOrders(newOrders);
-
-    if (selectedTab === idToClose) {
-      if (newOrders.length === 0) {
-        setSelectedTab(null);
-        // Tùy chọn: tự động tạo đơn hàng mới
-        // handleCreateOrder();
+    try {
+      // CHỈ GỌI API KHI returnStock LÀ TRUE
+      if (returnStock && orderToClose.products.length > 0) {
+        console.log(`Đang hoàn trả sản phẩm cho đơn hàng ID: ${orderToClose.name}`);
+        const returnProductPromises = orderToClose.products.map((product) =>
+          axios.put(
+            `http://localhost:8080/api/hoa-don/tang-so-luong-san-pham/${product.idChiTietSanPham}`,
+            null,
+            {
+              params: {
+                soLuong: product.quantity,
+              },
+            }
+          )
+        );
+        await Promise.all(returnProductPromises);
       } else {
-        setSelectedTab(newOrders[0].id);
+        console.log(
+          `Đóng tab cho đơn hàng đã hoàn tất ID: ${orderToClose.name}. Không hoàn trả sản phẩm.`
+        );
       }
-    }
-  } catch (error) {
-    console.error("Lỗi khi hoàn trả sản phẩm khi đóng tab:", error);
-    alert(
-      `Có lỗi xảy ra khi đóng đơn hàng. Sản phẩm chưa được hoàn trả về kho. Vui lòng thử lại.`
-    );
-  }
-};
 
+      // Phần logic còn lại để đóng tab không thay đổi
+      const newOrders = orders.filter((order) => order.id !== idToClose);
+      setOrders(newOrders);
+
+      if (selectedTab === idToClose) {
+        if (newOrders.length === 0) {
+          setSelectedTab(null);
+          // Tùy chọn: tự động tạo đơn hàng mới
+          // handleCreateOrder();
+        } else {
+          setSelectedTab(newOrders[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi hoàn trả sản phẩm khi đóng tab:", error);
+      toast.error(
+        `Có lỗi xảy ra khi đóng đơn hàng. Sản phẩm chưa được hoàn trả về kho. Vui lòng thử lại.`
+      );
+    }
+  };
+  useEffect(() => {
+    let today = new Date().getDate();
+
+    // Hàm thực hiện việc xóa tất cả các tab
+    const clearAllTabs = async () => {
+      console.log("🌅 Đã qua ngày mới, tiến hành xóa các tab chờ...");
+
+      try {
+        // Lấy danh sách các đơn hàng đang chờ từ localStorage
+        const savedOrdersRaw = localStorage.getItem("salesOrders");
+        const pendingOrders = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
+
+        if (pendingOrders.length > 0) {
+          // Tạo một mảng các promise để gọi API hoàn trả số lượng cho tất cả sản phẩm
+          const returnPromises = pendingOrders.flatMap((order) =>
+            order.products.map((product) => {
+              console.log(`Hoàn trả ${product.quantity} sản phẩm ${product.tenSanPham} về kho.`);
+              return axios.put(
+                `http://localhost:8080/api/hoa-don/tang-so-luong-san-pham/${product.idChiTietSanPham}`,
+                null,
+                { params: { soLuong: product.quantity } }
+              );
+            })
+          );
+
+          // Chờ tất cả các API hoàn trả thực hiện xong
+          await Promise.allSettled(returnPromises);
+          console.log("Hoàn trả số lượng tồn kho hoàn tất.");
+        }
+
+        // Xóa dữ liệu trong localStorage
+        localStorage.removeItem("salesOrders");
+        localStorage.removeItem("selectedSalesTab");
+
+        // Hiển thị thông báo và tải lại trang để reset trạng thái
+        toast.success("Đã qua ngày mới, tất cả các đơn hàng chờ đã được dọn dẹp.");
+        window.location.reload();
+      } catch (error) {
+        console.error("Lỗi khi tự động dọn dẹp các tab chờ:", error);
+        alert("Có lỗi xảy ra trong quá trình dọn dẹp tự động.");
+      }
+    };
+
+    // Thiết lập một bộ đếm thời gian kiểm tra mỗi phút
+    const intervalId = setInterval(() => {
+      const now = new Date();
+      // Nếu ngày hiện tại khác với ngày đã lưu -> tức là đã qua nửa đêm
+      if (now.getDate() !== today) {
+        // Cập nhật lại ngày "hôm nay"
+        today = now.getDate();
+        // Gọi hàm xóa
+        clearAllTabs();
+      }
+    }, 60000); // 60000ms = 1 phút
+
+    // Dọn dẹp interval khi component bị unmount
+    return () => clearInterval(intervalId);
+  }, []);
   return (
     <>
       <Card>
@@ -454,6 +554,9 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                       <Typography variant="body2">{order.name} </Typography>
                       <Badge badgeContent={order.products.length} color="error" />
                       <IconButton
+                        // THÊM DÒNG NÀY ĐỂ SỬA LỖI
+                        component="div"
+                        // ------------------------
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -534,7 +637,6 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
               {currentOrder ? (
                 currentOrder.products.length > 0 ? (
                   <>
-                    {/* Header bảng sản phẩm */}
                     <Box
                       sx={{
                         display: "flex",
@@ -655,6 +757,18 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                                 Màu: {product.mauSac} | Size: {product.kichThuoc}
                               </Typography>
                             </Box>
+                            {product.giaTruocKhiDoi && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: "error.main", // Màu đỏ
+                                  fontStyle: "italic", // In nghiêng
+                                }}
+                              >
+                                (Giá đã đổi từ {formatCurrency(product.giaTruocKhiDoi)} thành{" "}
+                                {formatCurrency(product.giaTienSauKhiGiam ?? product.gia)})
+                              </Typography>
+                            )}
                           </Box>
 
                           {/* Cột 3: Số lượng */}
@@ -679,12 +793,13 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                                   onClick={() =>
                                     handleUpdateQuantity(product.uniqueId, product.quantity - 1)
                                   }
-                                  disabled={product.quantity <= 1}
+                                  disabled={!!product.isPriceLocked || product.quantity <= 1}
                                   sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}
                                 >
                                   <RemoveIcon fontSize="small" />
                                 </IconButton>
                                 <TextField
+                                  disabled={!!product.isPriceLocked}
                                   type="number"
                                   value={product.quantity}
                                   onChange={(e) => {
@@ -711,7 +826,10 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                                   onClick={() =>
                                     handleUpdateQuantity(product.uniqueId, product.quantity + 1)
                                   }
-                                  disabled={product.quantity >= product.soLuongTonKho}
+                                  disabled={
+                                    !!product.isPriceLocked ||
+                                    product.quantity >= product.soLuongTonKho
+                                  }
                                   sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}
                                 >
                                   <AddIcon fontSize="small" />
@@ -734,7 +852,9 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                           <Box sx={{ width: "15%", textAlign: "right" }}>
                             <Typography variant="h6" fontWeight="bold">
                               {formatCurrency(
-                                (product.giaTienSauKhiGiam ?? product.gia) * product.quantity
+                                (product.giaTienSauKhiGiam > 0
+                                  ? product.giaTienSauKhiGiam
+                                  : product.gia) * product.quantity
                               )}
                             </Typography>
                           </Box>

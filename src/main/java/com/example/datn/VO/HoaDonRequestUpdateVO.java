@@ -15,7 +15,6 @@ public class HoaDonRequestUpdateVO {
     private String khachHang;           // ID của khách hàng
     private String nhanVien;            // ID của nhân viên
     private String phieuGiamGia;        // ID của phiếu giảm giá
-
     private String tenKhachHang;
     private String sdt;
     private String diaChi;
@@ -34,6 +33,8 @@ public class HoaDonRequestUpdateVO {
     public static class SanPhamCapNhatVO {
         private Integer id;
         private Integer soLuong;
+        private Integer donGia;
+        private Integer idDotGiamGia;
     }
 
 

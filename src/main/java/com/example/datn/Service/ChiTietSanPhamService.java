@@ -4,6 +4,7 @@ import com.example.datn.DTO.ChiTietSanPhamDTO;
 import com.example.datn.DTO.ChiTietSanPhamDotGIamGIaDTO;
 import com.example.datn.Entity.ChatLieu;
 import com.example.datn.Entity.ChiTietSanPham;
+import com.example.datn.Entity.DotGiamGia;
 import com.example.datn.Entity.ThuongHieu;
 import com.example.datn.Repository.*;
 import com.example.datn.VO.ChiTietSanPhamBanHangTaiQuayVO;
@@ -17,10 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -81,15 +80,31 @@ public class ChiTietSanPhamService {
 
     public List<ChiTietSanPhamDotGIamGIaDTO> getChiTietSanPhamCoDGG() {
         List<ChiTietSanPham> chiTietSanPhamList = chiTietSanPhamRepository.getChiTietSanPhamTrangThai();
-        List<ChiTietSanPhamDotGIamGIaDTO> chiTietSanPhamDotGIamGIaDTOS = new ArrayList<ChiTietSanPhamDotGIamGIaDTO>();
+        List<ChiTietSanPhamDotGIamGIaDTO> chiTietSanPhamDotGIamGIaDTOS = new ArrayList<>();
+
         for (ChiTietSanPham c : chiTietSanPhamList) {
             ChiTietSanPhamDotGIamGIaDTO ctsp = new ChiTietSanPhamDotGIamGIaDTO();
-            List<Integer> phantramgiamctsp = chiTietDotGiamGiaRepository.getDotGiamGiaByIdChiTietSanPham(c.getId());
-            phantramgiamctsp.sort(Collections.reverseOrder());
-            int pggLonNhat = 100;
-            if (!phantramgiamctsp.isEmpty()) {
-                pggLonNhat = phantramgiamctsp.getFirst();
+
+            // BƯỚC 1: Lấy về danh sách đối tượng DotGiamGia, không phải List<Integer>
+            // (Giả sử bạn đã đổi tên phương thức repository cho rõ nghĩa)
+            List<DotGiamGia> activeDiscounts = chiTietDotGiamGiaRepository.getDotGiamGiaByIdChiTietSanPham(c.getId());
+
+            // BƯỚC 2: Dùng Stream để tìm đợt giảm giá tốt nhất (có phanTramGiam cao nhất)
+            Optional<DotGiamGia> bestDiscountOptional = activeDiscounts.stream()
+                    .max(Comparator.comparing(DotGiamGia::getPhanTramGiamGia));
+
+            int pggLonNhat = 0;
+            Integer idDGG = null; // Dùng Integer để có thể là null
+
+            // BƯỚC 3: Nếu tìm thấy đợt giảm giá, lấy thông tin từ đó
+            if (bestDiscountOptional.isPresent()) {
+                DotGiamGia bestDiscount = bestDiscountOptional.get();
+                pggLonNhat = bestDiscount.getPhanTramGiamGia();
+                idDGG = bestDiscount.getId(); // Lấy ID ở đây!
             }
+
+            // BƯỚC 4: Set giá trị cho DTO
+            ctsp.setIdDotGiamGia(idDGG); // <-- SET ID ĐỢT GIẢM GIÁ
             ctsp.setIdChiTietSanPham(c.getId());
             ctsp.setTenSanPham(c.getSanPham().getTenSanPham());
             ctsp.setMaSanPham(c.getMaSanPhamChiTiet());
@@ -101,13 +116,14 @@ public class ChiTietSanPhamService {
             ctsp.setCoAo(c.getCoAo().getTenCoAo());
             ctsp.setTayAo(c.getTayAo().getTenTayAo());
             ctsp.setGia(c.getGia());
-            ctsp.setGiaTienSauKhiGiam(c.getGia() - (c.getGia() * pggLonNhat / 100));
-            if (pggLonNhat == 100){
-                ctsp.setPhanTramGiam(0);
-            }
-            else {
-                ctsp.setPhanTramGiam(pggLonNhat);
-            }
+            ctsp.setPhanTramGiam(pggLonNhat);
+
+            // Tính giá sau khi giảm
+            BigDecimal originalPrice = BigDecimal.valueOf(c.getGia());
+            BigDecimal discountAmount = originalPrice.multiply(BigDecimal.valueOf(pggLonNhat)).divide(BigDecimal.valueOf(100));
+            ctsp.setGiaTienSauKhiGiam(originalPrice.subtract(discountAmount).intValue());
+
+
             chiTietSanPhamDotGIamGIaDTOS.add(ctsp);
         }
 
