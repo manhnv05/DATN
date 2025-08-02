@@ -234,4 +234,14 @@ public ResponseEntity<byte[]> exportPdf(@PathVariable String id) {
                 .build();
         return ResponseEntity.ok(apiResponse);
     }
+    @PutMapping("/cap-nhat-khach-hang")
+    public ResponseEntity<ApiResponse<String>> capNhatKhachHangVaoHoaDon(@RequestBody CapNhatKhachRequestVO capNhatKhachRequest) {
+        String result = hoaDonService.capNhatKhachHangVaoHoaDon(capNhatKhachRequest);
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1000)
+                .message("Cập nhật khách hàng vào hóa đơn thành công")
+                .data(result)
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
 }

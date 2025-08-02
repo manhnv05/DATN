@@ -7,6 +7,7 @@ import com.example.datn.Entity.ChiTietSanPham;
 import com.example.datn.Entity.HoaDon;
 import com.example.datn.VO.*;
 import com.example.datn.enums.TrangThai;
+import lombok.Data;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
@@ -48,5 +49,6 @@ public interface HoaDonService {
    void capNhatSoLuongSanPhamTrongKho(HoaDon hoaDon, boolean isDeducting);
    TongTienHoaDonDto getThongTinGiamGiaByHoaDonId(Integer idHoaDon);
    int tinhGiaCuoiCung(ChiTietSanPham spct);
+   String  capNhatKhachHangVaoHoaDon(CapNhatKhachRequestVO capNhatKhachRequest);
 
 }

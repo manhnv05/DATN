@@ -487,18 +487,41 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
   };
 
   const handleClearCustomer = async () => {
-    setCustomer({ id: null, tenKhachHang: "Khách lẻ" });
-    setShippingAddress(null);
+    // Nếu không có hóa đơn đang hoạt động thì không làm gì cả
+    if (!hoaDonId) {
+      toast.warn("Chưa có hóa đơn nào được chọn.");
+      return;
+    }
 
-    // Reset voucher khi bỏ chọn khách hàng
-    setVoucherCode("");
-    setAppliedVoucher(null);
-    setSuggestedVoucher(null);
-    setDiscountValue(0);
+    try {
+      // 1. Chuẩn bị dữ liệu gửi đi
+      const payload = {
+        idHoaDon: hoaDonId,
+        idKhachHang: null, // Gán khách hàng về null
+      };
 
-    // Gọi API để tìm phiếu giảm giá cho khách lẻ (null)
-    if (totalAmount > 0) {
-      await fetchBestVoucherForCustomer(null);
+      // 2. Gọi API để cập nhật khách hàng về null
+      await axios.put("http://localhost:8080/api/hoa-don/cap-nhat-khach-hang", payload);
+
+      // 3. Nếu API thành công, cập nhật state của giao diện
+      setCustomer({ id: null, tenKhachHang: "Khách lẻ" });
+      setShippingAddress(null);
+
+      // Reset voucher khi bỏ chọn khách hàng
+      setVoucherCode("");
+      setAppliedVoucher(null);
+      setSuggestedVoucher(null);
+      setDiscountValue(0);
+
+      toast.success("Đã bỏ chọn khách hàng.");
+
+      // Gọi API để tìm phiếu giảm giá cho khách lẻ (truyền vào null)
+      if (totalAmount > 0) {
+        await fetchBestVoucherForCustomer(null);
+      }
+    } catch (error) {
+      console.error("Lỗi khi bỏ chọn khách hàng:", error);
+      toast.error("Có lỗi xảy ra khi cố gắng bỏ chọn khách hàng. Vui lòng thử lại.");
     }
   };
 
@@ -628,6 +651,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
       setAppliedVoucher(null);
     }
   };
+
   const isDisabled = totalAmount <= 0;
   return (
     <>
@@ -806,14 +830,36 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
       >
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
-            <SoftTypography variant="h5">Chọn khách hàng</SoftTypography>
+            <SoftTypography
+              variant="outlined"
+              size="medium"
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 400,
+                color: "#49a3f1",
+                borderColor: "#49a3f1",
+                boxShadow: "none",
+                "&:hover": {
+                  borderColor: "#1769aa",
+                  background: "#f0f6fd",
+                  color: "#1769aa",
+                },
+              }}
+            >
+              Chọn khách hàng
+            </SoftTypography>
             <IconButton onClick={() => setIsCustomerModalOpen(false)}>
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
         <DialogContent dividers>
-          <CustomerTable isSelectionMode={true} onSelectCustomer={handleSelectCustomer} />
+          <CustomerTable
+            isSelectionMode={true}
+            onSelectCustomer={handleSelectCustomer}
+            idHoaDon={hoaDonId}
+          />
         </DialogContent>
       </Dialog>
       <AddressSelectionModal

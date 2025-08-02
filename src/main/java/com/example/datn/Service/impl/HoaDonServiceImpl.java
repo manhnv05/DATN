@@ -392,6 +392,22 @@ public class HoaDonServiceImpl implements HoaDonService {
     }
 
     @Override
+    public String capNhatKhachHangVaoHoaDon(CapNhatKhachRequestVO capNhatKhachRequest) {
+        HoaDon hoaDon = hoaDonRepository.findById(capNhatKhachRequest.getIdHoaDon())
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        if (capNhatKhachRequest.getIdKhachHang() != null) {
+            KhachHang  khachHang = khachHangRepository.findById(capNhatKhachRequest.getIdKhachHang())
+                    .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+            hoaDon.setKhachHang(khachHang);
+
+        }else {
+            hoaDon.setKhachHang(null);
+        }
+        hoaDonRepository.save(hoaDon);
+        return "Cập nhật khách hàng thành công!";
+    }
+
+    @Override
     public CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien) {
         HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
