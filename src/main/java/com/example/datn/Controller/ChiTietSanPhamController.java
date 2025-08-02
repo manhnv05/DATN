@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -88,4 +89,11 @@ public class ChiTietSanPhamController {
     public List<ChiTietSanPhamDotGIamGIaDTO> test() {
         return chiTietSanPhamService.getChiTietSanPhamCoDGG();
     }
+
+    @GetMapping("/scan-san-pham")
+    public ResponseEntity<ChiTietSanPhamDotGIamGIaDTO> getSanPhamTheoMa(@RequestParam("maSanPhamChiTiet") String maSanPhamChiTiet) {
+        ChiTietSanPhamDotGIamGIaDTO dto = chiTietSanPhamService.getChiTietSanPhamTheoMa(maSanPhamChiTiet);
+        return ResponseEntity.ok(dto);
+    }
+
 }

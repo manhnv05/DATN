@@ -11,6 +11,7 @@ import com.example.datn.VO.ChiTietSanPhamBanHangTaiQuayVO;
 import com.example.datn.VO.ChiTietSanPhamQueryVO;
 import com.example.datn.VO.ChiTietSanPhamUpdateVO;
 import com.example.datn.VO.ChiTietSanPhamVO;
+import com.example.datn.exception.AppException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -234,4 +235,52 @@ public class ChiTietSanPhamService {
         }
         return list;
     }
+    public ChiTietSanPhamDotGIamGIaDTO getChiTietSanPhamTheoMa(String maSanPhamChiTiet) {
+        // Lấy chi tiết sản phẩm theo mã
+        ChiTietSanPham c = chiTietSanPhamRepository.findByMaSanPhamChiTiet(maSanPhamChiTiet);
+        if (c == null) {
+            throw new NoSuchElementException("Không tìm thấy chi tiết sản phẩm bán hàng tại quầy");
+        }
+
+        ChiTietSanPhamDotGIamGIaDTO ctsp = new ChiTietSanPhamDotGIamGIaDTO();
+
+        // Lấy các đợt giảm giá đang áp dụng
+        List<DotGiamGia> activeDiscounts = chiTietDotGiamGiaRepository.getDotGiamGiaByIdChiTietSanPham(c.getId());
+
+        // Tìm đợt giảm giá có phần trăm lớn nhất
+        DotGiamGia bestDiscount = activeDiscounts.stream()
+                .max(Comparator.comparing(DotGiamGia::getPhanTramGiamGia))
+                .orElse(null); // trả về null nếu không có đợt giảm giá
+
+        int pggLonNhat = 0;
+        Integer idDGG = null;
+
+        if (bestDiscount != null) {
+            pggLonNhat = bestDiscount.getPhanTramGiamGia();
+            idDGG = bestDiscount.getId();
+        }
+
+        // Gán dữ liệu vào DTO
+        ctsp.setIdDotGiamGia(idDGG);
+        ctsp.setIdChiTietSanPham(c.getId());
+        ctsp.setTenSanPham(c.getSanPham().getTenSanPham());
+        ctsp.setMaSanPham(c.getMaSanPhamChiTiet());
+        ctsp.setThuongHieu(c.getThuongHieu().getTenThuongHieu());
+        ctsp.setSoLuongTonKho(c.getSoLuong());
+        ctsp.setChatLieu(c.getChatLieu().getTenChatLieu());
+        ctsp.setMauSac(c.getMauSac().getTenMauSac());
+        ctsp.setKichThuoc(c.getKichThuoc().getTenKichCo());
+        ctsp.setCoAo(c.getCoAo().getTenCoAo());
+        ctsp.setTayAo(c.getTayAo().getTenTayAo());
+        ctsp.setGia(c.getGia());
+        ctsp.setPhanTramGiam(pggLonNhat);
+
+        // Tính giá sau khi giảm
+        BigDecimal originalPrice = BigDecimal.valueOf(c.getGia());
+        BigDecimal discountAmount = originalPrice.multiply(BigDecimal.valueOf(pggLonNhat)).divide(BigDecimal.valueOf(100));
+        ctsp.setGiaTienSauKhiGiam(originalPrice.subtract(discountAmount).intValue());
+
+        return ctsp;
     }
+
+}

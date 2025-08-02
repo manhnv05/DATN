@@ -39,6 +39,13 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.math.RoundingMode;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.itextpdf.text.Image;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
@@ -161,6 +168,16 @@ public class HoaDonServiceImpl implements HoaDonService {
         );
         return new HoaDonChoDTO(saveHoaDon.getId(),saveHoaDon.getMaHoaDon());
     }
+    private Image createQrCode(String data, int size) throws Exception {
+        QRCodeWriter writer = new QRCodeWriter();
+        BitMatrix bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, size, size);
+        BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
+
+        // Chuyển BufferedImage thành Image của iText
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedImage, "png", baos);
+        return Image.getInstance(baos.toByteArray());
+    }
 
     @Override
     public HoaDonPdfResult hoadonToPDF(String idHoaDon) {
@@ -191,15 +208,38 @@ public class HoaDonServiceImpl implements HoaDonService {
             Paragraph sdt = new Paragraph("Số điện thoại: 0192345544", font);
             Paragraph email = new Paragraph("Email: shop@gmail.com", font);
             Paragraph diaChi = new Paragraph("Địa chỉ: FPT , Phúc diên, Bắc Từ liêm, Hà Nội", font);
-            title2.setAlignment(Element.ALIGN_CENTER);
-            sdt.setAlignment(Paragraph.ALIGN_CENTER);
-            email.setAlignment(Element.ALIGN_CENTER);
-            diaChi.setAlignment(Element.ALIGN_CENTER);
+            PdfPTable headerTable = new PdfPTable(2); // Bảng có 2 cột
+            headerTable.setWidthPercentage(100);
+            headerTable.setWidths(new float[]{1, 4}); // Cột QR chiếm 1 phần, cột thông tin chiếm 4 phần
+            headerTable.setSpacingAfter(20f); // Tạo khoảng cách với phần "HÓA ĐƠN BÁN HÀNG" bên dưới
+
+// Cột 1 (Trái): Chứa mã QR
+            PdfPCell qrCell = new PdfPCell();
+            Image qrImage = createQrCode(hoaDon.getMaHoaDon(), 80); // Tạo QR kích thước 80x80 pixels
+            qrCell.addElement(qrImage);
+            qrCell.setBorder(Rectangle.NO_BORDER); // Xóa viền ô
+            headerTable.addCell(qrCell);
+
+// Cột 2 (Phải): Chứa thông tin cửa hàng
+            PdfPCell shopInfoCell = new PdfPCell();
+// Bỏ căn giữa để chữ căn trái tự nhiên
+            title2.setAlignment(Element.ALIGN_LEFT);
+            sdt.setAlignment(Element.ALIGN_LEFT);
+            email.setAlignment(Element.ALIGN_LEFT);
+            diaChi.setAlignment(Element.ALIGN_LEFT);
+// Thêm các dòng thông tin vào ô bên phải
+            shopInfoCell.addElement(title2);
+            shopInfoCell.addElement(sdt);
+            shopInfoCell.addElement(email);
+            shopInfoCell.addElement(diaChi);
+            shopInfoCell.setBorder(Rectangle.NO_BORDER); // Xóa viền ô
+            headerTable.addCell(shopInfoCell);
+
+// Thêm bảng header vừa tạo vào văn bản
+            document.add(headerTable);
+
+// Căn giữa cho tiêu đề "DANH SÁCH SẢN PHẨM"
             titleDSSP.setAlignment(Element.ALIGN_CENTER);
-            document.add(title2);
-            document.add(sdt);
-            document.add(email);
-            document.add(diaChi);
             // Tiêu đề
             Paragraph title = new Paragraph("HÓA ĐƠN BÁN HÀNG", fontTitle);
             title.setAlignment(Element.ALIGN_CENTER);
@@ -303,6 +343,8 @@ public class HoaDonServiceImpl implements HoaDonService {
         } catch (DocumentException | IOException e) {
             e.printStackTrace();
             throw new RuntimeException("Lỗi khi tạo PDF hóa đơn: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         return new HoaDonPdfResult(hoaDon.getMaHoaDon(), new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));

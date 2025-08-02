@@ -24,7 +24,7 @@ import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import PaidIcon from "@mui/icons-material/Paid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
-
+import QRCodeScanner from "../QRCodeScanner/QRCodeScanner.jsx"; // Đảm bảo đường dẫn đúng
 // Import các component chung
 import SoftBox from "components/SoftBox";
 import Card from "@mui/material/Card";
@@ -89,6 +89,52 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
   });
   const [selectedTab, setSelectedTab] = useState(orders.length > 0 ? orders[0].id : null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const handleScanSuccess = async (decodedText) => {
+  // 1. Đóng modal quét QR
+  setIsScannerOpen(false);
+
+  // 2. Kiểm tra xem có hóa đơn nào đang được chọn không
+  if (!selectedTab) {
+    toast.warn("Vui lòng chọn hoặc tạo một hóa đơn trước khi quét sản phẩm!");
+    return;
+  }
+
+  try {
+    // 3. Gọi API để lấy thông tin sản phẩm từ mã QR
+    const response = await axios.get(
+      "http://localhost:8080/chiTietSanPham/scan-san-pham",
+      {
+        params: {
+          maSanPhamChiTiet: decodedText, // axios sẽ tự động tạo URL: .../find-by-ma?ma=...
+        },
+      }
+    );
+
+    const productData = response.data;
+
+    // 4. Nếu API trả về dữ liệu sản phẩm hợp lệ
+    if (productData) {
+      // Gán số lượng mặc định là 1 để thêm vào giỏ hàng
+      const productToAdd = { ...productData, quantity: 1 };
+
+      // 5. Sử dụng hàm handleProductSelected đã có để thêm sản phẩm vào giỏ hàng
+      handleProductSelected(productToAdd);
+
+      toast.success(`Đã thêm: ${productData.tenSanPham}`);
+    } else {
+      toast.error("Mã sản phẩm không tồn tại trong hệ thống.");
+    }
+  } catch (error) {
+    console.error("Lỗi khi tìm sản phẩm bằng mã QR:", error);
+    toast.error("Lỗi: Không thể tìm thấy sản phẩm hoặc có sự cố kết nối.");
+  }
+};
+
+  const handleScanError = (errorMessage) => {
+    console.error("Lỗi máy quét QR:", errorMessage);
+    toast.error("Không thể quét mã. Vui lòng thử lại.");
+  };
   const [selectedCustomer, setSelectedCustomer] = useState({
     idKhachHang: 101,
     sdt: "012345673",
@@ -204,7 +250,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
     }
   }, [currentOrder, onProductsChange]);
   const handleProductSelected = (productToAdd) => {
-     console.log("productToAdd:", productToAdd); 
+    console.log("productToAdd:", productToAdd);
     const sanitizedProduct = {
       ...productToAdd,
       uniqueId: `${productToAdd.idChiTietSanPham}-${Date.now()}`, // Luôn tạo uniqueId
@@ -215,7 +261,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
       quantity: parseInt(productToAdd.quantity, 10) || 1,
       isSelected: true,
     };
-    
+
     setOrders((prevOrders) =>
       prevOrders.map((order) => {
         if (order.id === selectedTab) {
@@ -225,7 +271,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
             .find(
               (p) => p.idChiTietSanPham === sanitizedProduct.idChiTietSanPham && !p.isPriceLocked
             );
-            
+
           let updatedProducts;
           if (!existingProduct) {
             // TRƯỜNG HỢP 1: Sản phẩm chưa từng có trong giỏ -> Thêm mới bình thường
@@ -239,8 +285,8 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
               sanitizedProduct.giaTienSauKhiGiam > 0
                 ? sanitizedProduct.giaTienSauKhiGiam
                 : sanitizedProduct.gia;
-                 const campaignsAreSame = existingProduct.idDotGiamGia === sanitizedProduct.idDotGiamGia;
-            if (existingPrice === newPrice&& campaignsAreSame) {
+            const campaignsAreSame = existingProduct.idDotGiamGia === sanitizedProduct.idDotGiamGia;
+            if (existingPrice === newPrice && campaignsAreSame) {
               // GIÁ KHÔNG ĐỔI -> Tăng số lượng của sản phẩm đã có
               updatedProducts = order.products.map((p) =>
                 p.idChiTietSanPham === sanitizedProduct.idChiTietSanPham
@@ -592,6 +638,8 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                 <Button
                   variant="outlined"
                   startIcon={<QrCodeScannerIcon />}
+                  onClick={() => setIsScannerOpen(true)} // <-- THÊM DÒNG NÀY
+                  disabled={!selectedTab}
                   sx={{
                     borderRadius: 2,
                     textTransform: "none",
@@ -924,6 +972,12 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
           onSelectProduct={handleProductSelected}
         />
       )}
+      <QRCodeScanner
+    open={isScannerOpen}
+    onClose={() => setIsScannerOpen(false)}
+    onScanSuccess={handleScanSuccess}
+    onScanError={handleScanError}
+/>
     </>
   );
 }

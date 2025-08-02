@@ -25,7 +25,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import SoftButton from "components/SoftButton";
 import { toast } from "react-toastify";
 
-
 // import { IMaskInput } from "react-imask";
 
 // Hàm tiện ích định dạng tiền tệ
@@ -84,7 +83,6 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
 
   // Xử lý khi thêm một lần thanh toán mới
   const handleAddPayment = () => {
- 
     const paymentAmount = Number(String(amount).replace(/\./g, ""));
 
     if (!paymentAmount || paymentAmount <= 0) {
@@ -112,10 +110,10 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
       idHinhThucThanhToan: paymentMethod === "cash" ? 1 : 2,
       idHoaDon: hoaDonId,
       maGiaoDich: paymentMethod === "transfer" ? transactionCode : null,
-       soTienThanhToan: paymentAmount, 
+      soTienThanhToan: paymentAmount,
       trangThaiThanhToan: 1,
     };
-   
+
     setNewPayments([...newPayments, newPayment]);
     setAmount("");
     setTransactionCode("");
@@ -173,62 +171,59 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Box display="flex" gap={2} mb={2}>
             <Button
-           variant="outlined"
-           
-                    size="medium"
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      fontSize: "1rem",
-                      color: "#49a3f1",
-                      borderColor: "#49a3f1",
-                      boxShadow: "none",
-                      "&:hover": {
-                        borderColor: "#1769aa",
-                        background: "#f0f6fd",
-                        color: "#1769aa",
-                      },
-                    }}
+              variant="outlined"
+              size="medium"
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "1rem",
+                color: "#49a3f1",
+                borderColor: "#49a3f1",
+                boxShadow: "none",
+                "&:hover": {
+                  borderColor: "#1769aa",
+                  background: "#f0f6fd",
+                  color: "#1769aa",
+                },
+              }}
               onClick={() => setPaymentMethod("transfer")}
             >
               Chuyển khoản
             </Button>
             <Button
-               variant="outlined"
-               size="medium"
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                       fontWeight: 600,
-                      fontSize: "1rem",
-                      color: "#49a3f1",
-                      borderColor: "#49a3f1",
-                      boxShadow: "none",
-                      "&:hover": {
-                        borderColor: "#1769aa",
-                        background: "#f0f6fd",
-                        color: "#1769aa",
-                      },
-                    }}
+              variant="outlined"
+              size="medium"
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "1rem",
+                color: "#49a3f1",
+                borderColor: "#49a3f1",
+                boxShadow: "none",
+                "&:hover": {
+                  borderColor: "#1769aa",
+                  background: "#f0f6fd",
+                  color: "#1769aa",
+                },
+              }}
               onClick={() => setPaymentMethod("cash")}
             >
               Tiền mặt
             </Button>
           </Box>
           <Box display="flex" gap={2} alignItems="flex-start">
-          <TextField
- label="Tiền khách đưa"
- value={amount}
- onChange={(value) => {
-          
-                 
-                  setAmount(value);
-                }}
- sx={{ flexGrow: 1 }}
- autoFocus
-InputProps={{ inputComponent: NumberFormatCustom }}
- />
+            <TextField
+              label="Tiền khách đưa"
+              value={amount}
+              onChange={(value) => {
+                setAmount(value);
+              }}
+              sx={{ flexGrow: 1 }}
+              autoFocus
+              InputProps={{ inputComponent: NumberFormatCustom }}
+            />
             {paymentMethod === "transfer" && (
               <TextField
                 label="Mã giao dịch"
@@ -304,10 +299,7 @@ InputProps={{ inputComponent: NumberFormatCustom }}
               )}
               {/* Hàng hiển thị tiền thừa */}
               <TableRow>
-               
-                <TableCell align="right">
-                
-                </TableCell>
+                <TableCell align="right"></TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -321,8 +313,9 @@ InputProps={{ inputComponent: NumberFormatCustom }}
           onClick={handleConfirm}
           fullWidth
           sx={{
-                      borderRadius: 2,
-                      textTransform: "none"}}
+            borderRadius: 2,
+            textTransform: "none",
+          }}
         >
           Xác nhận
         </SoftButton>

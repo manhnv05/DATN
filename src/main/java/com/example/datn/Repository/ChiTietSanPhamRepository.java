@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, Integer>, JpaSpecificationExecutor<ChiTietSanPham> {
@@ -70,4 +71,6 @@ public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham, 
         ORDER BY ctsp.id desc
 """)
     List<ChiTietSanPham> getChiTietSanPhamTrangThai();
+
+
 }
