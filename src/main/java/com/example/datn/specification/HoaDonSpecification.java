@@ -5,6 +5,7 @@ import com.example.datn.Entity.HoaDon;
 import com.example.datn.enums.TrangThai;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -61,7 +62,7 @@ public static Specification<HoaDon> filterHoaDon(
         );
         predicates.add(criteriaBuilder.or(hasAssociatedCustomer, hasDirectCustomerName));
 
-
+        predicates.add(criteriaBuilder.greaterThan(root.get("tongTien"), BigDecimal.ZERO));
         // Kết hợp tất cả các predicates với toán tử AND
         return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
     };
