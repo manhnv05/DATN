@@ -14,8 +14,9 @@ import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
 import PropTypes from "prop-types";
 import { STATUS_LIST } from "./Filter";
 import { useState } from 'react';
-import ThreeDotMenu from "components/Voucher/menu";
+import ThreeDotMenuDotGiamGia from "components/Voucher/menuDotGiamGia";
 import { toast } from "react-toastify";
+import { ro } from "date-fns/locale";
 
 const TableList = ({
     data,
@@ -149,7 +150,7 @@ const TableList = ({
             width: "110px",
             render: (_, row) => (
                 <SoftBox display="flex" gap={0.5} justifyContent="center">
-                    <ThreeDotMenu
+                    <ThreeDotMenuDotGiamGia
                         statusList={statusListDotGiam}
                         onSelectStatus={(status) => handleStatusChangeMenu(row, status)}
                     />

@@ -606,7 +606,7 @@ function Pay({ totalAmount, hoaDonId, onSaveOrder, onDataChange, completedOrderI
           calculatedDiscount = appliedVoucher.giamToiDa;
         }
       } else if (appliedVoucher.soTienGiam) {
-        calculatedDiscount = appliedVoucher.soTienGiam;
+        calculatedDiscount = appliedVoucher.giamToiDa;
       }
       setDiscountValue(calculatedDiscount);
     } else {

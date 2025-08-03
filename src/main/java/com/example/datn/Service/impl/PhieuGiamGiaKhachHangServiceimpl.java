@@ -119,13 +119,18 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
     public Page<PhieuGiamGiaDTO> getChiTietPhieuGiam(List<PhieuGiamGia> data, ChiTietPhieuGiamGiaVO request) {
         List<PhieuGiamGia> sortPGG = new ArrayList<>();
         for(PhieuGiamGia dataE : data){
-            if (request.getTongTienHoaDon().compareTo(new BigDecimal(dataE.getDieuKienGiam())) >= 0) {
+            if (request.getTongTienHoaDon().compareTo(new BigDecimal(dataE.getDieuKienGiam())) >= 0 && request.getTongTienHoaDon().compareTo(dataE.getGiamToiDa()) >= 0) {
                 if(dataE.getPhamTramGiamGia() != null){
                     BigDecimal soTienGiam = dataE.getPhamTramGiamGia()
                             .multiply(request.getTongTienHoaDon())
                             .divide(BigDecimal.valueOf(100));
 
-                    dataE.setSoTienGiam(soTienGiam);
+                    if (soTienGiam.compareTo(dataE.getGiamToiDa()) >= 0) {
+
+                    }
+                    else {
+                        dataE.setGiamToiDa(soTienGiam);
+                    }
                     sortPGG.add(dataE);
                 }
                 else {
@@ -134,7 +139,7 @@ public class PhieuGiamGiaKhachHangServiceimpl implements ChiTietPhieuGiamGiaServ
             }
         }
         sortPGG.sort(Comparator.comparing(
-                PhieuGiamGia::getSoTienGiam, Comparator.reverseOrder()
+                PhieuGiamGia::getGiamToiDa, Comparator.reverseOrder()
         ));
         List<PhieuGiamGia> oldList = new LinkedList<>();
 

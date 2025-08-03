@@ -42,7 +42,9 @@ public enum ErrorCode {
     PHIEU_GIAM_GIA_KHACH_HANG_NOT_FOUND(2002, "Phiếu giảm giá khách hàng không tồn tại", HttpStatus.BAD_REQUEST),
     MAIL_ERROR(2003, "ERROR MAIL", HttpStatus.BAD_REQUEST),
     PHIEU_GIAM_GIA_KH_NULL(2002, "Không có phiếu gia giá nào", HttpStatus.NOT_FOUND),
-    MA_PHIEU_GIAM_GIA_TON_TAI(2002, "Mã phiếu giảm giá tồn tại", HttpStatus.BAD_REQUEST);
+    MA_PHIEU_GIAM_GIA_TON_TAI(2002, "Mã phiếu giảm giá tồn tại", HttpStatus.BAD_REQUEST),
+
+    INVALID_QUANTITY_PGG(1015, "Số lượng PGG hết", HttpStatus.BAD_REQUEST);
 
     private final int errorCode;
     private final String errorMessage;
