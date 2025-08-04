@@ -66,4 +66,18 @@ public class PhieuGiamGiaController {
             return ResponseHelper.error("Gửi mail thất bại: " + ex.getMessage());
         }
     }
+    @PostMapping("/giam-so_luong-pgg/{id}")
+    public ResponseEntity<ApiResponse<String>> giamSoLuongSanPhamChiTiet(
+            @PathVariable Integer id,
+            @RequestParam Integer soLuong,
+            @RequestParam Integer idKhachHang
+    ) {
+        return ResponseHelper.success("",phieuGiamGiaService.giamSoluongPhieuGiamGia(id, soLuong, idKhachHang));
+    }
+    @PostMapping("/tang-so_luong-pgg/{id}")
+    public ResponseEntity<ApiResponse<String>> tangSoLuongSanPhamChiTiet(
+            @PathVariable Integer id,
+            @RequestParam Integer soLuong) {
+        return ResponseHelper.success("",phieuGiamGiaService.tangSoluongPhieuGiamGia(id,soLuong));
+    }
 }

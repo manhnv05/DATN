@@ -318,7 +318,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             table2.addCell(leftCell2);
 
             Font fontRight = new Font(baseFont, 12, Font.BOLD);
-            PdfPCell rightCell2 = new PdfPCell(new Phrase(hoaDon.getTongTien() + " VNĐ", fontRight));
+            PdfPCell rightCell2 = new PdfPCell(new Phrase(hoaDon.getTongTienBanDau() + " VNĐ", fontRight));
             rightCell2.setHorizontalAlignment(Element.ALIGN_RIGHT);
             rightCell2.setBorder(Rectangle.NO_BORDER);
             table2.addCell(rightCell2);
@@ -333,7 +333,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             table2.addCell(createLeftCell("Phí giao hàng:", fontLeft));
             table2.addCell(createRightCell(hoaDon.getPhiVanChuyen() + " VND", fontRight));
             table2.addCell(createLeftCell("Tổng tiền cần thanh toán:", fontLeft));
-            table2.addCell(createRightCell(hoaDon.getTongTien() + " VND", fontRight));
+            table2.addCell(createRightCell(hoaDon.getTongHoaDon() + " VND", fontRight));
 
             document.add(table);
             document.add(new Paragraph(" ", font));
@@ -845,7 +845,7 @@ public class HoaDonServiceImpl implements HoaDonService {
                     }
                 } else if (pgg.getSoTienGiam() != null) {
                     // Giảm theo số tiền cố định
-                    soTienDuocGiam = pgg.getSoTienGiam();
+                    soTienDuocGiam = pgg.getGiamToiDa();
                 }
                 BigDecimal tongTienCuoiCung = tongTienGocBD.subtract(soTienDuocGiam);
                 hoaDon.setTongTien(tongTienCuoiCung.intValue());

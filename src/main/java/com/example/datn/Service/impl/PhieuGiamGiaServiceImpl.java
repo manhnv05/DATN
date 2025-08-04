@@ -2,7 +2,9 @@ package com.example.datn.Service.impl;
 
 import com.example.datn.Config.EmailService;
 import com.example.datn.DTO.PhieuGiamGiaDTO;
+import com.example.datn.Entity.ChiTietPhieuGiamGia;
 import com.example.datn.Entity.PhieuGiamGia;
+import com.example.datn.Repository.ChiTietPhieuGiamGiaRepository;
 import com.example.datn.Repository.PhieuGiamGiaRepository;
 import com.example.datn.Service.PhieuGiamGiaService;
 import com.example.datn.VO.PhieuGiamGiaVO;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -29,6 +32,9 @@ public class PhieuGiamGiaServiceImpl implements PhieuGiamGiaService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private ChiTietPhieuGiamGiaRepository phieuGiamGiaKhachHangRepository;
 
     @Override
     public Page<PhieuGiamGiaDTO> getAllPhieuGiamGia(int page, int size, PhieuGiamVOSearch search) {
@@ -101,6 +107,37 @@ public class PhieuGiamGiaServiceImpl implements PhieuGiamGiaService {
                 throw new AppException(ErrorCode.MAIL_ERROR);
             }
         }
+    }
+
+    @Override
+    public String tangSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong) {
+        PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(idPhieuGiamGia)
+                .orElseThrow(() -> new AppException(ErrorCode.PHIEU_GIAM_GIA_NULL));
+        BigDecimal soluongHienTai = phieuGiamGia.getSoLuong();
+        BigDecimal soLuongTangThem = BigDecimal.valueOf(soLuong);
+        BigDecimal tongSoLuong = soluongHienTai.add(soLuongTangThem);
+        phieuGiamGia.setSoLuong(tongSoLuong);
+        phieuGiamGiaRepository.save(phieuGiamGia);
+        return "Tăng số lượng thành công";
+    }
+
+    @Override
+    public String giamSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong, Integer idKhachHang) {
+        PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(idPhieuGiamGia)
+                .orElseThrow(() -> new AppException(ErrorCode.PHIEU_GIAM_GIA_NULL));
+        if (phieuGiamGia.getLoaiPhieu() == 1){
+            phieuGiamGiaKhachHangRepository.deletePhieuGiamGiaPhieuGiamGia(idPhieuGiamGia, idKhachHang);
+        }
+        BigDecimal soluongHienTai = phieuGiamGia.getSoLuong();
+        BigDecimal soLuongGiamBot = BigDecimal.valueOf(soLuong);
+
+        if (soluongHienTai.compareTo(soLuongGiamBot) < 0) {
+            throw new AppException(ErrorCode.INVALID_QUANTITY_PGG);
+        }
+        BigDecimal soLuongConLai = soluongHienTai.subtract(soLuongGiamBot);
+        phieuGiamGia.setSoLuong(soLuongConLai);
+        phieuGiamGiaRepository.save(phieuGiamGia);
+        return "Giảm số lượng thành công";
     }
 
     private String buildHtmlBody(PhieuGiamGia info) {
