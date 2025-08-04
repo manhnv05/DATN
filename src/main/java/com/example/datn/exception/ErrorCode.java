@@ -5,6 +5,13 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
+
+    // Thêm mã lỗi mới NV-KH.
+    CCCD_EXISTED(1012, "CCCD đã tồn tại", HttpStatus.BAD_REQUEST),
+    EMAIL_EXISTED(1013, "Email đã tồn tại", HttpStatus.BAD_REQUEST),
+    PHONE_EXISTED(1014, "Số điện thoại đã tồn tại", HttpStatus.BAD_REQUEST),
+    RESOURCE_NOT_FOUND(4040, "Tài nguyên không tồn tại", HttpStatus.NOT_FOUND),
+
     // General & User
     USER_EXISTED(1002, "User already existed", HttpStatus.INTERNAL_SERVER_ERROR),
     UNCATEGORIZED_EXCEPTION(9999, "UNCATEGORIZED_EXCEPTION", HttpStatus.BAD_REQUEST),
@@ -23,11 +30,21 @@ public enum ErrorCode {
     NO_PREVIOUS_STATUS(1006, "Không có trạng thái trước đó để thay đổi", HttpStatus.BAD_REQUEST),
     INVALID_STATUS_TRANSITION(1007, "Chuyển đổi trạng thái không hợp lệ", HttpStatus.BAD_REQUEST),
     ORDER_HAS_BEEN_CANCELLED(1008, "Đơn hàng đã hủy", HttpStatus.BAD_REQUEST),
+    INVALID_STATUS(1009, "Trạng thái hóa đơn không đúng", HttpStatus.BAD_REQUEST),
+    NOT_YET_PAID(1012, "Chưa thanh toán", HttpStatus.BAD_REQUEST),
+    PAYMENT_METHOD_NOT_FOUND(1013, "Khong nó hình thưc thanh toán này", HttpStatus.BAD_REQUEST),
+
+    NO_PAYMENT_HISTORY (1014, "Chưa có lịch sử thanh toán", HttpStatus.BAD_REQUEST),
+    INVALID_QUANTITY (1015, "Số lượng tồn kho hết", HttpStatus.BAD_REQUEST),
 
     // Voucher/Discount (from sd_17)
     PHIEU_GIAM_GIA_NULL(2001, "Phiếu Giảm Giá Không Tồn tại", HttpStatus.NOT_FOUND),
     PHIEU_GIAM_GIA_KHACH_HANG_NOT_FOUND(2002, "Phiếu giảm giá khách hàng không tồn tại", HttpStatus.BAD_REQUEST),
-    MAIL_ERROR(2003, "ERROR MAIL", HttpStatus.BAD_REQUEST);
+    MAIL_ERROR(2003, "ERROR MAIL", HttpStatus.BAD_REQUEST),
+    PHIEU_GIAM_GIA_KH_NULL(2002, "Không có phiếu gia giá nào", HttpStatus.NOT_FOUND),
+    MA_PHIEU_GIAM_GIA_TON_TAI(2002, "Mã phiếu giảm giá tồn tại", HttpStatus.BAD_REQUEST),
+
+    INVALID_QUANTITY_PGG(1015, "Số lượng PGG hết", HttpStatus.BAD_REQUEST);
 
     private final int errorCode;
     private final String errorMessage;

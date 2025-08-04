@@ -10,6 +10,7 @@ public enum TrangThai {
     // Chỉ giữ lại tên hiển thị
     TAO_DON_HANG("Tạo đơn hàng"),
     CHO_XAC_NHAN("Chờ xác nhận"),
+    DA_XAC_NHAN("Đã xác nhận"),
     CHO_GIAO_HANG("Chờ giao hàng"),
     DANG_VAN_CHUYEN("Đang vận chuyển"),
     //    DA_GIAO("Đã giao hàng"),
@@ -32,30 +33,25 @@ public enum TrangThai {
 
     // Phương thức kiểm tra chuyển đổi trạng thái hợp lệ
     // Bỏ qua logic ràng buộc, luôn cho phép chuyển đổi
-    public boolean canTransitionFrom(TrangThai oldStatus) {
-        // Đây là nơi bạn định nghĩa các quy tắc chuyển đổi hợp lệ
-        switch (this) {
-            case CHO_XAC_NHAN:
-                return oldStatus == TAO_DON_HANG;
-            case CHO_GIAO_HANG:
-                return oldStatus == CHO_XAC_NHAN;
-            case DANG_VAN_CHUYEN:
-                return oldStatus == CHO_GIAO_HANG;
+    public boolean canTransitionTo(TrangThai newState) {
+        // 'this' là trạng thái cũ
+        switch (newState) {
             case HOAN_THANH:
-                return oldStatus == DANG_VAN_CHUYEN;
+                // Chỉ cho phép hoàn thành khi đang vận chuyển hoặc đã xác nhận (tại quầy)
+                return this == DANG_VAN_CHUYEN || this == DA_XAC_NHAN;
             case HUY:
-                // Hủy có thể từ nhiều trạng thái, nhưng không từ HOAN_THANH
-                return oldStatus != HOAN_THANH && oldStatus != HUY;
-            // Thêm các trường hợp khác nếu cần
+                // Cho phép hủy khi chưa hoàn thành hoặc chưa bị hủy
+                return this != HOAN_THANH && this != HUY;
+            // ... định nghĩa tất cả các quy tắc hợp lệ khác
             default:
-                return false; // Mặc định không cho phép chuyển đổi nếu không định nghĩa
+                return false;
         }
     }
 
     public boolean canRevertTo(TrangThai newStatus) {
         switch (this) {
             case TAO_DON_HANG:
-                return false; // Không thể quay lại từ trạng thái đầu tiên
+                return false;
             case CHO_XAC_NHAN:
 
                 return newStatus == TAO_DON_HANG;

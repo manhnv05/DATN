@@ -1,16 +1,14 @@
 package com.example.datn.mapper;
 
-import com.example.datn.DTO.HoaDonDTO;
-import com.example.datn.Entity.HoaDon;
-import com.example.datn.VO.HoaDonCreateVO;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import com.example.datn.dto.HoaDonDTO;
+import com.example.datn.entity.HoaDon;
+import com.example.datn.vo.hoaDonVO.HoaDonCreateVO;
+import com.example.datn.vo.hoaDonVO.HoaDonRequestUpdateVO;
+import org.mapstruct.*;
 
 @Mapper(
-        componentModel = MappingConstants.ComponentModel.SPRING,
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE // Bỏ qua các trường null từ nguồn
+        componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
 public interface HoaDonMapper {
 
@@ -45,12 +43,12 @@ public interface HoaDonMapper {
     @Mapping(source = "phiVanChuyen", target = "phiVanChuyen")
     @Mapping(source = "tongHoaDon", target = "tongHoaDon")
     @Mapping(source = "maHoaDon", target = "maHoaDon")
-
-
-
     // Map tenKhachHang: Nếu có thực thể khách hàng, lấy tên từ đó. Nếu không (khách lẻ), lấy từ trường tenKhachHang trực tiếp của HoaDon Entity.
-    @Mapping(target = "tenKhachHang", expression = "java(hoaDon.getKhachHang() != null ? hoaDon.getTenKhachHang()  : hoaDon.getKhachHang().getTenKhachHang())")
+    @Mapping(target = "tenKhachHang", expression = "java(hoaDon.getKhachHang() != null ? hoaDon.getKhachHang().getTenKhachHang() : \"Khách lẻ\")")
+    // Map tenNhanVien: Nếu có thực thể nhân viên, lấy tên từ đó. Nếu không, trả về null.
     @Mapping(target = "tenNhanVien", expression = "java(hoaDon.getNhanVien() != null ? hoaDon.getNhanVien().getHoVaTen() : null)")
+    @Mapping(target = "maNhanVien", expression = "java(hoaDon.getNhanVien() != null ? hoaDon.getNhanVien().getMaNhanVien() : null)")
     HoaDonDTO toHoaDonResponse(HoaDon hoaDon);
+
 
 }

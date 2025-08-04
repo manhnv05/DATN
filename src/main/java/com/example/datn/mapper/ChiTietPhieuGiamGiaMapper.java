@@ -1,9 +1,9 @@
 package com.example.datn.mapper;
 
-import com.example.datn.DTO.ChiTietPhieuGiamGiaDTO;
-import com.example.datn.Entity.ChiTietPhieuGiamGia;
-import com.example.datn.VO.ChiTietPhieuGiamGiaUpdateVO;
-import com.example.datn.VO.ChiTietPhieuGiamGiaVO;
+import com.example.datn.dto.ChiTietPhieuGiamGiaDTO;
+import com.example.datn.entity.ChiTietPhieuGiamGia;
+import com.example.datn.vo.chiTietPhieuGiamGiaVO.ChiTietPhieuGiamGiaUpdateVO;
+import com.example.datn.vo.chiTietPhieuGiamGiaVO.ChiTietPhieuGiamGiaVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

@@ -42,3 +42,4 @@ public class KhachHangVO {
     private Integer trangThai;
 
 }
+

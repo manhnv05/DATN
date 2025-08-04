@@ -11,6 +11,7 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import routes from "routes";
 import { useSoftUIController, setMiniSidenav} from "context";
+import "bootstrap/dist/css/bootstrap.min.css";
 import brand from "assets/images/logo4.png";
 
 export default function App() {

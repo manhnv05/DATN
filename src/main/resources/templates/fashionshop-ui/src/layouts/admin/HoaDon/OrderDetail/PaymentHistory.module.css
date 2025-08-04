@@ -1,0 +1,69 @@
+/* --- Dán vào file PaymentHistory.module.css --- */
+
+/* Badge chung, giống hệt mẫu của bạn */
+.softBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid;
+  text-align: center;
+  min-width: 100px;
+  height: 30px;
+  margin-left: 10px;
+}
+
+/* Các lớp màu cho badge, giống hệt mẫu của bạn */
+.bg-success {
+  color: #198754;
+  background-color: #d1e7dd;
+  border-color: #198754;
+}
+.paymentButton {
+  /* Các thuộc tính cơ bản */
+  border-radius: 8px; /* Tương đương borderRadius: 2 của MUI */
+  text-transform: none;
+  font-weight: 400;
+  color: #49a3f1;
+  border: 1px solid #49a3f1;
+  box-shadow: none;
+  background-color: transparent; /* Nền trong suốt để tạo kiểu outlined */
+  padding: 6px 16px; /* Thêm padding cho đẹp hơn */
+  cursor: pointer;
+
+  /* Hiệu ứng chuyển động mượt mà */
+  transition: background-color 250ms, border-color 250ms, color 250ms;
+}
+
+/* Hiệu ứng khi di chuột vào */
+.paymentButton:hover {
+  border-color: #1769aa;
+  background-color: #f0f6fd;
+  color: #1769aa;
+}
+.bg-primary {
+  color: #0d6efd;
+  background-color: #cfe2ff;
+  border-color: #0d6efd;
+}
+
+.bg-secondary {
+  color: #6c757d;
+  background-color: #e2e3e5;
+  border-color: #6c757d;
+}
+
+/* Kiểu cho mỗi bản ghi thanh toán */
+.paymentRecord strong {
+  color: #555;
+  margin-right: 8px;
+}
+
+/* Kiểu riêng cho số tiền */
+.currency {
+  font-weight: bold;
+  color: #dc3545; /* Màu đỏ cho nổi bật */
+}

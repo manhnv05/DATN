@@ -1,32 +1,35 @@
-import Dashboard from "layouts/dashboard";
-import SanPham from "layouts/SanPham/sanphan";
-import ThuongHieu from "layouts/SanPham/thuonghieu";
-import ChatLieu from "layouts/SanPham/chatlieu";
-import DanhMuc from "layouts/SanPham/danhmuc";
-import KichThuoc from "layouts/SanPham/kichthuoc";
-import MauSac from "layouts/SanPham/mausac";
-import TayAo from "layouts/SanPham/tayao";
-import CoAo from "layouts/SanPham/coao";
-import HinhAnh from "layouts/SanPham/hinhanh";
-import ProductForm from "layouts/SanPham/themsp";
-import ProductDetailForm from "layouts/SanPham/chitiet"; // <-- Thêm import này
-import GiamGia from "layouts/GiamGia";
-import OrderManagementPage from "layouts/HoaDon/pages/OrderManagementPage";
-import OrderDetailPage from "layouts/HoaDon/pages/OrderDetailPage";
-import PhieuGiamPage from "layouts/phieugiamgia/phieugiam";
-import AddPhieuGiam from "layouts/phieugiamgia/addPhieuGiam";
-import UpdatePhieuGiam from "layouts/phieugiamgia/updatePhieuGiamGia";
-import KhachHang from "layouts/khachhang";
-import AddKhachHang from "layouts/khachhang/add";
-import NhanVien from "layouts/nhanvien";
-import AddNhanVien from "layouts/nhanvien/add";
-import DetailNhanVien from "layouts/nhanvien/detail";
-import UpdateNhanVien from "layouts/nhanvien/update";
+import SanPham from "./layouts/admin/SanPham/sanphan";
+import ThuongHieu from "./layouts/admin/SanPham/thuonghieu";
+import ChatLieu from "./layouts/admin/SanPham/chatlieu";
+import DanhMuc from "./layouts/admin/SanPham/danhmuc";
+import KichThuoc from "./layouts/admin/SanPham/kichthuoc";
+import MauSac from "./layouts/admin/SanPham/mausac";
+import TayAo from "./layouts/admin/SanPham/tayao";
+import CoAo from "./layouts/admin/SanPham/coao";
+import HinhAnh from "./layouts/admin/SanPham/hinhanh";
+import ProductForm from "./layouts/admin/SanPham/themsp";
+import ProductDetailForm from "./layouts/admin/SanPham/chitiet"; // <-- Thêm import này
+import GiamGia from "./layouts/admin/GiamGia";
+import OrderManagementPage from "./layouts/admin/HoaDon/pages/OrderManagementPage";
+import OrderDetailPage from "./layouts/admin/HoaDon/pages/OrderDetailPage";
+import PhieuGiamPage from "./layouts/admin/phieugiamgia/phieugiam";
+import AddPhieuGiam from "./layouts/admin/phieugiamgia/addPhieuGiam";
+import UpdatePhieuGiam from "./layouts/admin/phieugiamgia/updatePhieuGiamGia";
+import KhachHang from "./layouts/admin/khachhang";
+import AddKhachHang from "./layouts/admin/khachhang/add";
+import DetailKhachHang from "./layouts/admin/khachhang/detail";
+import UpdateKhachHang from "./layouts/admin/khachhang/update";
+import NhanVien from "./layouts/admin/nhanvien";
+import AddNhanVien from "./layouts/admin/nhanvien/add";
+import DetailNhanVien from "./layouts/admin/nhanvien/detail";
+import UpdateNhanVien from "./layouts/admin/nhanvien/update";
+import SalesDashboardPage from "./layouts/admin/BanHangTaiQuay/pages/SalesDashboardPage";
+import DashboardStats from "./layouts/admin/thongke/thongke";
+import AddDiscountEventPage from "./layouts/admin/GiamGia/AddDiscountEventPage";
+import ViewDiscountEventPage from "./layouts/admin/GiamGia/ViewDiscountEventPage";
 
-
-
-import SignIn from "layouts/authentication/sign-in";
-import SignUp from "layouts/authentication/sign-up";
+import SignIn from "./layouts/admin/authentication/sign-in";
+import SignUp from "./layouts/admin/authentication/sign-up";
 
 import Shop from "examples/Icons/Shop";
 import Office from "examples/Icons/Office";
@@ -36,8 +39,7 @@ import SpaceShip from "examples/Icons/SpaceShip";
 import CustomerSupport from "examples/Icons/CustomerSupport";
 import CreditCard from "examples/Icons/CreditCard";
 import Cube from "examples/Icons/Cube";
-import AddDiscountEventPage from "layouts/GiamGia/AddDiscountEventPage";
-import ViewDiscountEventPage from "layouts/GiamGia/ViewDiscountEventPage";
+
 
 const routes = [
   {
@@ -46,16 +48,16 @@ const routes = [
     key: "dashboard",
     route: "/dashboard",
     icon: <Shop size="12px" />,
-    component: <Dashboard />,
+    component: <DashboardStats />,
     noCollapse: true,
   },
   {
     type: "collapse",
     name: "Bán Hàng Tại Quầy",
     key: "sales",
-    route: "/tables",
+    route: "/sales",
     icon: <Office size="12px" />,
-    // component: <Tables />,
+    component: <SalesDashboardPage />,
     noCollapse: true,
   },
   {
@@ -66,11 +68,6 @@ const routes = [
     icon: <CreditCard size="12px" />,
     component: <OrderManagementPage />,
     noCollapse: true,
-  },
-  {
-    route: "/order-management/:orderId",
-    component: <OrderDetailPage />,
-    key: "order-detail",
   },
   {
     type: "collapse",
@@ -201,7 +198,7 @@ const routes = [
     key: "profile",
     route: "/profile",
     icon: <CustomerSupport size="12px" />,
-    // component: <Profile />,
+    //component: <Profile />,
     noCollapse: true,
   },
   {
@@ -283,6 +280,22 @@ const routes = [
     hidden: true,
   },
   {
+    key: "detail-customer",
+    name: "chi tiết khách hàng",
+    route: "/khachhang/detail/:id",
+    component: <DetailKhachHang />,
+    noCollapse: true,
+    hidden: true,
+  },
+  {
+    key: "update-customer",
+    name: "Cập nhật khách hàng",
+    route: "/khachhang/update/:id",
+    component: <UpdateKhachHang />,
+    noCollapse: true,
+    hidden: true,
+  },
+  {
     key: "add-staff",
     name: "Thêm nhân viên",
     route: "/nhanvien/add",
@@ -305,6 +318,14 @@ const routes = [
     component: <UpdateNhanVien />,
     noCollapse: true,
     hidden: true,
+  },
+  {
+    key: "order-detail",
+    name: "Hóa đơn chi tiết",
+    route: "/QuanLyHoaDon/:orderId",
+    component: <OrderDetailPage />,
+    noCollapse: true,
+    hidden: true, // ẩn khỏi menu nếu muốn
   },
 ];
 

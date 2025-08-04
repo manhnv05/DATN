@@ -1,0 +1,110 @@
+/* src/component/OrderDetail/OrderInfo.module.css */
+
+.order-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 5px;
+    border-bottom: 1px dotted #eee;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.order-info p {
+    margin: 0;
+    flex: 1;
+}
+
+.order-info strong {
+    color: #555;
+}
+
+.status {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+/* Căn giữa text, nền nhạt, viền màu, chữ màu đồng nhất */
+.softBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid;
+  text-align: center;
+  min-width: 100px;
+  height: 30px;
+  margin-left: 10px;
+}
+
+/* Trạng thái và loại đơn hàng */
+.bg-success {
+  color: #198754;
+  background-color: #d1e7dd;
+  border-color: #198754;
+}
+
+.bg-primary {
+  color: #0d6efd;
+  background-color: #cfe2ff;
+  border-color: #0d6efd;
+}
+
+.bg-warning {
+  color: #d39e00;
+  background-color: #fff3cd;
+  border-color: #d39e00;
+}
+
+.bg-info {
+  color: #0dcaf0;
+  background-color: #cff4fc;
+  border-color: #0dcaf0;
+}
+
+
+
+.bg-danger {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border-color: #dc3545;
+}
+
+
+/* --- Các class cho Loại đơn hàng --- */
+.order-type {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+
+
+/* Đảm bảo các phần thông tin đơn hàng có không gian rộng */
+.orderInfo { /* Tên class này có vẻ đã được định nghĩa lại trong file chính */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.infoRow { /* Tên class này cũng được định nghĩa lại */
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 5px;
+    border-bottom: 1px dotted #eee;
+    width: 100%; /* Đảm bảo không bị co lại */
+}
