@@ -449,6 +449,8 @@ public class HoaDonServiceImpl implements HoaDonService {
         return "Cập nhật khách hàng thành công!";
     }
 
+
+
     @Override
     public CapNhatTrangThaiDTO capNhatTrangThaiHoaDon(Integer idHoaDon, TrangThai trangThaiMoi, String ghiChu, String nguoiThucHien) {
         HoaDon hoaDon = hoaDonRepository.findById(idHoaDon)
@@ -845,14 +847,12 @@ public class HoaDonServiceImpl implements HoaDonService {
                     // Giảm theo số tiền cố định
                     soTienDuocGiam = pgg.getSoTienGiam();
                 }
-
                 BigDecimal tongTienCuoiCung = tongTienGocBD.subtract(soTienDuocGiam);
                 hoaDon.setTongTien(tongTienCuoiCung.intValue());
             }
         } else {
             hoaDon.setPhieuGiamGia(null);
         }
-
         // 6. Tính tổng hóa đơn cuối cùng (bao gồm phí vận chuyển)
         // Giả sử mapper đã set `phiVanChuyen` vào `hoaDon`
         Integer phiVanChuyen = (hoaDon.getPhiVanChuyen() != null) ? hoaDon.getPhiVanChuyen() : 0;

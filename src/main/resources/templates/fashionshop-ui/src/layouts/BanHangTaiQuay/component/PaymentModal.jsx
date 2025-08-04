@@ -324,7 +324,7 @@ function PaymentModal({ open, onClose, totalAmount, onConfirm, hoaDonId }) {
   );
 }
 
-// Định nghĩa PropTypes để quản lý props tốt hơn
+
 PaymentModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
