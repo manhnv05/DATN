@@ -2,7 +2,9 @@ package com.example.datn.Service.impl;
 
 import com.example.datn.Config.EmailService;
 import com.example.datn.DTO.PhieuGiamGiaDTO;
+import com.example.datn.Entity.ChiTietPhieuGiamGia;
 import com.example.datn.Entity.PhieuGiamGia;
+import com.example.datn.Repository.ChiTietPhieuGiamGiaRepository;
 import com.example.datn.Repository.PhieuGiamGiaRepository;
 import com.example.datn.Service.PhieuGiamGiaService;
 import com.example.datn.VO.PhieuGiamGiaVO;
@@ -30,6 +32,9 @@ public class PhieuGiamGiaServiceImpl implements PhieuGiamGiaService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private ChiTietPhieuGiamGiaRepository phieuGiamGiaKhachHangRepository;
 
     @Override
     public Page<PhieuGiamGiaDTO> getAllPhieuGiamGia(int page, int size, PhieuGiamVOSearch search) {
@@ -117,10 +122,12 @@ public class PhieuGiamGiaServiceImpl implements PhieuGiamGiaService {
     }
 
     @Override
-    public String giamSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong) {
+    public String giamSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong, Integer idKhachHang) {
         PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(idPhieuGiamGia)
                 .orElseThrow(() -> new AppException(ErrorCode.PHIEU_GIAM_GIA_NULL));
-
+        if (phieuGiamGia.getLoaiPhieu() == 1){
+            phieuGiamGiaKhachHangRepository.deletePhieuGiamGiaPhieuGiamGia(idPhieuGiamGia, idKhachHang);
+        }
         BigDecimal soluongHienTai = phieuGiamGia.getSoLuong();
         BigDecimal soLuongGiamBot = BigDecimal.valueOf(soLuong);
 

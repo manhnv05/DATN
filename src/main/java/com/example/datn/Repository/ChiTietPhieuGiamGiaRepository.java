@@ -6,8 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -39,4 +41,11 @@ public interface ChiTietPhieuGiamGiaRepository extends JpaRepository<ChiTietPhie
     );
 
     Optional<ChiTietPhieuGiamGia> findByPhieuGiamGia_MaPhieuGiamGiaAndKhachHang_Id(String maPhieuGiamGia, Integer idKhachHang);
+
+    @Modifying
+    @Transactional
+    @Query("""
+        delete from ChiTietPhieuGiamGia pddkh where pddkh.khachHang.id = :idKhachHang and pddkh.phieuGiamGia.id = :idPhieuGiamGia
+   """)
+    void deletePhieuGiamGiaPhieuGiamGia(@Param("idPhieuGiamGia") Integer idPhieuGiamGia , @Param("idKhachHang") Integer idKhachHang);
 }
