@@ -69,10 +69,8 @@ public class PhieuGiamGiaController {
     @PostMapping("/giam-so_luong-pgg/{id}")
     public ResponseEntity<ApiResponse<String>> giamSoLuongSanPhamChiTiet(
             @PathVariable Integer id,
-            @RequestParam Integer soLuong,
-            @RequestParam Integer idKhachHang
-    ) {
-        return ResponseHelper.success("",phieuGiamGiaService.giamSoluongPhieuGiamGia(id, soLuong, idKhachHang));
+            @RequestParam Integer soLuong) {
+        return ResponseHelper.success("",phieuGiamGiaService.giamSoluongPhieuGiamGia(id,soLuong));
     }
     @PostMapping("/tang-so_luong-pgg/{id}")
     public ResponseEntity<ApiResponse<String>> tangSoLuongSanPhamChiTiet(
