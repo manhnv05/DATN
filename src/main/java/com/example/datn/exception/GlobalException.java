@@ -1,6 +1,5 @@
 package com.example.datn.exception;
 
-import com.example.datn.Config.ResponseHelper;
 import com.example.datn.DTO.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -46,14 +45,17 @@ public class GlobalException {
 
     // Xử lý lỗi validate đầu vào
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.put(error.getField(), error.getDefaultMessage());
         }
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ResponseHelper.error(HttpStatus.BAD_REQUEST, "Validation", errors));
+        ErrorCode validationError = ErrorCode.VALIDATION_ERROR;
+        ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
+                .code(validationError.getErrorCode())
+                .message(validationError.getErrorMessage())
+                .data(errors)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 }

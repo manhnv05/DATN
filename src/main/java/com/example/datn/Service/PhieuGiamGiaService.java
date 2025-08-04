@@ -15,6 +15,4 @@ public interface PhieuGiamGiaService {
     boolean deletePhieuGiamGia(int id);
     PhieuGiamGiaDTO updateStatusPhieuGiamGia(int id, int status);
     void sendMailToListCustomer(SendMailRequestData sendMailRequestData);
-    String tangSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong);
-    String giamSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong);
 }

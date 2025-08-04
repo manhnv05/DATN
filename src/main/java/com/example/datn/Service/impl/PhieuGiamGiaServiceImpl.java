@@ -18,7 +18,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -102,35 +101,6 @@ public class PhieuGiamGiaServiceImpl implements PhieuGiamGiaService {
                 throw new AppException(ErrorCode.MAIL_ERROR);
             }
         }
-    }
-
-    @Override
-    public String tangSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong) {
-        PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(idPhieuGiamGia)
-                .orElseThrow(() -> new AppException(ErrorCode.PHIEU_GIAM_GIA_NULL));
-        BigDecimal soluongHienTai = phieuGiamGia.getSoLuong();
-        BigDecimal soLuongTangThem = BigDecimal.valueOf(soLuong);
-        BigDecimal tongSoLuong = soluongHienTai.add(soLuongTangThem);
-        phieuGiamGia.setSoLuong(tongSoLuong);
-        phieuGiamGiaRepository.save(phieuGiamGia);
-        return "Tăng số lượng thành công";
-    }
-
-    @Override
-    public String giamSoluongPhieuGiamGia(Integer idPhieuGiamGia, Integer soLuong) {
-        PhieuGiamGia phieuGiamGia = phieuGiamGiaRepository.findById(idPhieuGiamGia)
-                .orElseThrow(() -> new AppException(ErrorCode.PHIEU_GIAM_GIA_NULL));
-
-        BigDecimal soluongHienTai = phieuGiamGia.getSoLuong();
-        BigDecimal soLuongGiamBot = BigDecimal.valueOf(soLuong);
-
-        if (soluongHienTai.compareTo(soLuongGiamBot) < 0) {
-            throw new AppException(ErrorCode.INVALID_QUANTITY_PGG);
-        }
-        BigDecimal soLuongConLai = soluongHienTai.subtract(soLuongGiamBot);
-        phieuGiamGia.setSoLuong(soLuongConLai);
-        phieuGiamGiaRepository.save(phieuGiamGia);
-        return "Giảm số lượng thành công";
     }
 
     private String buildHtmlBody(PhieuGiamGia info) {
