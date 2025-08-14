@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'; // Thêm useMemo
 import axios from 'axios';
 import PropTypes from 'prop-types';
+import ProductSlideshow from './ProductSlideshow';
 import {
   Dialog,
   DialogTitle,
@@ -391,14 +392,10 @@ const [products, setProducts] = useState([]);
                                     filteredProducts.map((product) => (
                                         // Sử dụng `uniqueId` đã được tạo sẵn
                                        <TableRow key={product.idChiTietSanPham} hover>
-                                         <TableCell sx={{ width: '80px', padding: '8px' }}>
-  {/* Box container để định vị nhãn giảm giá */}
-  <Box sx={{ position: 'relative', width: 50, height: 50 }}>
-    {/* Ảnh sản phẩm */}
-    <Box
-      component="img"
-      alt={product.tenSanPham}
-      src={product.duongDanAnh ? `${BASE_IMAGE_URL}${product.duongDanAnh}` : "https://via.placeholder.com/50x50?text=N/A"}
+                  <TableCell sx={{ width: '160px', padding: '8px' }}>
+  <Box sx={{ position: 'relative', width: 100, height: 100 }}>
+    <ProductSlideshow
+      product={product}
       sx={{
         width: '100%',
         height: '100%',
@@ -415,7 +412,7 @@ const [products, setProducts] = useState([]);
         sx={{
           position: 'absolute',
           top: 0,
-          left: 0,
+          right: 0,
           backgroundColor: 'success.main', // Màu xanh lá cây từ theme
           padding: '2px 5px',
           borderRadius: '4px',

@@ -4,6 +4,7 @@ import styles from "./ProductList.module.css";
 import PropTypes from "prop-types";
 import { useState, useEffect, useCallback } from "react";
 const BASE_SERVER_URL = "http://localhost:8080/";
+import ProductSlideshow from "../../BanHangTaiQuay/component/ProductSlideshow.jsx";
 const ProductList = ({ orderId, orderStatus }) => {
   const [orderData, setOrderData] = useState(null);
   const [productsInOrder, setProductsInOrder] = useState([]);
@@ -38,6 +39,8 @@ const ProductList = ({ orderId, orderStatus }) => {
     };
     fetchListProductOrder();
   }, [orderId]);
+// Tạo mảng chứa URL ảnh
+const imageList = productsInOrder.map(product =>  product.duongDanAnh);
 
   return (
     <div className={styles["product-list"]}>
@@ -54,12 +57,10 @@ const ProductList = ({ orderId, orderStatus }) => {
         // Map dữ liệu từ state 'products' đã được fetch ở trên
         productsInOrder.map((product) => (
           <div key={product.id || product.maSanPhamChiTiet} className={styles["product-item"]}>
-            <div className={styles["product-image"]}>
-              <img
-                src={BASE_SERVER_URL + product.duongDanAnh}
-                alt={product.tenSanPham} // Sử dụng 'tenSanPham' cho alt text
-              />
-            </div>
+           <ProductSlideshow
+  product={imageList }
+  sx={{ width: '150px', height: '150px',mr:2  }}
+/>
             <div className={styles["product-details"]}>
               <p className={styles["product-name"]}>
                 {product.tenSanPham} ({product.maSanPhamChiTiet})

@@ -34,7 +34,7 @@ import SoftTypography from "components/SoftTypography";
 import ProductSelectionModal from "./ProductSelectionModal";
 import PropTypes from "prop-types";
 import { toast } from "react-toastify";
-
+import ProductSlideshow from "./ProductSlideshow";
 const formatCurrency = (amount) => {
   if (typeof amount !== "number" || isNaN(amount)) {
     return "N/A";
@@ -91,45 +91,42 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const handleScanSuccess = async (decodedText) => {
-  // 1. Đóng modal quét QR
-  setIsScannerOpen(false);
+    // 1. Đóng modal quét QR
+    setIsScannerOpen(false);
 
-  // 2. Kiểm tra xem có hóa đơn nào đang được chọn không
-  if (!selectedTab) {
-    toast.warn("Vui lòng chọn hoặc tạo một hóa đơn trước khi quét sản phẩm!");
-    return;
-  }
+    // 2. Kiểm tra xem có hóa đơn nào đang được chọn không
+    if (!selectedTab) {
+      toast.warn("Vui lòng chọn hoặc tạo một hóa đơn trước khi quét sản phẩm!");
+      return;
+    }
 
-  try {
-    // 3. Gọi API để lấy thông tin sản phẩm từ mã QR
-    const response = await axios.get(
-      "http://localhost:8080/chiTietSanPham/scan-san-pham",
-      {
+    try {
+      // 3. Gọi API để lấy thông tin sản phẩm từ mã QR
+      const response = await axios.get("http://localhost:8080/chiTietSanPham/scan-san-pham", {
         params: {
           maSanPhamChiTiet: decodedText, // axios sẽ tự động tạo URL: .../find-by-ma?ma=...
         },
+      });
+
+      const productData = response.data;
+
+      // 4. Nếu API trả về dữ liệu sản phẩm hợp lệ
+      if (productData) {
+        // Gán số lượng mặc định là 1 để thêm vào giỏ hàng
+        const productToAdd = { ...productData, quantity: 1 };
+
+        // 5. Sử dụng hàm handleProductSelected đã có để thêm sản phẩm vào giỏ hàng
+        handleProductSelected(productToAdd);
+
+        toast.success(`Đã thêm: ${productData.tenSanPham}`);
+      } else {
+        toast.error("Mã sản phẩm không tồn tại trong hệ thống.");
       }
-    );
-
-    const productData = response.data;
-
-    // 4. Nếu API trả về dữ liệu sản phẩm hợp lệ
-    if (productData) {
-      // Gán số lượng mặc định là 1 để thêm vào giỏ hàng
-      const productToAdd = { ...productData, quantity: 1 };
-
-      // 5. Sử dụng hàm handleProductSelected đã có để thêm sản phẩm vào giỏ hàng
-      handleProductSelected(productToAdd);
-
-      toast.success(`Đã thêm: ${productData.tenSanPham}`);
-    } else {
-      toast.error("Mã sản phẩm không tồn tại trong hệ thống.");
+    } catch (error) {
+      console.error("Lỗi khi tìm sản phẩm bằng mã QR:", error);
+      toast.error("Lỗi: Không thể tìm thấy sản phẩm hoặc có sự cố kết nối.");
     }
-  } catch (error) {
-    console.error("Lỗi khi tìm sản phẩm bằng mã QR:", error);
-    toast.error("Lỗi: Không thể tìm thấy sản phẩm hoặc có sự cố kết nối.");
-  }
-};
+  };
 
   const handleScanError = (errorMessage) => {
     console.error("Lỗi máy quét QR:", errorMessage);
@@ -553,6 +550,7 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
     // Dọn dẹp interval khi component bị unmount
     return () => clearInterval(intervalId);
   }, []);
+  const imageList = currentOrder.products.map((product) => product.duongDanAnh);
   return (
     <>
       <Card>
@@ -747,23 +745,27 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                           {/* Cột 2: Thông tin sản phẩm ĐÃ CẬP NHẬT HOÀN CHỈNH */}
                           <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 2 }}>
                             {/* ===== CONTAINER MỚI CHO ẢNH VÀ NHÃN ===== */}
-                            <Box sx={{ position: "relative" }}>
-                              <Avatar
-                                variant="rounded"
-                                src={product.duongDanAnh}
-                                sx={{ width: 60, height: 60 }}
+                            <Box sx={{ position: "relative", width: 100, height: 100 }}>
+                              <ProductSlideshow
+                                product={product}
+                                sx={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                }}
                               />
-                              {/* Nhãn giảm giá */}
+                              {/* Nhãn giảm giá (chỉ hiển thị khi phanTramGiam > 0) */}
                               {product.phanTramGiam > 0 && (
-                                <Typography
+                                <SoftTypography
                                   variant="caption"
                                   color="white"
                                   fontWeight="bold"
                                   sx={{
                                     position: "absolute",
                                     top: 0,
-                                    left: 0,
-                                    backgroundColor: "success.main", // Màu xanh lá cây
+                                    right: 0,
+                                    backgroundColor: "success.main", // Màu xanh lá cây từ theme
                                     padding: "2px 5px",
                                     borderRadius: "4px",
                                     fontSize: "0.7rem",
@@ -771,11 +773,10 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
                                   }}
                                 >
                                   {product.phanTramGiam}% OFF
-                                </Typography>
+                                </SoftTypography>
                               )}
                             </Box>
                             {/* ============================================== */}
-
                             <Box>
                               <Typography variant="subtitle1" fontWeight="medium">
                                 {product.tenSanPham}
@@ -973,11 +974,11 @@ function SalesCounter({ onTotalChange, onInvoiceIdChange, onProductsChange, comp
         />
       )}
       <QRCodeScanner
-    open={isScannerOpen}
-    onClose={() => setIsScannerOpen(false)}
-    onScanSuccess={handleScanSuccess}
-    onScanError={handleScanError}
-/>
+        open={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+        onScanError={handleScanError}
+      />
     </>
   );
 }
